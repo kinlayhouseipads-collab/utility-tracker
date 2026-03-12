@@ -32,13 +32,21 @@
                 <p class="stat" id="stat-gas">-- units</p>
             </div>
             <div class="card">
-                <h3>Total Monthly Cost</h3>
-                <p class="stat" id="stat-cost">-- $</p>
+                <h3>Total Portfolio Monthly Cost</h3>
+                <p class="stat" id="stat-portfolio-cost">-- $</p>
             </div>
         </section>
 
         <section class="chart-section" style="margin-top: 40px; background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
             <canvas id="utilityChart"></canvas>
+        </section>
+
+        <section class="buildings-section" style="margin-top: 40px;">
+            <h2>Buildings Portfolio</h2>
+            <input id="search-bar" class="sticky-search" type="text" placeholder="Search buildings by name, address, or status...">
+            <div id="buildings-grid" class="dashboard-grid">
+                <!-- Building cards will be rendered here dynamically -->
+            </div>
         </section>
 
         <section id="entry-modal" class="modal">

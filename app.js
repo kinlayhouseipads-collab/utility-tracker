@@ -31,7 +31,57 @@ function updateDashboard() {
     document.getElementById('stat-electricity').textContent = totalElectricity.toFixed(2) + ' kWh';
     document.getElementById('stat-water').textContent = totalWater.toFixed(2) + ' m³';
     document.getElementById('stat-gas').textContent = totalGas.toFixed(2) + ' units';
-    document.getElementById('stat-cost').textContent = '$' + totalCost.toFixed(2);
+    // document.getElementById('stat-cost').textContent = '$' + totalCost.toFixed(2);
+}
+
+let allBuildings = [];
+
+async function loadBuildings() {
+    try {
+        const response = await fetch('buildings.json');
+        allBuildings = await response.json();
+        renderBuildings(allBuildings);
+    } catch (error) {
+        console.error('Error loading buildings:', error);
+    }
+}
+
+function renderBuildings(buildings) {
+    const grid = document.getElementById('buildings-grid');
+    grid.innerHTML = '';
+
+    let totalPortfolioCost = 0;
+
+    buildings.forEach(building => {
+        totalPortfolioCost += building.monthlyCost;
+
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <h3>${building.name}</h3>
+            <p><strong>Address:</strong> ${building.address}</p>
+            <p><strong>Status:</strong> ${building.status}</p>
+            <p class="stat">$${building.monthlyCost.toLocaleString()}</p>
+        `;
+        grid.appendChild(card);
+    });
+
+    document.getElementById('stat-portfolio-cost').textContent = '$' + totalPortfolioCost.toLocaleString();
+}
+
+function setupSearch() {
+    const searchBar = document.getElementById('search-bar');
+    if (searchBar) {
+        searchBar.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allBuildings.filter(b =>
+                b.name.toLowerCase().includes(term) ||
+                b.address.toLowerCase().includes(term) ||
+                b.status.toLowerCase().includes(term)
+            );
+            renderBuildings(filtered);
+        });
+    }
 }
 
 function renderChart() {
@@ -112,6 +162,8 @@ function renderChart() {
 document.addEventListener('DOMContentLoaded', () => {
     updateDashboard();
     renderChart();
+    loadBuildings();
+    setupSearch();
 });
 
 document.getElementById('tracker-form').addEventListener('submit', function(e) {
