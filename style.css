@@ -1,13 +1,16 @@
 :root {
     --primary: #2563eb;
-    --bg: #f8fafc;
-    --card-bg: rgba(255, 255, 255, 0.8);
+    --bg: #f8fafc; /* Keep as fallback if image fails, but will be overriden by glassmorphism bg */
+    --card-bg: rgba(255, 255, 255, 0.6);
     --text: #1e293b;
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 }
 
 body {
     font-family: 'Inter', sans-serif;
-    background-color: var(--bg);
+    background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+    background-attachment: fixed;
     color: var(--text);
     margin: 0;
 }
@@ -19,9 +22,15 @@ body {
 }
 
 .app-header {
-    background: #fff;
-    border-bottom: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--glass-border);
     padding: 1rem 0;
+    box-shadow: var(--glass-shadow);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
 .app-header .container {
@@ -32,19 +41,29 @@ body {
 
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:
+        "a b c"
+        "d e .";
     gap: 20px;
     margin-top: 40px;
 }
 
-.card {
+.card.a { grid-area: a; }
+.card.b { grid-area: b; }
+.card.c { grid-area: c; }
+.card.d { grid-area: d; }
+.card.e { grid-area: e; }
+
+.card, .high-priority-glass {
     background: var(--card-bg);
-    backdrop-filter: blur(10px);
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
     padding: 20px;
     text-align: center;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    box-shadow: var(--glass-shadow);
 }
 
 .stat {
@@ -80,9 +99,7 @@ input, select {
     border-color: #2563eb;
 }
 
-/* Glassmorphism utility */
-.high-priority-glass {
-    background: var(--card-bg);
-    backdrop-filter: blur(10px);
-    border: 1px solid #e2e8f0;
+/* Specific Fonts */
+.monospace {
+    font-family: 'Courier New', Courier, monospace;
 }
