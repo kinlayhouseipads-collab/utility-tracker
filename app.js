@@ -1,6 +1,7 @@
 let utilityChartInstance = null;
 let activeBuildingId = null;
 let allBuildings = [];
+let sortEndDateAscending = true; // Track sorting state globally
 
 const companies = [
     { id: 'oracle', name: 'Oracle', industry: 'Technology' },
@@ -14,7 +15,35 @@ const companies = [
 async function loadBuildings() {
     try {
         const response = await fetch('buildings.json');
-        allBuildings = await response.json();
+        const rawBuildings = await response.json();
+        allBuildings = rawBuildings.map(building => {
+            // Relational Data Upgrade (Multi-Account)
+            const accounts = [];
+            if (building.mprn) {
+                accounts.push({
+                    type: 'Electricity',
+                    id_number: building.mprn,
+                    provider: 'Utility Co',
+                    contractEndDate: building.contractEndDate
+                });
+            }
+            if (building.gprn) {
+                accounts.push({
+                    type: 'Gas',
+                    id_number: building.gprn,
+                    provider: 'Utility Co',
+                    contractEndDate: building.contractEndDate
+                });
+            }
+
+            // Delete old flat fields and add accounts array
+            delete building.mprn;
+            delete building.gprn;
+            building.accounts = accounts;
+
+            return building;
+        });
+
         renderBuildings(allBuildings);
     } catch (error) {
         console.error('Error loading buildings:', error);
@@ -33,18 +62,32 @@ function renderBuildings(buildings) {
     const thead = document.createElement('thead');
     thead.innerHTML = `
         <tr style="background: var(--card-bg); position: sticky; top: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); z-index: 10;">
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Name</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Address</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Company</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Usage</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">MPRN</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">GPRN</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">End Date</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Status</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Actions</th>
+            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Building Name/Address</th>
+            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Company Badge</th>
+            <th id="sort-end-date" style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase; cursor: pointer;">Contract End Date &#x21C5;</th>
+            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Last Updated</th>
+            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Total Cost</th>
         </tr>
     `;
     table.appendChild(thead);
+
+    // Sort End Date Logic
+    setTimeout(() => {
+        const sortHeader = document.getElementById('sort-end-date');
+        if (sortHeader) {
+            // Remove previous event listeners if rendering again
+            sortHeader.replaceWith(sortHeader.cloneNode(true));
+            document.getElementById('sort-end-date').addEventListener('click', () => {
+                sortEndDateAscending = !sortEndDateAscending;
+                const sorted = [...buildings].sort((a, b) => {
+                    const dateA = new Date(a.contractEndDate).getTime();
+                    const dateB = new Date(b.contractEndDate).getTime();
+                    return sortEndDateAscending ? dateA - dateB : dateB - dateA;
+                });
+                renderBuildings(sorted);
+            });
+        }
+    }, 0);
 
     const tbody = document.createElement('tbody');
 
@@ -83,68 +126,102 @@ function renderBuildings(buildings) {
         const companyObj = companies.find(c => c.id === building.companyId);
         const companyName = companyObj ? companyObj.name : 'Unknown';
 
-        // Status logic
+        // Helper to format date as DD/MM/YYYY
+        const formatDate = (dateStr) => {
+            if (!dateStr) return 'N/A';
+            const d = new Date(dateStr);
+            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        };
+
+        const today = new Date('2026-03-12T00:00:00');
+
+        // Contract End Date logic
         const end = new Date(building.contractEndDate);
-        const today = new Date();
-        const diffTime = end - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffEndDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+        const endStyle = diffEndDays < 30 ? 'color: #ef4444; font-weight: bold;' : 'color: #334155;';
 
-        let statusColor = '#22c55e'; // GREEN
-        let statusText = '> 90 days';
+        // Last Updated (Staleness logic)
+        let lastUpdatedText = 'No bills';
+        let stalenessStyle = 'color: #334155;';
+        let buildingTotalCost = 0;
 
-        if (diffDays < 30) {
-            statusColor = '#ef4444'; // RED
-            statusText = '< 30 days';
-        } else if (diffDays <= 90) {
-            statusColor = '#f59e0b'; // AMBER
-            statusText = '30-90 days';
+        if (building.billHistory && building.billHistory.length > 0) {
+            const maxDate = new Date(Math.max(...building.billHistory.map(b => new Date(b.date).getTime())));
+            const diffStaleDays = Math.ceil((today - maxDate) / (1000 * 60 * 60 * 24));
+
+            if (diffStaleDays > 60) {
+                lastUpdatedText = `<span style="color: #ef4444; font-weight: bold;">STALE</span> (${diffStaleDays} days ago)`;
+            } else {
+                lastUpdatedText = `${diffStaleDays} days ago`;
+            }
+
+            // Building Level Aggregation
+            buildingTotalCost = building.billHistory.reduce((sum, bill) => sum + (parseFloat(bill.cost) || 0), 0);
         }
 
         row.innerHTML = `
-            <td style="padding: 15px; font-weight: 500;">${building.name}</td>
-            <td style="padding: 15px; color: #64748b; font-size: 0.9em;">${building.address}</td>
             <td style="padding: 15px;">
-                <span style="background: #e2e8f0; color: #334155; padding: 4px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold;">
+                <div style="font-weight: 500; font-size: 1.05em; color: #1e293b;">${building.name}</div>
+                <div style="color: #64748b; font-size: 0.85em; margin-top: 4px;">${building.address}</div>
+            </td>
+            <td style="padding: 15px;">
+                <span style="background: #e2e8f0; color: #334155; padding: 6px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                    <span style="display:inline-block; width:8px; height:8px; background:var(--primary); border-radius:50%;"></span>
                     ${companyName}
                 </span>
             </td>
-            <td style="padding: 15px; font-weight: bold; color: var(--primary);">${building.current_usage || '--'}</td>
-            <td style="padding: 15px; font-family: monospace; font-size: 0.9em; color: #475569;">${building.mprn || 'N/A'}</td>
-            <td style="padding: 15px; font-family: monospace; font-size: 0.9em; color: #475569;">${building.gprn || 'N/A'}</td>
-            <td style="padding: 15px; font-size: 0.9em;">${building.contractEndDate || 'N/A'}</td>
-            <td style="padding: 15px;">
-                <span style="background: ${statusColor}20; color: ${statusColor}; padding: 4px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; border: 1px solid ${statusColor}40;">
-                    ${statusText}
-                </span>
+            <td style="padding: 15px; font-size: 0.95em; ${endStyle}">
+                ${formatDate(building.contractEndDate)}
             </td>
-            <td style="padding: 15px;">
-                <button class="edit-btn btn-primary" data-id="${building.id}" style="padding: 6px 12px; font-size: 0.8em;">Edit</button>
+            <td style="padding: 15px; font-size: 0.95em; ${stalenessStyle}">
+                ${lastUpdatedText}
+            </td>
+            <td style="padding: 15px; font-size: 0.95em; font-weight: bold; color: var(--primary);">
+                €${buildingTotalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
             </td>
         `;
 
-        row.addEventListener('click', (e) => {
-            if (e.target.tagName.toLowerCase() === 'button') return;
-            selectBuilding(building);
+        // Create Expandable Accordion Row for Accounts
+        const accordionRow = document.createElement('tr');
+        accordionRow.style.display = 'none';
+        accordionRow.style.backgroundColor = '#f1f5f9';
 
-            // Trigger global update to re-render row styling while keeping all filters intact
-            if (typeof updateFilters === 'function') {
-                updateFilters();
-            } else {
-                // Fallback for initialization phase if updateFilters isn't defined yet in scope
-                renderBuildings(allBuildings);
-            }
-        });
+        let accountsHtml = '<div style="padding: 15px; display: flex; flex-direction: column; gap: 10px;">';
+        accountsHtml += '<h4 style="margin:0; color: #334155;">Accounts</h4>';
+        accountsHtml += '<ul style="list-style-type: none; padding: 0; margin: 0;">';
 
-        // Add event listener to edit button directly
-        const editBtn = row.querySelector('.edit-btn');
-        if (editBtn) {
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // prevent row click
-                openEditModal(building.id);
+        if (building.accounts && building.accounts.length > 0) {
+            building.accounts.forEach(acc => {
+                accountsHtml += `<li style="padding: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 5px; display: flex; justify-content: space-between;">
+                    <span style="font-weight: 600; color: #1e293b;">${acc.type}</span>
+                    <span style="font-family: monospace; color: #475569;">ID: ${acc.id_number || 'N/A'}</span>
+                </li>`;
             });
+        } else {
+            accountsHtml += `<li style="color: #64748b;">No accounts found.</li>`;
         }
 
+        accountsHtml += '</ul>';
+        accountsHtml += '<button class="btn-primary" style="align-self: flex-start; padding: 8px 12px; font-size: 0.85em; margin-top: 10px;">+ Add Account</button>';
+        accountsHtml += '</div>';
+
+        accordionRow.innerHTML = `<td colspan="5">${accountsHtml}</td>`;
+
+        row.addEventListener('click', (e) => {
+            if (e.target.tagName.toLowerCase() === 'button') return;
+
+            // Toggle Accordion
+            if (accordionRow.style.display === 'none') {
+                accordionRow.style.display = 'table-row';
+            } else {
+                accordionRow.style.display = 'none';
+            }
+
+            selectBuilding(building);
+        });
+
         tbody.appendChild(row);
+        tbody.appendChild(accordionRow);
     });
 
     table.appendChild(tbody);
@@ -175,6 +252,7 @@ function updateDashboard() {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
 
+    const searchBar = document.getElementById('search-bar')?.value;
     const companyFilter = document.getElementById('company-filter')?.value;
     const startDateFilter = document.getElementById('start-date-filter')?.value;
     const endDateFilter = document.getElementById('end-date-filter')?.value;
@@ -187,8 +265,17 @@ function updateDashboard() {
     let targetBuildings = allBuildings;
     if (activeBuildingId) {
         targetBuildings = targetBuildings.filter(b => b.id === activeBuildingId);
-    } else if (companyFilter) {
-        targetBuildings = targetBuildings.filter(b => b.companyId === companyFilter);
+    } else {
+        if (companyFilter) {
+            targetBuildings = targetBuildings.filter(b => b.companyId === companyFilter);
+        }
+        if (searchBar) {
+            const searchTerm = searchBar.toLowerCase();
+            targetBuildings = targetBuildings.filter(building =>
+                building.name.toLowerCase().includes(searchTerm) ||
+                building.address.toLowerCase().includes(searchTerm)
+            );
+        }
     }
 
     targetBuildings.forEach(building => {
@@ -248,10 +335,19 @@ function updateDashboard() {
         }
     });
 
-    document.getElementById('stat-electricity').textContent = totalElectricity.toFixed(2) + ' kWh';
-    document.getElementById('stat-water').textContent = totalWater.toFixed(2) + ' m³';
-    document.getElementById('stat-gas').textContent = totalGas.toFixed(2) + ' units';
-    document.getElementById('stat-cost').textContent = '$' + totalCost.toFixed(2);
+    document.getElementById('stat-electricity').textContent = totalElectricity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh';
+    document.getElementById('stat-water').textContent = totalWater.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' m³';
+    document.getElementById('stat-gas').textContent = totalGas.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' units';
+
+    // Total for entire filtered view over ALL time, per prompt: "Company Level: Create a header stat that sums the costs for the entire filtered view."
+    let grandTotal = 0;
+    targetBuildings.forEach(building => {
+        if (building.billHistory) {
+            grandTotal += building.billHistory.reduce((s, bill) => s + (parseFloat(bill.cost) || 0), 0);
+        }
+    });
+
+    document.getElementById('stat-cost').textContent = '€' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 
 function renderChart() {
@@ -375,6 +471,7 @@ function updateFilters() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
     loadBuildings();
     updateDashboard();
     renderChart();
@@ -518,6 +615,24 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDashboard();
     });
 
+    // Auth Login Logic
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value.trim();
+            if (username === 'Oracle_Admin') {
+                localStorage.setItem('auth_user', 'oracle');
+                checkAuth();
+            } else if (username === 'Super_Admin') {
+                localStorage.setItem('auth_user', 'all');
+                checkAuth();
+            } else {
+                alert('Invalid user. Try Oracle_Admin or Super_Admin');
+            }
+        });
+    }
+
     window.addEventListener('click', (event) => {
         if (event.target == billHistoryModal) {
             billHistoryModal.style.display = 'none';
@@ -545,6 +660,35 @@ window.openEditModal = function(id) {
         document.getElementById('edit-building-modal').style.display = 'block';
     }
 };
+
+function checkAuth() {
+    const authUser = localStorage.getItem('auth_user');
+    const authModal = document.getElementById('auth-modal');
+    const appContent = document.getElementById('app-content');
+    const companyFilter = document.getElementById('company-filter');
+
+    if (!authUser) {
+        authModal.style.display = 'flex';
+        appContent.style.display = 'none';
+    } else {
+        authModal.style.display = 'none';
+        appContent.style.display = 'block';
+
+        if (authUser === 'oracle') {
+            if (companyFilter) {
+                companyFilter.value = 'oracle';
+                companyFilter.disabled = true;
+            }
+        } else if (authUser === 'all') {
+            if (companyFilter) {
+                companyFilter.disabled = false;
+            }
+        }
+
+        // Trigger filter update with the applied roles
+        setTimeout(() => updateFilters(), 100);
+    }
+}
 
 document.getElementById('tracker-form').addEventListener('submit', function(e) {
     e.preventDefault();
