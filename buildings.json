@@ -1,0 +1,302 @@
+[
+    {
+        "id": "B001",
+        "name": "Building A1",
+        "address": "101 Main Street, Cityville",
+        "current_usage": "1352.90 kWh"
+    },
+    {
+        "id": "B002",
+        "name": "Building A2",
+        "address": "102 Main Street, Cityville",
+        "current_usage": "586.36 kWh"
+    },
+    {
+        "id": "B003",
+        "name": "Building A3",
+        "address": "103 Main Street, Cityville",
+        "current_usage": "1450.00 kWh"
+    },
+    {
+        "id": "B004",
+        "name": "Building A4",
+        "address": "104 Main Street, Cityville",
+        "current_usage": "1185.88 kWh"
+    },
+    {
+        "id": "B005",
+        "name": "Building A5",
+        "address": "105 Main Street, Cityville",
+        "current_usage": "1470.94 kWh"
+    },
+    {
+        "id": "B006",
+        "name": "Building A6",
+        "address": "106 Main Street, Cityville",
+        "current_usage": "1347.63 kWh"
+    },
+    {
+        "id": "B007",
+        "name": "Building A7",
+        "address": "107 Main Street, Cityville",
+        "current_usage": "560.39 kWh"
+    },
+    {
+        "id": "B008",
+        "name": "Building A8",
+        "address": "108 Main Street, Cityville",
+        "current_usage": "1194.52 kWh"
+    },
+    {
+        "id": "B009",
+        "name": "Building A9",
+        "address": "109 Main Street, Cityville",
+        "current_usage": "891.54 kWh"
+    },
+    {
+        "id": "B010",
+        "name": "Building A10",
+        "address": "110 Main Street, Cityville",
+        "current_usage": "720.47 kWh"
+    },
+    {
+        "id": "B011",
+        "name": "Building B1",
+        "address": "111 Main Street, Cityville",
+        "current_usage": "632.93 kWh"
+    },
+    {
+        "id": "B012",
+        "name": "Building B2",
+        "address": "112 Main Street, Cityville",
+        "current_usage": "962.10 kWh"
+    },
+    {
+        "id": "B013",
+        "name": "Building B3",
+        "address": "113 Main Street, Cityville",
+        "current_usage": "977.74 kWh"
+    },
+    {
+        "id": "B014",
+        "name": "Building B4",
+        "address": "114 Main Street, Cityville",
+        "current_usage": "1284.10 kWh"
+    },
+    {
+        "id": "B015",
+        "name": "Building B5",
+        "address": "115 Main Street, Cityville",
+        "current_usage": "1078.96 kWh"
+    },
+    {
+        "id": "B016",
+        "name": "Building B6",
+        "address": "116 Main Street, Cityville",
+        "current_usage": "862.47 kWh"
+    },
+    {
+        "id": "B017",
+        "name": "Building B7",
+        "address": "117 Main Street, Cityville",
+        "current_usage": "739.16 kWh"
+    },
+    {
+        "id": "B018",
+        "name": "Building B8",
+        "address": "118 Main Street, Cityville",
+        "current_usage": "1159.55 kWh"
+    },
+    {
+        "id": "B019",
+        "name": "Building B9",
+        "address": "119 Main Street, Cityville",
+        "current_usage": "1085.44 kWh"
+    },
+    {
+        "id": "B020",
+        "name": "Building B10",
+        "address": "120 Main Street, Cityville",
+        "current_usage": "1177.35 kWh"
+    },
+    {
+        "id": "B021",
+        "name": "Building C1",
+        "address": "121 Main Street, Cityville",
+        "current_usage": "1346.78 kWh"
+    },
+    {
+        "id": "B022",
+        "name": "Building C2",
+        "address": "122 Main Street, Cityville",
+        "current_usage": "1128.27 kWh"
+    },
+    {
+        "id": "B023",
+        "name": "Building C3",
+        "address": "123 Main Street, Cityville",
+        "current_usage": "1110.98 kWh"
+    },
+    {
+        "id": "B024",
+        "name": "Building C4",
+        "address": "124 Main Street, Cityville",
+        "current_usage": "1420.00 kWh"
+    },
+    {
+        "id": "B025",
+        "name": "Building C5",
+        "address": "125 Main Street, Cityville",
+        "current_usage": "661.00 kWh"
+    },
+    {
+        "id": "B026",
+        "name": "Building C6",
+        "address": "126 Main Street, Cityville",
+        "current_usage": "672.28 kWh"
+    },
+    {
+        "id": "B027",
+        "name": "Building C7",
+        "address": "127 Main Street, Cityville",
+        "current_usage": "1021.08 kWh"
+    },
+    {
+        "id": "B028",
+        "name": "Building C8",
+        "address": "128 Main Street, Cityville",
+        "current_usage": "926.51 kWh"
+    },
+    {
+        "id": "B029",
+        "name": "Building C9",
+        "address": "129 Main Street, Cityville",
+        "current_usage": "504.64 kWh"
+    },
+    {
+        "id": "B030",
+        "name": "Building C10",
+        "address": "130 Main Street, Cityville",
+        "current_usage": "677.48 kWh"
+    },
+    {
+        "id": "B031",
+        "name": "Building D1",
+        "address": "131 Main Street, Cityville",
+        "current_usage": "987.20 kWh"
+    },
+    {
+        "id": "B032",
+        "name": "Building D2",
+        "address": "132 Main Street, Cityville",
+        "current_usage": "1342.20 kWh"
+    },
+    {
+        "id": "B033",
+        "name": "Building D3",
+        "address": "133 Main Street, Cityville",
+        "current_usage": "742.26 kWh"
+    },
+    {
+        "id": "B034",
+        "name": "Building D4",
+        "address": "134 Main Street, Cityville",
+        "current_usage": "700.84 kWh"
+    },
+    {
+        "id": "B035",
+        "name": "Building D5",
+        "address": "135 Main Street, Cityville",
+        "current_usage": "1116.20 kWh"
+    },
+    {
+        "id": "B036",
+        "name": "Building D6",
+        "address": "136 Main Street, Cityville",
+        "current_usage": "1282.70 kWh"
+    },
+    {
+        "id": "B037",
+        "name": "Building D7",
+        "address": "137 Main Street, Cityville",
+        "current_usage": "589.23 kWh"
+    },
+    {
+        "id": "B038",
+        "name": "Building D8",
+        "address": "138 Main Street, Cityville",
+        "current_usage": "1219.75 kWh"
+    },
+    {
+        "id": "B039",
+        "name": "Building D9",
+        "address": "139 Main Street, Cityville",
+        "current_usage": "1351.47 kWh"
+    },
+    {
+        "id": "B040",
+        "name": "Building D10",
+        "address": "140 Main Street, Cityville",
+        "current_usage": "1209.13 kWh"
+    },
+    {
+        "id": "B041",
+        "name": "Building E1",
+        "address": "141 Main Street, Cityville",
+        "current_usage": "638.11 kWh"
+    },
+    {
+        "id": "B042",
+        "name": "Building E2",
+        "address": "142 Main Street, Cityville",
+        "current_usage": "1364.85 kWh"
+    },
+    {
+        "id": "B043",
+        "name": "Building E3",
+        "address": "143 Main Street, Cityville",
+        "current_usage": "1203.67 kWh"
+    },
+    {
+        "id": "B044",
+        "name": "Building E4",
+        "address": "144 Main Street, Cityville",
+        "current_usage": "648.34 kWh"
+    },
+    {
+        "id": "B045",
+        "name": "Building E5",
+        "address": "145 Main Street, Cityville",
+        "current_usage": "866.68 kWh"
+    },
+    {
+        "id": "B046",
+        "name": "Building E6",
+        "address": "146 Main Street, Cityville",
+        "current_usage": "506.46 kWh"
+    },
+    {
+        "id": "B047",
+        "name": "Building E7",
+        "address": "147 Main Street, Cityville",
+        "current_usage": "1127.44 kWh"
+    },
+    {
+        "id": "B048",
+        "name": "Building E8",
+        "address": "148 Main Street, Cityville",
+        "current_usage": "1049.63 kWh"
+    },
+    {
+        "id": "B049",
+        "name": "Building E9",
+        "address": "149 Main Street, Cityville",
+        "current_usage": "946.05 kWh"
+    },
+    {
+        "id": "B050",
+        "name": "Building E10",
+        "address": "150 Main Street, Cityville",
+        "current_usage": "815.20 kWh"
+    }
+]

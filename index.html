@@ -18,6 +18,17 @@
     </header>
 
     <main class="container">
+
+        <section class="search-section" style="margin-top: 20px;">
+            <input type="text" id="search-bar" placeholder="Search buildings by name or address..." style="width: 100%; padding: 15px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+        </section>
+
+        <section id="buildings-list" class="dashboard-grid" style="margin-top: 20px; max-height: 400px; overflow-y: auto;">
+            <!-- Buildings will be rendered here -->
+        </section>
+
+        <h2 id="selected-building-name" style="margin-top: 40px;">All Buildings Dashboard</h2>
+
         <section class="dashboard-grid">
             <div class="card">
                 <h3>Electricity</h3>
@@ -45,6 +56,7 @@
             <div class="modal-content">
                 <h2>Log New Reading</h2>
                 <form id="tracker-form">
+                    <input type="hidden" id="building-id">
                     <select id="utility-type" required>
                         <option value="electricity">Electricity</option>
                         <option value="water">Water</option>
