@@ -13,7 +13,7 @@ body {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -78,4 +78,11 @@ input, select {
     z-index: 100;
     position: relative;
     border-color: #2563eb;
+}
+
+/* Glassmorphism utility */
+.high-priority-glass {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid #e2e8f0;
 }

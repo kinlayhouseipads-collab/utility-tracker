@@ -4,7 +4,6 @@
         "name": "Building A1",
         "address": "101 Main Street, Cityville",
         "current_usage": "1352.90 kWh",
-        "company": "Oracle",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -150,14 +149,17 @@
                 "usage_kwh": "1067.37",
                 "usage_m3": "112.61"
             }
-        ]
+        ],
+        "companyId": "oracle",
+        "mprn": "13748403078",
+        "gprn": "2867044",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B002",
         "name": "Building A2",
         "address": "102 Main Street, Cityville",
         "current_usage": "586.36 kWh",
-        "company": "Oracle",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -303,14 +305,17 @@
                 "usage_kwh": "678.53",
                 "usage_m3": "95.90"
             }
-        ]
+        ],
+        "companyId": "oracle",
+        "mprn": "12298119928",
+        "gprn": "2588409",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B003",
         "name": "Building A3",
         "address": "103 Main Street, Cityville",
         "current_usage": "1450.00 kWh",
-        "company": "Oracle",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -456,14 +461,17 @@
                 "usage_kwh": "1258.80",
                 "usage_m3": "52.95"
             }
-        ]
+        ],
+        "companyId": "oracle",
+        "mprn": "11746098402",
+        "gprn": "2817131",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B004",
         "name": "Building A4",
         "address": "104 Main Street, Cityville",
         "current_usage": "1185.88 kWh",
-        "company": "Apple",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -609,14 +617,17 @@
                 "usage_kwh": "1406.39",
                 "usage_m3": "141.34"
             }
-        ]
+        ],
+        "companyId": "apple",
+        "mprn": "13764611025",
+        "gprn": "2657502",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B005",
         "name": "Building A5",
         "address": "105 Main Street, Cityville",
         "current_usage": "1470.94 kWh",
-        "company": "Microsoft",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -762,14 +773,17 @@
                 "usage_kwh": "778.05",
                 "usage_m3": "101.97"
             }
-        ]
+        ],
+        "companyId": "microsoft",
+        "mprn": "11745750777",
+        "gprn": "2597920",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B006",
         "name": "Building A6",
         "address": "106 Main Street, Cityville",
         "current_usage": "1347.63 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -915,14 +929,17 @@
                 "usage_kwh": "1121.34",
                 "usage_m3": "69.14"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "16067450265",
+        "gprn": "2702522",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B007",
         "name": "Building A7",
         "address": "107 Main Street, Cityville",
         "current_usage": "560.39 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -1068,14 +1085,17 @@
                 "usage_kwh": "1327.37",
                 "usage_m3": "62.27"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "13777963259",
+        "gprn": "2686090",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B008",
         "name": "Building A8",
         "address": "108 Main Street, Cityville",
         "current_usage": "1194.52 kWh",
-        "company": "Apple",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -1221,14 +1241,17 @@
                 "usage_kwh": "1395.70",
                 "usage_m3": "121.68"
             }
-        ]
+        ],
+        "companyId": "apple",
+        "mprn": "16113621385",
+        "gprn": "2634261",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B009",
         "name": "Building A9",
         "address": "109 Main Street, Cityville",
         "current_usage": "891.54 kWh",
-        "company": "Apple",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -1374,14 +1397,17 @@
                 "usage_kwh": "1100.83",
                 "usage_m3": "89.54"
             }
-        ]
+        ],
+        "companyId": "apple",
+        "mprn": "19796557147",
+        "gprn": "2272775",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B010",
         "name": "Building A10",
         "address": "110 Main Street, Cityville",
         "current_usage": "720.47 kWh",
-        "company": "Microsoft",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -1527,14 +1553,17 @@
                 "usage_kwh": "1490.43",
                 "usage_m3": "97.23"
             }
-        ]
+        ],
+        "companyId": "microsoft",
+        "mprn": "12541424027",
+        "gprn": "2744210",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B011",
         "name": "Building B1",
         "address": "111 Main Street, Cityville",
         "current_usage": "632.93 kWh",
-        "company": "Meta",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -1680,14 +1709,17 @@
                 "usage_kwh": "1479.56",
                 "usage_m3": "102.90"
             }
-        ]
+        ],
+        "companyId": "meta",
+        "mprn": "11577439121",
+        "gprn": "2256307",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B012",
         "name": "Building B2",
         "address": "112 Main Street, Cityville",
         "current_usage": "962.10 kWh",
-        "company": "Microsoft",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -1833,14 +1865,17 @@
                 "usage_kwh": "744.50",
                 "usage_m3": "114.35"
             }
-        ]
+        ],
+        "companyId": "microsoft",
+        "mprn": "16559911733",
+        "gprn": "2084527",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B013",
         "name": "Building B3",
         "address": "113 Main Street, Cityville",
         "current_usage": "977.74 kWh",
-        "company": "Apple",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -1986,14 +2021,17 @@
                 "usage_kwh": "1441.14",
                 "usage_m3": "90.86"
             }
-        ]
+        ],
+        "companyId": "apple",
+        "mprn": "10406812094",
+        "gprn": "2688537",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B014",
         "name": "Building B4",
         "address": "114 Main Street, Cityville",
         "current_usage": "1284.10 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -2139,14 +2177,17 @@
                 "usage_kwh": "1433.68",
                 "usage_m3": "98.82"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "19179240841",
+        "gprn": "2885488",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B015",
         "name": "Building B5",
         "address": "115 Main Street, Cityville",
         "current_usage": "1078.96 kWh",
-        "company": "Google",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -2292,14 +2333,17 @@
                 "usage_kwh": "1421.24",
                 "usage_m3": "142.84"
             }
-        ]
+        ],
+        "companyId": "google",
+        "mprn": "19472951864",
+        "gprn": "2609173",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B016",
         "name": "Building B6",
         "address": "116 Main Street, Cityville",
         "current_usage": "862.47 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -2445,14 +2489,17 @@
                 "usage_kwh": "643.12",
                 "usage_m3": "128.88"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "11730881059",
+        "gprn": "2213767",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B017",
         "name": "Building B7",
         "address": "117 Main Street, Cityville",
         "current_usage": "739.16 kWh",
-        "company": "Google",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -2598,14 +2645,17 @@
                 "usage_kwh": "1053.78",
                 "usage_m3": "89.12"
             }
-        ]
+        ],
+        "companyId": "google",
+        "mprn": "11230294730",
+        "gprn": "2387001",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B018",
         "name": "Building B8",
         "address": "118 Main Street, Cityville",
         "current_usage": "1159.55 kWh",
-        "company": "Google",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -2751,14 +2801,17 @@
                 "usage_kwh": "1477.53",
                 "usage_m3": "69.21"
             }
-        ]
+        ],
+        "companyId": "google",
+        "mprn": "16334271273",
+        "gprn": "2818482",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B019",
         "name": "Building B9",
         "address": "119 Main Street, Cityville",
         "current_usage": "1085.44 kWh",
-        "company": "Microsoft",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -2904,14 +2957,17 @@
                 "usage_kwh": "872.79",
                 "usage_m3": "59.35"
             }
-        ]
+        ],
+        "companyId": "microsoft",
+        "mprn": "12603321303",
+        "gprn": "2045133",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B020",
         "name": "Building B10",
         "address": "120 Main Street, Cityville",
         "current_usage": "1177.35 kWh",
-        "company": "Microsoft",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -3057,14 +3113,17 @@
                 "usage_kwh": "834.40",
                 "usage_m3": "69.26"
             }
-        ]
+        ],
+        "companyId": "microsoft",
+        "mprn": "10906138858",
+        "gprn": "2340341",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B021",
         "name": "Building C1",
         "address": "121 Main Street, Cityville",
         "current_usage": "1346.78 kWh",
-        "company": "Meta",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -3210,14 +3269,17 @@
                 "usage_kwh": "940.24",
                 "usage_m3": "91.11"
             }
-        ]
+        ],
+        "companyId": "meta",
+        "mprn": "12266014190",
+        "gprn": "2547542",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B022",
         "name": "Building C2",
         "address": "122 Main Street, Cityville",
         "current_usage": "1128.27 kWh",
-        "company": "Microsoft",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -3363,14 +3425,17 @@
                 "usage_kwh": "1484.24",
                 "usage_m3": "100.48"
             }
-        ]
+        ],
+        "companyId": "microsoft",
+        "mprn": "18966149481",
+        "gprn": "2247131",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B023",
         "name": "Building C3",
         "address": "123 Main Street, Cityville",
         "current_usage": "1110.98 kWh",
-        "company": "Meta",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -3516,14 +3581,17 @@
                 "usage_kwh": "567.30",
                 "usage_m3": "114.48"
             }
-        ]
+        ],
+        "companyId": "meta",
+        "mprn": "14055229113",
+        "gprn": "2086111",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B024",
         "name": "Building C4",
         "address": "124 Main Street, Cityville",
         "current_usage": "1420.00 kWh",
-        "company": "Apple",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -3669,14 +3737,17 @@
                 "usage_kwh": "562.51",
                 "usage_m3": "80.71"
             }
-        ]
+        ],
+        "companyId": "apple",
+        "mprn": "13745689607",
+        "gprn": "2148523",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B025",
         "name": "Building C5",
         "address": "125 Main Street, Cityville",
         "current_usage": "661.00 kWh",
-        "company": "Apple",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -3822,14 +3893,17 @@
                 "usage_kwh": "1477.43",
                 "usage_m3": "90.30"
             }
-        ]
+        ],
+        "companyId": "apple",
+        "mprn": "18721859038",
+        "gprn": "2150445",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B026",
         "name": "Building C6",
         "address": "126 Main Street, Cityville",
         "current_usage": "672.28 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -3975,14 +4049,17 @@
                 "usage_kwh": "1375.64",
                 "usage_m3": "98.34"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "17597519437",
+        "gprn": "2157898",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B027",
         "name": "Building C7",
         "address": "127 Main Street, Cityville",
         "current_usage": "1021.08 kWh",
-        "company": "Meta",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -4128,14 +4205,17 @@
                 "usage_kwh": "1178.60",
                 "usage_m3": "87.82"
             }
-        ]
+        ],
+        "companyId": "meta",
+        "mprn": "16336980202",
+        "gprn": "2424420",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B028",
         "name": "Building C8",
         "address": "128 Main Street, Cityville",
         "current_usage": "926.51 kWh",
-        "company": "Meta",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -4281,14 +4361,17 @@
                 "usage_kwh": "506.04",
                 "usage_m3": "57.20"
             }
-        ]
+        ],
+        "companyId": "meta",
+        "mprn": "14516809867",
+        "gprn": "2063420",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B029",
         "name": "Building C9",
         "address": "129 Main Street, Cityville",
         "current_usage": "504.64 kWh",
-        "company": "Microsoft",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -4434,14 +4517,17 @@
                 "usage_kwh": "655.01",
                 "usage_m3": "74.88"
             }
-        ]
+        ],
+        "companyId": "microsoft",
+        "mprn": "17682751003",
+        "gprn": "2755366",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B030",
         "name": "Building C10",
         "address": "130 Main Street, Cityville",
         "current_usage": "677.48 kWh",
-        "company": "Meta",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -4587,14 +4673,17 @@
                 "usage_kwh": "1322.17",
                 "usage_m3": "126.70"
             }
-        ]
+        ],
+        "companyId": "meta",
+        "mprn": "19578928876",
+        "gprn": "2606619",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B031",
         "name": "Building D1",
         "address": "131 Main Street, Cityville",
         "current_usage": "987.20 kWh",
-        "company": "Apple",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -4740,14 +4829,17 @@
                 "usage_kwh": "892.97",
                 "usage_m3": "89.54"
             }
-        ]
+        ],
+        "companyId": "apple",
+        "mprn": "18155166798",
+        "gprn": "2723474",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B032",
         "name": "Building D2",
         "address": "132 Main Street, Cityville",
         "current_usage": "1342.20 kWh",
-        "company": "Microsoft",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -4893,14 +4985,17 @@
                 "usage_kwh": "581.44",
                 "usage_m3": "79.98"
             }
-        ]
+        ],
+        "companyId": "microsoft",
+        "mprn": "15592272164",
+        "gprn": "2946065",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B033",
         "name": "Building D3",
         "address": "133 Main Street, Cityville",
         "current_usage": "742.26 kWh",
-        "company": "Google",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -5046,14 +5141,17 @@
                 "usage_kwh": "1005.28",
                 "usage_m3": "129.67"
             }
-        ]
+        ],
+        "companyId": "google",
+        "mprn": "15607544568",
+        "gprn": "2441334",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B034",
         "name": "Building D4",
         "address": "134 Main Street, Cityville",
         "current_usage": "700.84 kWh",
-        "company": "Google",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -5199,14 +5297,17 @@
                 "usage_kwh": "851.11",
                 "usage_m3": "135.14"
             }
-        ]
+        ],
+        "companyId": "google",
+        "mprn": "10212634774",
+        "gprn": "2692677",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B035",
         "name": "Building D5",
         "address": "135 Main Street, Cityville",
         "current_usage": "1116.20 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -5352,14 +5453,17 @@
                 "usage_kwh": "626.74",
                 "usage_m3": "55.69"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "13717609546",
+        "gprn": "2508657",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B036",
         "name": "Building D6",
         "address": "136 Main Street, Cityville",
         "current_usage": "1282.70 kWh",
-        "company": "Google",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -5505,14 +5609,17 @@
                 "usage_kwh": "928.11",
                 "usage_m3": "59.38"
             }
-        ]
+        ],
+        "companyId": "google",
+        "mprn": "12144811060",
+        "gprn": "2981093",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B037",
         "name": "Building D7",
         "address": "137 Main Street, Cityville",
         "current_usage": "589.23 kWh",
-        "company": "Meta",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -5658,14 +5765,17 @@
                 "usage_kwh": "909.16",
                 "usage_m3": "123.91"
             }
-        ]
+        ],
+        "companyId": "meta",
+        "mprn": "12445437849",
+        "gprn": "2615171",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B038",
         "name": "Building D8",
         "address": "138 Main Street, Cityville",
         "current_usage": "1219.75 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -5811,14 +5921,17 @@
                 "usage_kwh": "1081.94",
                 "usage_m3": "70.78"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "18034148729",
+        "gprn": "2871156",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B039",
         "name": "Building D9",
         "address": "139 Main Street, Cityville",
         "current_usage": "1351.47 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -5964,14 +6077,17 @@
                 "usage_kwh": "588.77",
                 "usage_m3": "50.48"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "11229195659",
+        "gprn": "2319325",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B040",
         "name": "Building D10",
         "address": "140 Main Street, Cityville",
         "current_usage": "1209.13 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -6117,14 +6233,17 @@
                 "usage_kwh": "1306.07",
                 "usage_m3": "102.21"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "19240344326",
+        "gprn": "2680580",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B041",
         "name": "Building E1",
         "address": "141 Main Street, Cityville",
         "current_usage": "638.11 kWh",
-        "company": "Microsoft",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -6270,14 +6389,17 @@
                 "usage_kwh": "535.44",
                 "usage_m3": "90.97"
             }
-        ]
+        ],
+        "companyId": "microsoft",
+        "mprn": "13049373685",
+        "gprn": "2733681",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B042",
         "name": "Building E2",
         "address": "142 Main Street, Cityville",
         "current_usage": "1364.85 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -6423,14 +6545,17 @@
                 "usage_kwh": "516.99",
                 "usage_m3": "111.83"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "10495038001",
+        "gprn": "2076506",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B043",
         "name": "Building E3",
         "address": "143 Main Street, Cityville",
         "current_usage": "1203.67 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -6576,14 +6701,17 @@
                 "usage_kwh": "1485.31",
                 "usage_m3": "90.35"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "15495451183",
+        "gprn": "2437761",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B044",
         "name": "Building E4",
         "address": "144 Main Street, Cityville",
         "current_usage": "648.34 kWh",
-        "company": "Google",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -6729,14 +6857,17 @@
                 "usage_kwh": "1143.50",
                 "usage_m3": "108.67"
             }
-        ]
+        ],
+        "companyId": "google",
+        "mprn": "11844907791",
+        "gprn": "2322403",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B045",
         "name": "Building E5",
         "address": "145 Main Street, Cityville",
         "current_usage": "866.68 kWh",
-        "company": "Google",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -6882,14 +7013,17 @@
                 "usage_kwh": "1370.62",
                 "usage_m3": "133.30"
             }
-        ]
+        ],
+        "companyId": "google",
+        "mprn": "18391327463",
+        "gprn": "2196753",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B046",
         "name": "Building E6",
         "address": "146 Main Street, Cityville",
         "current_usage": "506.46 kWh",
-        "company": "Apple",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -7035,14 +7169,17 @@
                 "usage_kwh": "683.17",
                 "usage_m3": "119.14"
             }
-        ]
+        ],
+        "companyId": "apple",
+        "mprn": "18471786065",
+        "gprn": "2364337",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B047",
         "name": "Building E7",
         "address": "147 Main Street, Cityville",
         "current_usage": "1127.44 kWh",
-        "company": "Microsoft",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -7188,14 +7325,17 @@
                 "usage_kwh": "1136.39",
                 "usage_m3": "72.62"
             }
-        ]
+        ],
+        "companyId": "microsoft",
+        "mprn": "10163080103",
+        "gprn": "2768382",
+        "contractEndDate": "2026-05-11"
     },
     {
         "id": "B048",
         "name": "Building E8",
         "address": "148 Main Street, Cityville",
         "current_usage": "1049.63 kWh",
-        "company": "Amazon",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -7341,14 +7481,17 @@
                 "usage_kwh": "898.77",
                 "usage_m3": "73.94"
             }
-        ]
+        ],
+        "companyId": "amazon",
+        "mprn": "10982585967",
+        "gprn": "2516378",
+        "contractEndDate": "2026-07-10"
     },
     {
         "id": "B049",
         "name": "Building E9",
         "address": "149 Main Street, Cityville",
         "current_usage": "946.05 kWh",
-        "company": "Meta",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -7494,14 +7637,17 @@
                 "usage_kwh": "724.94",
                 "usage_m3": "89.28"
             }
-        ]
+        ],
+        "companyId": "meta",
+        "mprn": "11343381104",
+        "gprn": "2992318",
+        "contractEndDate": "2026-03-27"
     },
     {
         "id": "B050",
         "name": "Building E10",
         "address": "150 Main Street, Cityville",
         "current_usage": "815.20 kWh",
-        "company": "Meta",
         "billHistory": [
             {
                 "date": "2025-01-01",
@@ -7647,6 +7793,10 @@
                 "usage_kwh": "984.56",
                 "usage_m3": "143.33"
             }
-        ]
+        ],
+        "companyId": "meta",
+        "mprn": "19790431441",
+        "gprn": "2313717",
+        "contractEndDate": "2026-05-11"
     }
 ]
