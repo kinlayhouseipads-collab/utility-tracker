@@ -2,6 +2,8 @@ let utilityChartInstance = null;
 let activeBuildingId = null;
 let allBuildings = [];
 let sortEndDateAscending = true; // Track sorting state globally
+let currentUserRole = null;
+let currentUserId = null;
 
 const companies = [
     { id: 'oracle', name: 'Oracle', industry: 'Technology' },
@@ -11,6 +13,48 @@ const companies = [
     { id: 'apple', name: 'Apple', industry: 'Technology' },
     { id: 'microsoft', name: 'Microsoft', industry: 'Technology' }
 ];
+
+// Audit Logging Function
+function logAudit(action) {
+    if (!currentUserId) return;
+    const now = new Date();
+    const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().split(' ')[0]}`;
+
+    const logEntry = {
+        userId: currentUserId,
+        action: action,
+        timestamp: timestamp
+    };
+
+    let logs = JSON.parse(localStorage.getItem('utility_audit_logs')) || [];
+    logs.unshift(logEntry); // Add to beginning
+    localStorage.setItem('utility_audit_logs', JSON.stringify(logs));
+
+    renderAuditLogs();
+}
+
+function renderAuditLogs() {
+    const container = document.getElementById('audit-log-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const logs = JSON.parse(localStorage.getItem('utility_audit_logs')) || [];
+    logs.forEach(log => {
+        const el = document.createElement('div');
+        el.style.fontSize = '0.85em';
+        el.style.padding = '10px';
+        el.style.background = '#f8fafc';
+        el.style.border = '1px solid #e2e8f0';
+        el.style.borderRadius = '6px';
+
+        el.innerHTML = `
+            <div style="color: #64748b; font-size: 0.9em; margin-bottom: 4px;">${log.timestamp}</div>
+            <div style="font-weight: 600; color: #1e293b;">${log.userId}</div>
+            <div style="color: #334155; margin-top: 2px;">${log.action}</div>
+        `;
+        container.appendChild(el);
+    });
+}
 
 async function loadBuildings() {
     try {
@@ -41,6 +85,11 @@ async function loadBuildings() {
             delete building.gprn;
             building.accounts = accounts;
 
+            // Set default area if missing
+            if (!building.area) {
+                building.area = 1000;
+            }
+
             return building;
         });
 
@@ -65,8 +114,9 @@ function renderBuildings(buildings) {
             <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Building Name/Address</th>
             <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Company Badge</th>
             <th id="sort-end-date" style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase; cursor: pointer;">Contract End Date &#x21C5;</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Last Updated</th>
+            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Days Since Last Bill</th>
             <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Total Cost</th>
+            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase; text-align: center;">Actions</th>
         </tr>
     `;
     table.appendChild(thead);
@@ -144,15 +194,17 @@ function renderBuildings(buildings) {
         let lastUpdatedText = 'No bills';
         let stalenessStyle = 'color: #334155;';
         let buildingTotalCost = 0;
+        let diffStaleDays = -1;
 
         if (building.billHistory && building.billHistory.length > 0) {
             const maxDate = new Date(Math.max(...building.billHistory.map(b => new Date(b.date).getTime())));
-            const diffStaleDays = Math.ceil((today - maxDate) / (1000 * 60 * 60 * 24));
+            diffStaleDays = Math.ceil((today - maxDate) / (1000 * 60 * 60 * 24));
 
             if (diffStaleDays > 60) {
-                lastUpdatedText = `<span style="color: #ef4444; font-weight: bold;">STALE</span> (${diffStaleDays} days ago)`;
+                lastUpdatedText = `<span style="color: #ef4444; font-weight: bold;">STALE</span> (${diffStaleDays} days)`;
+                row.style.backgroundColor = '#fee2e2'; // Highlight red if stale
             } else {
-                lastUpdatedText = `${diffStaleDays} days ago`;
+                lastUpdatedText = `${diffStaleDays} days`;
             }
 
             // Building Level Aggregation
@@ -179,36 +231,54 @@ function renderBuildings(buildings) {
             <td style="padding: 15px; font-size: 0.95em; font-weight: bold; color: var(--primary);">
                 €${buildingTotalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
             </td>
+            <td style="padding: 15px; text-align: center;">
+                <button onclick="openEditModal('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #64748b; margin-right: 10px;" title="Edit Building">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="requestDeleteBuilding('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Building">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
         `;
 
         // Create Expandable Accordion Row for Accounts
         const accordionRow = document.createElement('tr');
         accordionRow.style.display = 'none';
-        accordionRow.style.backgroundColor = '#f1f5f9';
+        accordionRow.style.backgroundColor = '#f8fafc';
 
-        let accountsHtml = '<div style="padding: 15px; display: flex; flex-direction: column; gap: 10px;">';
-        accountsHtml += '<h4 style="margin:0; color: #334155;">Accounts</h4>';
-        accountsHtml += '<ul style="list-style-type: none; padding: 0; margin: 0;">';
+        let accountsHtml = '<div style="padding: 15px 40px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #e2e8f0;">';
+        accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #334155;">Linked Accounts</h4>';
+        accountsHtml += `<button class="btn-primary" onclick="openAddAccountModal('${building.id}')" style="padding: 6px 12px; font-size: 0.85em;">+ Add Account</button></div>`;
+
+        accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
+        accountsHtml += '<thead><tr style="border-bottom: 1px solid #cbd5e1;"><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Provider</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Account # (MPRN/GPRN)</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">End Date</th><th style="text-align: center; padding: 8px; color: #64748b; font-size: 0.85em;">Actions</th></tr></thead>';
+        accountsHtml += '<tbody>';
 
         if (building.accounts && building.accounts.length > 0) {
             building.accounts.forEach(acc => {
-                accountsHtml += `<li style="padding: 8px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 5px; display: flex; justify-content: space-between;">
-                    <span style="font-weight: 600; color: #1e293b;">${acc.type}</span>
-                    <span style="font-family: monospace; color: #475569;">ID: ${acc.id_number || 'N/A'}</span>
-                </li>`;
+                accountsHtml += `<tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+                    <td style="padding: 8px; font-weight: 600; color: #1e293b;">${acc.type}</td>
+                    <td style="padding: 8px; color: #475569;">${acc.provider || 'N/A'}</td>
+                    <td style="padding: 8px;" class="monospace">${acc.id_number || 'N/A'}</td>
+                    <td style="padding: 8px; color: #475569;">${formatDate(acc.contractEndDate)}</td>
+                    <td style="padding: 8px; text-align: center;">
+                        <button onclick="openEditAccountModal('${building.id}', '${acc.id_number}')" style="background: transparent; border: none; cursor: pointer; color: #64748b; margin-right: 5px;"><i class="fas fa-edit"></i></button>
+                        <button onclick="requestDeleteAccount('${building.id}', '${acc.id_number}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
             });
         } else {
-            accountsHtml += `<li style="color: #64748b;">No accounts found.</li>`;
+            accountsHtml += `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #64748b;">No accounts linked to this building.</td></tr>`;
         }
 
-        accountsHtml += '</ul>';
-        accountsHtml += '<button class="btn-primary" style="align-self: flex-start; padding: 8px 12px; font-size: 0.85em; margin-top: 10px;">+ Add Account</button>';
+        accountsHtml += '</tbody></table>';
         accountsHtml += '</div>';
 
-        accordionRow.innerHTML = `<td colspan="5">${accountsHtml}</td>`;
+        accordionRow.innerHTML = `<td colspan="6" style="padding: 0;">${accountsHtml}</td>`;
 
         row.addEventListener('click', (e) => {
-            if (e.target.tagName.toLowerCase() === 'button') return;
+            // Do not toggle accordion if clicking on actions column
+            if (e.target.closest('td') === row.lastElementChild || e.target.closest('button') || e.target.closest('i')) return;
 
             // Toggle Accordion
             if (accordionRow.style.display === 'none') {
@@ -227,6 +297,62 @@ function renderBuildings(buildings) {
     table.appendChild(tbody);
     list.appendChild(table);
 }
+
+// Global modal state for confirmations
+let deleteTarget = null; // { type: 'building' | 'account', buildingId, accountId }
+
+window.requestDeleteBuilding = function(id) {
+    const building = allBuildings.find(b => b.id === id);
+    if (!building) return;
+    deleteTarget = { type: 'building', buildingId: id };
+    document.getElementById('confirm-title').innerText = 'Delete Building';
+    document.getElementById('confirm-message').innerText = `Are you sure you want to delete "${building.name}"? All associated accounts and readings will be lost.`;
+    document.getElementById('confirm-modal').style.display = 'block';
+};
+
+window.requestDeleteAccount = function(buildingId, accountId) {
+    const building = allBuildings.find(b => b.id === buildingId);
+    if (!building) return;
+    const account = building.accounts.find(a => a.id_number === accountId);
+    if (!account) return;
+
+    deleteTarget = { type: 'account', buildingId: buildingId, accountId: accountId };
+    document.getElementById('confirm-title').innerText = 'Delete Account';
+    document.getElementById('confirm-message').innerText = `Are you sure you want to delete ${account.type} Account (${accountId}) from "${building.name}"?`;
+    document.getElementById('confirm-modal').style.display = 'block';
+};
+
+document.getElementById('confirm-cancel')?.addEventListener('click', () => {
+    deleteTarget = null;
+    document.getElementById('confirm-modal').style.display = 'none';
+});
+
+document.getElementById('confirm-yes')?.addEventListener('click', () => {
+    if (!deleteTarget) return;
+
+    if (deleteTarget.type === 'building') {
+        const buildingIndex = allBuildings.findIndex(b => b.id === deleteTarget.buildingId);
+        if (buildingIndex !== -1) {
+            const buildingName = allBuildings[buildingIndex].name;
+            allBuildings.splice(buildingIndex, 1);
+            logAudit(`Deleted building: ${buildingName}`);
+        }
+    } else if (deleteTarget.type === 'account') {
+        const building = allBuildings.find(b => b.id === deleteTarget.buildingId);
+        if (building) {
+            const accountIndex = building.accounts.findIndex(a => a.id_number === deleteTarget.accountId);
+            if (accountIndex !== -1) {
+                building.accounts.splice(accountIndex, 1);
+                logAudit(`Deleted account ${deleteTarget.accountId} from building ${building.name}`);
+            }
+        }
+    }
+
+    deleteTarget = null;
+    document.getElementById('confirm-modal').style.display = 'none';
+    updateFilters();
+    updateDashboard();
+});
 
 function selectBuilding(building) {
     const viewBillHistoryBtn = document.getElementById('view-bill-history');
@@ -341,42 +467,61 @@ function updateDashboard() {
 
     // Total for entire filtered view over ALL time, per prompt: "Company Level: Create a header stat that sums the costs for the entire filtered view."
     let grandTotal = 0;
+    let totalArea = 0;
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             grandTotal += building.billHistory.reduce((s, bill) => s + (parseFloat(bill.cost) || 0), 0);
         }
+        totalArea += parseFloat(building.area) || 1000;
     });
 
     document.getElementById('stat-cost').textContent = '€' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+    // Efficiency KPI
+    let efficiency = totalArea > 0 ? (grandTotal / totalArea) : 0;
+    const statEff = document.getElementById('stat-efficiency');
+    if (statEff) {
+        statEff.textContent = '€' + efficiency.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' /m²';
+    }
 }
 
 function renderChart() {
-    let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+    let readings = [];
 
+    // Gather all historical bills and normalize them for charting
+    let targetBuildings = allBuildings;
     if (activeBuildingId) {
-        readings = readings.filter(r => r.building_id === activeBuildingId);
+        targetBuildings = targetBuildings.filter(b => b.id === activeBuildingId);
     }
 
-    // Sort readings by date
-    readings.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    // Get unique dates for x-axis
-    const dates = [...new Set(readings.map(r => r.date))];
-
-    const electricityData = dates.map(date => {
-        const matching = readings.filter(r => r.date === date && r.type === 'electricity');
-        return matching.reduce((sum, r) => sum + parseFloat(r.value || 0), 0);
+    targetBuildings.forEach(b => {
+        if (b.billHistory) {
+            b.billHistory.forEach(bill => {
+                readings.push({
+                    date: bill.date,
+                    cost: parseFloat(bill.cost) || 0
+                });
+            });
+        }
     });
 
-    const waterData = dates.map(date => {
-        const matching = readings.filter(r => r.date === date && r.type === 'water');
-        return matching.reduce((sum, r) => sum + parseFloat(r.value || 0), 0);
+    // Group costs by month-year
+    const monthlyCosts = {};
+    readings.forEach(r => {
+        const d = new Date(r.date);
+        const y = d.getFullYear();
+        const m = d.getMonth(); // 0-11
+        if (!monthlyCosts[y]) monthlyCosts[y] = Array(12).fill(0);
+        monthlyCosts[y][m] += r.cost;
     });
 
-    const gasData = dates.map(date => {
-        const matching = readings.filter(r => r.date === date && r.type === 'gas');
-        return matching.reduce((sum, r) => sum + parseFloat(r.value || 0), 0);
-    });
+    const currentYear = new Date().getFullYear();
+    const lastYear = currentYear - 1;
+
+    const currentYearData = monthlyCosts[currentYear] || Array(12).fill(0);
+    const lastYearData = monthlyCosts[lastYear] || Array(12).fill(0);
+
+    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     const ctx = document.getElementById('utilityChart').getContext('2d');
 
@@ -387,28 +532,22 @@ function renderChart() {
     utilityChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: dates,
+            labels: labels,
             datasets: [
                 {
-                    label: 'Electricity (kWh)',
-                    data: electricityData,
-                    borderColor: '#f59e0b',
-                    backgroundColor: '#f59e0b',
-                    tension: 0.1
+                    label: `Total Cost ${currentYear} (€)`,
+                    data: currentYearData,
+                    borderColor: '#2563eb',
+                    backgroundColor: '#2563eb',
+                    tension: 0.4
                 },
                 {
-                    label: 'Water (m³)',
-                    data: waterData,
-                    borderColor: '#3b82f6',
-                    backgroundColor: '#3b82f6',
-                    tension: 0.1
-                },
-                {
-                    label: 'Gas (units)',
-                    data: gasData,
-                    borderColor: '#ef4444',
-                    backgroundColor: '#ef4444',
-                    tension: 0.1
+                    label: `Total Cost ${lastYear} (€)`,
+                    data: lastYearData,
+                    borderColor: '#94a3b8',
+                    backgroundColor: 'transparent',
+                    borderDash: [5, 5], // Dashed line for comparative chart
+                    tension: 0.4
                 }
             ]
         },
@@ -417,12 +556,17 @@ function renderChart() {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Utility Readings Trend'
+                    text: 'Total Portfolio Cost: Current vs Previous Year'
                 }
             },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '€' + value;
+                        }
+                    }
                 }
             }
         }
@@ -571,14 +715,14 @@ document.addEventListener('DOMContentLoaded', () => {
             name: document.getElementById('add-b-name').value,
             address: document.getElementById('add-b-address').value,
             companyId: document.getElementById('add-b-company').value,
-            mprn: document.getElementById('add-b-mprn').value,
-            gprn: document.getElementById('add-b-gprn').value,
-            contractEndDate: document.getElementById('add-b-enddate').value,
+            accounts: [],
+            area: parseFloat(document.getElementById('add-b-area').value) || 1000,
             current_usage: "0.00 kWh",
             billHistory: []
         };
 
         allBuildings.push(newBuilding);
+        logAudit(`Created building: ${newBuilding.name}`);
         addBuildingModal.style.display = 'none';
         document.getElementById('add-building-form').reset();
 
@@ -605,14 +749,57 @@ document.addEventListener('DOMContentLoaded', () => {
             allBuildings[buildingIndex].name = document.getElementById('edit-b-name').value;
             allBuildings[buildingIndex].address = document.getElementById('edit-b-address').value;
             allBuildings[buildingIndex].companyId = document.getElementById('edit-b-company').value;
-            allBuildings[buildingIndex].mprn = document.getElementById('edit-b-mprn').value;
-            allBuildings[buildingIndex].gprn = document.getElementById('edit-b-gprn').value;
-            allBuildings[buildingIndex].contractEndDate = document.getElementById('edit-b-enddate').value;
+            allBuildings[buildingIndex].area = parseFloat(document.getElementById('edit-b-area').value) || 1000;
+
+            logAudit(`Edited building: ${allBuildings[buildingIndex].name}`);
         }
 
         editBuildingModal.style.display = 'none';
         updateFilters();
         updateDashboard();
+    });
+
+    const addAccountModal = document.getElementById('add-account-modal');
+    document.getElementById('close-add-account-modal')?.addEventListener('click', () => { addAccountModal.style.display = 'none'; });
+
+    document.getElementById('add-account-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const bId = document.getElementById('add-acc-building-id').value;
+        const building = allBuildings.find(b => b.id === bId);
+        if (building) {
+            const newAcc = {
+                type: document.getElementById('add-acc-type').value,
+                id_number: document.getElementById('add-acc-id').value,
+                provider: document.getElementById('add-acc-provider').value,
+                contractEndDate: document.getElementById('add-acc-enddate').value
+            };
+            if (!building.accounts) building.accounts = [];
+            building.accounts.push(newAcc);
+            logAudit(`Added ${newAcc.type} account to ${building.name}`);
+        }
+        addAccountModal.style.display = 'none';
+        updateFilters();
+    });
+
+    const editAccountModal = document.getElementById('edit-account-modal');
+    document.getElementById('close-edit-account-modal')?.addEventListener('click', () => { editAccountModal.style.display = 'none'; });
+
+    document.getElementById('edit-account-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const bId = document.getElementById('edit-acc-building-id').value;
+        const origId = document.getElementById('edit-acc-original-id').value;
+        const building = allBuildings.find(b => b.id === bId);
+        if (building && building.accounts) {
+            const accIndex = building.accounts.findIndex(a => a.id_number === origId);
+            if (accIndex !== -1) {
+                building.accounts[accIndex].id_number = document.getElementById('edit-acc-id').value;
+                building.accounts[accIndex].provider = document.getElementById('edit-acc-provider').value;
+                building.accounts[accIndex].contractEndDate = document.getElementById('edit-acc-enddate').value;
+                logAudit(`Edited ${building.accounts[accIndex].type} account on ${building.name}`);
+            }
+        }
+        editAccountModal.style.display = 'none';
+        updateFilters();
     });
 
     // Auth Login Logic
@@ -621,17 +808,35 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const username = document.getElementById('login-username').value.trim();
-            if (username === 'Oracle_Admin') {
-                localStorage.setItem('auth_user', 'oracle');
+
+            if (username === 'Super_Admin') {
+                sessionStorage.setItem('auth_role', 'Super-Admin');
+                sessionStorage.setItem('auth_user_id', username);
+                logAudit(`Logged in as Super-Admin`);
                 checkAuth();
-            } else if (username === 'Super_Admin') {
-                localStorage.setItem('auth_user', 'all');
-                checkAuth();
+            } else if (username.endsWith('_Admin')) {
+                const companyName = username.split('_')[0].toLowerCase();
+                const validCompany = companies.find(c => c.id === companyName);
+                if (validCompany) {
+                    sessionStorage.setItem('auth_role', 'Company-Admin');
+                    sessionStorage.setItem('auth_company', companyName);
+                    sessionStorage.setItem('auth_user_id', username);
+                    logAudit(`Logged in as Company-Admin for ${companyName}`);
+                    checkAuth();
+                } else {
+                    alert('Company not found in registry.');
+                }
             } else {
-                alert('Invalid user. Try Oracle_Admin or Super_Admin');
+                alert('Invalid username format. Try Super_Admin or [Company]_Admin');
             }
         });
     }
+
+    document.getElementById('logout-btn')?.addEventListener('click', () => {
+        logAudit('Logged out');
+        sessionStorage.clear();
+        checkAuth();
+    });
 
     window.addEventListener('click', (event) => {
         if (event.target == billHistoryModal) {
@@ -653,33 +858,59 @@ window.openEditModal = function(id) {
         document.getElementById('edit-b-name').value = building.name || '';
         document.getElementById('edit-b-address').value = building.address || '';
         document.getElementById('edit-b-company').value = building.companyId || '';
-        document.getElementById('edit-b-mprn').value = building.mprn || '';
-        document.getElementById('edit-b-gprn').value = building.gprn || '';
-        document.getElementById('edit-b-enddate').value = building.contractEndDate || '';
+        document.getElementById('edit-b-area').value = building.area || '';
 
         document.getElementById('edit-building-modal').style.display = 'block';
     }
 };
 
+window.openAddAccountModal = function(buildingId) {
+    document.getElementById('add-account-form').reset();
+    document.getElementById('add-acc-building-id').value = buildingId;
+    document.getElementById('add-account-modal').style.display = 'block';
+};
+
+window.openEditAccountModal = function(buildingId, accountId) {
+    const building = allBuildings.find(b => b.id === buildingId);
+    if (building && building.accounts) {
+        const account = building.accounts.find(a => a.id_number === accountId);
+        if (account) {
+            document.getElementById('edit-account-form').reset();
+            document.getElementById('edit-acc-building-id').value = buildingId;
+            document.getElementById('edit-acc-original-id').value = accountId;
+            document.getElementById('edit-acc-id').value = account.id_number || '';
+            document.getElementById('edit-acc-provider').value = account.provider || '';
+            document.getElementById('edit-acc-enddate').value = account.contractEndDate || '';
+            document.getElementById('edit-account-modal').style.display = 'block';
+        }
+    }
+};
+
 function checkAuth() {
-    const authUser = localStorage.getItem('auth_user');
+    const authRole = sessionStorage.getItem('auth_role');
+    currentUserId = sessionStorage.getItem('auth_user_id');
+    currentUserRole = authRole;
+
     const authModal = document.getElementById('auth-modal');
     const appContent = document.getElementById('app-content');
     const companyFilter = document.getElementById('company-filter');
 
-    if (!authUser) {
+    if (!authRole) {
         authModal.style.display = 'flex';
         appContent.style.display = 'none';
     } else {
         authModal.style.display = 'none';
         appContent.style.display = 'block';
 
-        if (authUser === 'oracle') {
+        renderAuditLogs();
+
+        if (authRole === 'Company-Admin') {
+            const authCompany = sessionStorage.getItem('auth_company');
             if (companyFilter) {
-                companyFilter.value = 'oracle';
+                companyFilter.value = authCompany;
                 companyFilter.disabled = true;
             }
-        } else if (authUser === 'all') {
+        } else if (authRole === 'Super-Admin') {
             if (companyFilter) {
                 companyFilter.disabled = false;
             }
@@ -690,18 +921,177 @@ function checkAuth() {
     }
 }
 
-document.getElementById('tracker-form').addEventListener('submit', function(e) {
+// 3-Step Guided Entry Wizard Logic
+const entryModal = document.getElementById('entry-modal');
+const addEntryBtn = document.getElementById('add-entry');
+const closeEntryModal = document.getElementById('close-entry-modal');
+
+const wStep1 = document.getElementById('wizard-step-1');
+const wStep2 = document.getElementById('wizard-step-2');
+const wStep3 = document.getElementById('wizard-step-3');
+
+const wCompany = document.getElementById('wizard-company');
+const wBuilding = document.getElementById('wizard-building');
+const wAccount = document.getElementById('wizard-account');
+
+const wNext1 = document.getElementById('wizard-next-1');
+const wBack2 = document.getElementById('wizard-back-2');
+const wNext2 = document.getElementById('wizard-next-2');
+const wBack3 = document.getElementById('wizard-back-3');
+
+const wEditAccNum = document.getElementById('wizard-edit-acc-num');
+const wEditEndDate = document.getElementById('wizard-edit-enddate');
+
+if (addEntryBtn) {
+    addEntryBtn.addEventListener('click', () => {
+        // Reset wizard
+        wStep1.style.display = 'block';
+        wStep2.style.display = 'none';
+        wStep3.style.display = 'none';
+
+        // Auto-select company if company admin
+        if (currentUserRole === 'Company-Admin') {
+            wCompany.value = sessionStorage.getItem('auth_company');
+            wCompany.disabled = true;
+        } else {
+            wCompany.value = '';
+            wCompany.disabled = false;
+        }
+
+        entryModal.style.display = 'block';
+    });
+}
+
+if (closeEntryModal) {
+    closeEntryModal.addEventListener('click', () => {
+        entryModal.style.display = 'none';
+    });
+}
+
+window.addEventListener('click', (event) => {
+    if (event.target == entryModal) {
+        entryModal.style.display = 'none';
+    }
+});
+
+// Step 1 -> 2
+if (wNext1) {
+    wNext1.addEventListener('click', () => {
+        if (!wCompany.value) {
+            alert('Please select a company first.');
+            return;
+        }
+
+        // Populate buildings
+        wBuilding.innerHTML = '<option value="" disabled selected>Select Building</option>';
+        const filtered = allBuildings.filter(b => b.companyId === wCompany.value);
+        filtered.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b.id;
+            opt.textContent = b.name;
+            wBuilding.appendChild(opt);
+        });
+
+        wStep1.style.display = 'none';
+        wStep2.style.display = 'block';
+    });
+}
+
+// Step 2 Back
+if (wBack2) {
+    wBack2.addEventListener('click', () => {
+        wStep2.style.display = 'none';
+        wStep1.style.display = 'block';
+    });
+}
+
+// Step 2 -> 3
+if (wNext2) {
+    wNext2.addEventListener('click', () => {
+        if (!wBuilding.value) {
+            alert('Please select a building.');
+            return;
+        }
+
+        const b = allBuildings.find(x => x.id === wBuilding.value);
+        if (!b) return;
+
+        // Populate accounts
+        wAccount.innerHTML = '<option value="" disabled selected>Select Account</option>';
+        if (b.accounts) {
+            b.accounts.forEach(a => {
+                const opt = document.createElement('option');
+                opt.value = a.id_number;
+                opt.textContent = `${a.type} - ${a.id_number}`;
+                opt.dataset.type = a.type;
+                opt.dataset.enddate = a.contractEndDate;
+                wAccount.appendChild(opt);
+            });
+        }
+
+        wStep2.style.display = 'none';
+        wStep3.style.display = 'block';
+    });
+}
+
+// Step 3 Back
+if (wBack3) {
+    wBack3.addEventListener('click', () => {
+        wStep3.style.display = 'none';
+        wStep2.style.display = 'block';
+    });
+}
+
+// Auto-fill editable fields on account selection
+if (wAccount) {
+    wAccount.addEventListener('change', () => {
+        const selected = wAccount.options[wAccount.selectedIndex];
+        wEditAccNum.value = selected.value;
+        wEditEndDate.value = selected.dataset.enddate || '';
+    });
+}
+
+document.getElementById('tracker-form')?.addEventListener('submit', function(e) {
     e.preventDefault();
     
-    const buildingId = document.getElementById('building-id').value;
-    if (!buildingId) {
-        alert('Please select a building before adding a reading.');
+    if (!wBuilding.value || !wAccount.value) {
+        alert('Please complete the wizard properly.');
         return;
     }
 
+    // Handle potential inline edits
+    const bId = wBuilding.value;
+    const oldAccNum = wAccount.value; // The original one selected
+    const newAccNum = wEditAccNum.value;
+    const newEndDate = wEditEndDate.value;
+
+    const selectedOpt = wAccount.options[wAccount.selectedIndex];
+    const accType = selectedOpt.dataset.type;
+
+    const building = allBuildings.find(b => b.id === bId);
+    if (building && building.accounts) {
+        const accIndex = building.accounts.findIndex(a => a.id_number === oldAccNum);
+        if (accIndex !== -1) {
+            let edited = false;
+            if (building.accounts[accIndex].id_number !== newAccNum) {
+                building.accounts[accIndex].id_number = newAccNum;
+                edited = true;
+            }
+            if (building.accounts[accIndex].contractEndDate !== newEndDate) {
+                building.accounts[accIndex].contractEndDate = newEndDate;
+                edited = true;
+            }
+            if (edited) {
+                logAudit(`Edited ${accType} account details during reading entry for ${building.name}`);
+                updateFilters(); // Refresh the building table in case accordion is open
+            }
+        }
+    }
+
     const data = {
-        building_id: buildingId,
-        type: document.getElementById('utility-type').value,
+        building_id: bId,
+        type: accType.toLowerCase(),
+        account_number: newAccNum,
         value: document.getElementById('reading-value').value,
         cost: document.getElementById('reading-cost').value,
         date: document.getElementById('reading-date').value
@@ -712,8 +1102,11 @@ document.getElementById('tracker-form').addEventListener('submit', function(e) {
     readings.push(data);
     localStorage.setItem('utility_readings', JSON.stringify(readings));
 
+    logAudit(`Added new ${accType} reading for account ${newAccNum}`);
+
     alert('Reading Saved!');
     this.reset();
+    entryModal.style.display = 'none';
 
     updateDashboard();
     renderChart();
