@@ -21,16 +21,24 @@
         <section class="dashboard-grid">
             <div class="card">
                 <h3>Electricity</h3>
-                <p class="stat">-- kWh</p>
+                <p class="stat" id="stat-electricity">-- kWh</p>
             </div>
             <div class="card">
                 <h3>Water</h3>
-                <p class="stat">-- m³</p>
+                <p class="stat" id="stat-water">-- m³</p>
             </div>
             <div class="card">
                 <h3>Gas</h3>
-                <p class="stat">-- units</p>
+                <p class="stat" id="stat-gas">-- units</p>
             </div>
+            <div class="card">
+                <h3>Total Monthly Cost</h3>
+                <p class="stat" id="stat-cost">-- $</p>
+            </div>
+        </section>
+
+        <section class="chart-section" style="margin-top: 40px; background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            <canvas id="utilityChart"></canvas>
         </section>
 
         <section id="entry-modal" class="modal">
@@ -43,6 +51,7 @@
                         <option value="gas">Gas</option>
                     </select>
                     <input type="number" id="reading-value" placeholder="Enter Value" required>
+                    <input type="number" id="reading-cost" placeholder="Enter Cost ($)" step="0.01" required>
                     <input type="date" id="reading-date" required>
                     <button type="submit" class="btn-submit">Save Reading</button>
                 </form>
@@ -54,6 +63,7 @@
         <p>&copy; 2026 UtilityPulse. Data stored locally for privacy.</p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
