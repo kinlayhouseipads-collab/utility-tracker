@@ -73,3 +73,9 @@ input, select {
     border: 1px solid #cbd5e1;
     border-radius: 6px;
 }
+
+#company-filter, #start-date-filter, #end-date-filter {
+    z-index: 100;
+    position: relative;
+    border-color: #2563eb;
+}

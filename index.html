@@ -11,17 +11,18 @@
         <div class="container">
             <h1>Utility<span>Pulse</span></h1>
             <nav style="display: flex; gap: 10px; align-items: center;">
-                <select id="company-filter" class="high-priority-glass" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--card-bg); backdrop-filter: blur(10px);">
-                    <option value="">All Companies</option>
-                    <option value="Oracle">Oracle</option>
-                    <option value="Google">Google</option>
-                    <option value="Amazon">Amazon</option>
-                    <option value="Microsoft">Microsoft</option>
-                    <option value="Apple">Apple</option>
-                    <option value="Meta">Meta</option>
-                </select>
-                <input type="date" id="start-date-filter" class="high-priority-glass" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--card-bg); backdrop-filter: blur(10px);" aria-label="Start Date">
-                <input type="date" id="end-date-filter" class="high-priority-glass" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--card-bg); backdrop-filter: blur(10px);" aria-label="End Date">
+                <div id="filter-controls" style="display: flex; gap: 10px; align-items: center;">
+                    <select id="company-filter" class="high-priority-glass" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--card-bg); backdrop-filter: blur(10px);">
+                        <option value="">All Companies</option>
+                        <option value="Oracle">Oracle</option>
+                        <option value="Google">Google</option>
+                        <option value="Amazon">Amazon</option>
+                    </select>
+                    <label for="start-date-filter">Start Date</label>
+                    <input type="date" id="start-date-filter" class="high-priority-glass" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--card-bg); backdrop-filter: blur(10px);">
+                    <label for="end-date-filter">End Date</label>
+                    <input type="date" id="end-date-filter" class="high-priority-glass" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--card-bg); backdrop-filter: blur(10px);">
+                </div>
                 <button id="view-stats">Trends</button>
                 <button id="add-entry" class="btn-primary">+ New Entry</button>
             </nav>
