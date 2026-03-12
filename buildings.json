@@ -1,0 +1,302 @@
+[
+  {
+    "name": "Building 1",
+    "address": "297 Main Street, Dublin, D24 E5F6",
+    "status": "Active",
+    "monthlyCost": 5195
+  },
+  {
+    "name": "Building 2",
+    "address": "346 Main Street, Dublin, D12 E5F6",
+    "status": "Under Maintenance",
+    "monthlyCost": 4663
+  },
+  {
+    "name": "Building 3",
+    "address": "861 Main Street, Dublin, D03 C3D4",
+    "status": "Under Maintenance",
+    "monthlyCost": 7158
+  },
+  {
+    "name": "Building 4",
+    "address": "380 Main Street, Dublin, D14 C3D4",
+    "status": "Inactive",
+    "monthlyCost": 8760
+  },
+  {
+    "name": "Building 5",
+    "address": "169 Main Street, Dublin, D09 C3D4",
+    "status": "Active",
+    "monthlyCost": 3532
+  },
+  {
+    "name": "Building 6",
+    "address": "334 Main Street, Dublin, D22 X7Y8",
+    "status": "Inactive",
+    "monthlyCost": 8028
+  },
+  {
+    "name": "Building 7",
+    "address": "632 Main Street, Dublin, D15 C3D4",
+    "status": "Active",
+    "monthlyCost": 3767
+  },
+  {
+    "name": "Building 8",
+    "address": "266 Main Street, Dublin, D18 C3D4",
+    "status": "Under Maintenance",
+    "monthlyCost": 7483
+  },
+  {
+    "name": "Building 9",
+    "address": "949 Main Street, Dublin, D13 X7Y8",
+    "status": "Inactive",
+    "monthlyCost": 4405
+  },
+  {
+    "name": "Building 10",
+    "address": "182 Main Street, Dublin, D12 E5F6",
+    "status": "Inactive",
+    "monthlyCost": 5746
+  },
+  {
+    "name": "Building 11",
+    "address": "110 Main Street, Dublin, D21 X7Y8",
+    "status": "Active",
+    "monthlyCost": 3223
+  },
+  {
+    "name": "Building 12",
+    "address": "669 Main Street, Dublin, D07 X7Y8",
+    "status": "Active",
+    "monthlyCost": 9491
+  },
+  {
+    "name": "Building 13",
+    "address": "374 Main Street, Dublin, D09 C3D4",
+    "status": "Inactive",
+    "monthlyCost": 6656
+  },
+  {
+    "name": "Building 14",
+    "address": "206 Main Street, Dublin, D15 X7Y8",
+    "status": "Inactive",
+    "monthlyCost": 1410
+  },
+  {
+    "name": "Building 15",
+    "address": "945 Main Street, Dublin, D15 E5F6",
+    "status": "Under Maintenance",
+    "monthlyCost": 2542
+  },
+  {
+    "name": "Building 16",
+    "address": "213 Main Street, Dublin, D11 X7Y8",
+    "status": "Under Maintenance",
+    "monthlyCost": 8924
+  },
+  {
+    "name": "Building 17",
+    "address": "911 Main Street, Dublin, D16 A1B2",
+    "status": "Active",
+    "monthlyCost": 4262
+  },
+  {
+    "name": "Building 18",
+    "address": "31 Main Street, Dublin, D18 E5F6",
+    "status": "Under Maintenance",
+    "monthlyCost": 1177
+  },
+  {
+    "name": "Building 19",
+    "address": "519 Main Street, Dublin, D16 A1B2",
+    "status": "Inactive",
+    "monthlyCost": 3063
+  },
+  {
+    "name": "Building 20",
+    "address": "549 Main Street, Dublin, D11 A1B2",
+    "status": "Inactive",
+    "monthlyCost": 5132
+  },
+  {
+    "name": "Building 21",
+    "address": "901 Main Street, Dublin, D18 E5F6",
+    "status": "Inactive",
+    "monthlyCost": 8847
+  },
+  {
+    "name": "Building 22",
+    "address": "87 Main Street, Dublin, D20 E5F6",
+    "status": "Under Maintenance",
+    "monthlyCost": 2608
+  },
+  {
+    "name": "Building 23",
+    "address": "617 Main Street, Dublin, D02 E5F6",
+    "status": "Active",
+    "monthlyCost": 6376
+  },
+  {
+    "name": "Building 24",
+    "address": "638 Main Street, Dublin, D07 X7Y8",
+    "status": "Active",
+    "monthlyCost": 7648
+  },
+  {
+    "name": "Building 25",
+    "address": "78 Main Street, Dublin, D20 X7Y8",
+    "status": "Inactive",
+    "monthlyCost": 3879
+  },
+  {
+    "name": "Building 26",
+    "address": "604 Main Street, Dublin, D12 A1B2",
+    "status": "Inactive",
+    "monthlyCost": 4659
+  },
+  {
+    "name": "Building 27",
+    "address": "886 Main Street, Dublin, D21 C3D4",
+    "status": "Inactive",
+    "monthlyCost": 9907
+  },
+  {
+    "name": "Building 28",
+    "address": "635 Main Street, Dublin, D13 X7Y8",
+    "status": "Active",
+    "monthlyCost": 5698
+  },
+  {
+    "name": "Building 29",
+    "address": "879 Main Street, Dublin, D24 C3D4",
+    "status": "Inactive",
+    "monthlyCost": 9559
+  },
+  {
+    "name": "Building 30",
+    "address": "197 Main Street, Dublin, D22 C3D4",
+    "status": "Active",
+    "monthlyCost": 8768
+  },
+  {
+    "name": "Building 31",
+    "address": "79 Main Street, Dublin, D20 X7Y8",
+    "status": "Active",
+    "monthlyCost": 5287
+  },
+  {
+    "name": "Building 32",
+    "address": "645 Main Street, Dublin, D09 C3D4",
+    "status": "Active",
+    "monthlyCost": 8488
+  },
+  {
+    "name": "Building 33",
+    "address": "501 Main Street, Dublin, D12 C3D4",
+    "status": "Inactive",
+    "monthlyCost": 8824
+  },
+  {
+    "name": "Building 34",
+    "address": "629 Main Street, Dublin, D17 E5F6",
+    "status": "Active",
+    "monthlyCost": 4317
+  },
+  {
+    "name": "Building 35",
+    "address": "577 Main Street, Dublin, D15 E5F6",
+    "status": "Inactive",
+    "monthlyCost": 7016
+  },
+  {
+    "name": "Building 36",
+    "address": "875 Main Street, Dublin, D18 E5F6",
+    "status": "Inactive",
+    "monthlyCost": 3152
+  },
+  {
+    "name": "Building 37",
+    "address": "999 Main Street, Dublin, D17 E5F6",
+    "status": "Active",
+    "monthlyCost": 6901
+  },
+  {
+    "name": "Building 38",
+    "address": "928 Main Street, Dublin, D07 C3D4",
+    "status": "Active",
+    "monthlyCost": 9848
+  },
+  {
+    "name": "Building 39",
+    "address": "61 Main Street, Dublin, D12 A1B2",
+    "status": "Active",
+    "monthlyCost": 1349
+  },
+  {
+    "name": "Building 40",
+    "address": "620 Main Street, Dublin, D24 A1B2",
+    "status": "Active",
+    "monthlyCost": 2467
+  },
+  {
+    "name": "Building 41",
+    "address": "342 Main Street, Dublin, D06 X7Y8",
+    "status": "Inactive",
+    "monthlyCost": 3529
+  },
+  {
+    "name": "Building 42",
+    "address": "213 Main Street, Dublin, D20 C3D4",
+    "status": "Under Maintenance",
+    "monthlyCost": 7835
+  },
+  {
+    "name": "Building 43",
+    "address": "544 Main Street, Dublin, D03 X7Y8",
+    "status": "Active",
+    "monthlyCost": 8129
+  },
+  {
+    "name": "Building 44",
+    "address": "51 Main Street, Dublin, D08 A1B2",
+    "status": "Inactive",
+    "monthlyCost": 9133
+  },
+  {
+    "name": "Building 45",
+    "address": "793 Main Street, Dublin, D09 C3D4",
+    "status": "Inactive",
+    "monthlyCost": 3770
+  },
+  {
+    "name": "Building 46",
+    "address": "926 Main Street, Dublin, D12 E5F6",
+    "status": "Active",
+    "monthlyCost": 7880
+  },
+  {
+    "name": "Building 47",
+    "address": "57 Main Street, Dublin, D12 X7Y8",
+    "status": "Active",
+    "monthlyCost": 2114
+  },
+  {
+    "name": "Building 48",
+    "address": "890 Main Street, Dublin, D07 X7Y8",
+    "status": "Inactive",
+    "monthlyCost": 1399
+  },
+  {
+    "name": "Building 49",
+    "address": "371 Main Street, Dublin, D04 C3D4",
+    "status": "Inactive",
+    "monthlyCost": 3549
+  },
+  {
+    "name": "Building 50",
+    "address": "202 Main Street, Dublin, D18 E5F6",
+    "status": "Under Maintenance",
+    "monthlyCost": 3759
+  }
+]

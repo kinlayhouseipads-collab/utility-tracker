@@ -62,6 +62,23 @@ body {
     cursor: pointer;
 }
 
+.sticky-search {
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    background-color: var(--card-bg);
+    color: var(--text);
+    font-size: 1rem;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+}
+
 form {
     display: flex;
     flex-direction: column;
