@@ -10,7 +10,18 @@
     <header class="app-header">
         <div class="container">
             <h1>Utility<span>Pulse</span></h1>
-            <nav>
+            <nav style="display: flex; gap: 10px; align-items: center;">
+                <select id="company-filter" class="high-priority-glass" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--card-bg); backdrop-filter: blur(10px);">
+                    <option value="">All Companies</option>
+                    <option value="Oracle">Oracle</option>
+                    <option value="Google">Google</option>
+                    <option value="Amazon">Amazon</option>
+                    <option value="Microsoft">Microsoft</option>
+                    <option value="Apple">Apple</option>
+                    <option value="Meta">Meta</option>
+                </select>
+                <input type="date" id="start-date-filter" class="high-priority-glass" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--card-bg); backdrop-filter: blur(10px);" aria-label="Start Date">
+                <input type="date" id="end-date-filter" class="high-priority-glass" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: var(--card-bg); backdrop-filter: blur(10px);" aria-label="End Date">
                 <button id="view-stats">Trends</button>
                 <button id="add-entry" class="btn-primary">+ New Entry</button>
             </nav>
@@ -27,7 +38,10 @@
             <!-- Buildings will be rendered here -->
         </section>
 
-        <h2 id="selected-building-name" style="margin-top: 40px;">All Buildings Dashboard</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
+            <h2 id="selected-building-name" style="margin: 0;">All Buildings Dashboard</h2>
+            <button id="view-bill-history" class="btn-primary" style="display: none;">View Bill History</button>
+        </div>
 
         <section class="dashboard-grid">
             <div class="card">
@@ -69,6 +83,17 @@
                 </form>
             </div>
         </section>
+
+        <section id="bill-history-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+            <div class="modal-content" style="background: var(--card-bg); backdrop-filter: blur(10px); margin: 15% auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; width: 80%; max-width: 600px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <span id="close-history-modal" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                <h2 id="history-modal-title">Bill History</h2>
+                <div id="bill-history-list" style="max-height: 300px; overflow-y: auto; margin-top: 20px;">
+                    <!-- Bill history items will be rendered here -->
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <footer class="app-footer">

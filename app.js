@@ -36,14 +36,18 @@ function renderBuildings(buildings) {
 
             // Re-render to update selected border but respect current search filter
             const searchBar = document.getElementById('search-bar');
+            const companyFilter = document.getElementById('company-filter');
             let buildingsToRender = allBuildings;
 
             if (searchBar && searchBar.value) {
                 const searchTerm = searchBar.value.toLowerCase();
-                buildingsToRender = allBuildings.filter(b =>
+                buildingsToRender = buildingsToRender.filter(b =>
                     b.name.toLowerCase().includes(searchTerm) ||
                     b.address.toLowerCase().includes(searchTerm)
                 );
+            }
+            if (companyFilter && companyFilter.value) {
+                buildingsToRender = buildingsToRender.filter(b => b.company === companyFilter.value);
             }
             renderBuildings(buildingsToRender);
         });
@@ -53,15 +57,18 @@ function renderBuildings(buildings) {
 }
 
 function selectBuilding(building) {
+    const viewBillHistoryBtn = document.getElementById('view-bill-history');
     if (activeBuildingId === building.id) {
         // Deselect
         activeBuildingId = null;
         document.getElementById('selected-building-name').textContent = 'All Buildings Dashboard';
         document.getElementById('building-id').value = '';
+        if (viewBillHistoryBtn) viewBillHistoryBtn.style.display = 'none';
     } else {
         activeBuildingId = building.id;
         document.getElementById('selected-building-name').textContent = `${building.name} Dashboard`;
         document.getElementById('building-id').value = building.id;
+        if (viewBillHistoryBtn) viewBillHistoryBtn.style.display = 'block';
     }
 
     updateDashboard();
@@ -73,18 +80,64 @@ function updateDashboard() {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
 
+    const companyFilter = document.getElementById('company-filter')?.value;
+    const startDateFilter = document.getElementById('start-date-filter')?.value;
+    const endDateFilter = document.getElementById('end-date-filter')?.value;
+
     let totalElectricity = 0;
     let totalWater = 0;
     let totalGas = 0;
     let totalCost = 0;
 
-    readings.forEach(reading => {
-        if (activeBuildingId && reading.building_id !== activeBuildingId) {
-            return; // Skip if a building is selected and it doesn't match
+    let targetBuildings = allBuildings;
+    if (activeBuildingId) {
+        targetBuildings = targetBuildings.filter(b => b.id === activeBuildingId);
+    } else if (companyFilter) {
+        targetBuildings = targetBuildings.filter(b => b.company === companyFilter);
+    }
+
+    targetBuildings.forEach(building => {
+        if (building.billHistory) {
+            building.billHistory.forEach(bill => {
+                const billDate = new Date(bill.date);
+                let withinDateRange = false;
+
+                if (startDateFilter && endDateFilter) {
+                    const start = new Date(startDateFilter);
+                    const end = new Date(endDateFilter);
+                    withinDateRange = billDate >= start && billDate <= end;
+                } else {
+                    withinDateRange = billDate.getMonth() === currentMonth && billDate.getFullYear() === currentYear;
+                }
+
+                if (withinDateRange) {
+                    totalElectricity += parseFloat(bill.usage_kwh) || 0;
+                    totalWater += parseFloat(bill.usage_m3) || 0;
+                    totalCost += parseFloat(bill.cost) || 0;
+                }
+            });
         }
+    });
+
+    readings.forEach(reading => {
+        const building = allBuildings.find(b => b.id === reading.building_id);
+        if (!building) return;
+
+        if (activeBuildingId && reading.building_id !== activeBuildingId) return;
+        if (!activeBuildingId && companyFilter && building.company !== companyFilter) return;
 
         const readingDate = new Date(reading.date);
-        if (readingDate.getMonth() === currentMonth && readingDate.getFullYear() === currentYear) {
+        let withinDateRange = false;
+
+        if (startDateFilter && endDateFilter) {
+            const start = new Date(startDateFilter);
+            const end = new Date(endDateFilter);
+            withinDateRange = readingDate >= start && readingDate <= end;
+        } else {
+            withinDateRange = readingDate.getMonth() === currentMonth && readingDate.getFullYear() === currentYear;
+        }
+
+        if (withinDateRange) {
             const val = parseFloat(reading.value) || 0;
             const cost = parseFloat(reading.cost) || 0;
 
@@ -191,16 +244,95 @@ document.addEventListener('DOMContentLoaded', () => {
     renderChart();
 
     const searchBar = document.getElementById('search-bar');
-    if (searchBar) {
-        searchBar.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filteredBuildings = allBuildings.filter(building =>
+    const companyFilter = document.getElementById('company-filter');
+    const startDateFilter = document.getElementById('start-date-filter');
+    const endDateFilter = document.getElementById('end-date-filter');
+    const viewBillHistoryBtn = document.getElementById('view-bill-history');
+    const billHistoryModal = document.getElementById('bill-history-modal');
+    const closeHistoryModal = document.getElementById('close-history-modal');
+
+    const updateFilters = () => {
+        let filteredBuildings = allBuildings;
+
+        if (searchBar && searchBar.value) {
+            const searchTerm = searchBar.value.toLowerCase();
+            filteredBuildings = filteredBuildings.filter(building =>
                 building.name.toLowerCase().includes(searchTerm) ||
                 building.address.toLowerCase().includes(searchTerm)
             );
-            renderBuildings(filteredBuildings);
+        }
+
+        if (companyFilter && companyFilter.value) {
+            filteredBuildings = filteredBuildings.filter(b => b.company === companyFilter.value);
+        }
+
+        renderBuildings(filteredBuildings);
+        updateDashboard();
+    };
+
+    if (searchBar) searchBar.addEventListener('input', updateFilters);
+    if (companyFilter) companyFilter.addEventListener('change', updateFilters);
+    if (startDateFilter) startDateFilter.addEventListener('change', updateDashboard);
+    if (endDateFilter) endDateFilter.addEventListener('change', updateDashboard);
+
+    if (viewBillHistoryBtn) {
+        viewBillHistoryBtn.addEventListener('click', () => {
+            if (!activeBuildingId) return;
+            const building = allBuildings.find(b => b.id === activeBuildingId);
+            if (!building) return;
+
+            const listContainer = document.getElementById('bill-history-list');
+            listContainer.innerHTML = '';
+
+            let allBills = [];
+            if (building.billHistory) {
+                allBills = [...building.billHistory];
+            }
+
+            let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+            readings.filter(r => r.building_id === activeBuildingId).forEach(r => {
+                allBills.push({
+                    date: r.date,
+                    cost: r.cost,
+                    usage_kwh: r.type === 'electricity' ? r.value : '0',
+                    usage_m3: r.type === 'water' ? r.value : '0'
+                });
+            });
+
+            allBills.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            allBills.forEach(bill => {
+                const item = document.createElement('div');
+                item.style.padding = '10px';
+                item.style.borderBottom = '1px solid #e2e8f0';
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                        <span>${bill.date}</span>
+                        <span style="color: var(--primary);">$${parseFloat(bill.cost).toFixed(2)}</span>
+                    </div>
+                    <div style="font-size: 0.9em; color: #64748b; margin-top: 5px;">
+                        <span>Electricity: ${parseFloat(bill.usage_kwh).toFixed(2)} kWh</span> |
+                        <span>Water: ${parseFloat(bill.usage_m3).toFixed(2)} m³</span>
+                    </div>
+                `;
+                listContainer.appendChild(item);
+            });
+
+            billHistoryModal.style.display = 'block';
         });
     }
+
+    if (closeHistoryModal) {
+        closeHistoryModal.addEventListener('click', () => {
+            billHistoryModal.style.display = 'none';
+        });
+    }
+
+    window.addEventListener('click', (event) => {
+        if (event.target == billHistoryModal) {
+            billHistoryModal.style.display = 'none';
+        }
+    });
 });
 
 document.getElementById('tracker-form').addEventListener('submit', function(e) {
