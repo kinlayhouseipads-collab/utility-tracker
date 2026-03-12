@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UtilityPulse | Smart Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="container">
+            <h1>Utility<span>Pulse</span></h1>
+            <nav>
+                <button id="view-stats">Trends</button>
+                <button id="add-entry" class="btn-primary">+ New Entry</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="dashboard-grid">
+            <div class="card">
+                <h3>Electricity</h3>
+                <p class="stat">-- kWh</p>
+            </div>
+            <div class="card">
+                <h3>Water</h3>
+                <p class="stat">-- m³</p>
+            </div>
+            <div class="card">
+                <h3>Gas</h3>
+                <p class="stat">-- units</p>
+            </div>
+        </section>
+
+        <section id="entry-modal" class="modal">
+            <div class="modal-content">
+                <h2>Log New Reading</h2>
+                <form id="tracker-form">
+                    <select id="utility-type" required>
+                        <option value="electricity">Electricity</option>
+                        <option value="water">Water</option>
+                        <option value="gas">Gas</option>
+                    </select>
+                    <input type="number" id="reading-value" placeholder="Enter Value" required>
+                    <input type="date" id="reading-date" required>
+                    <button type="submit" class="btn-submit">Save Reading</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>&copy; 2026 UtilityPulse. Data stored locally for privacy.</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
