@@ -14,10 +14,22 @@ let companies = JSON.parse(localStorage.getItem('utility_companies')) || [
     { id: 'microsoft', name: 'Microsoft', industry: 'Technology' }
 ];
 
+
 // Function to save companies
 function saveCompanies() {
     localStorage.setItem('utility_companies', JSON.stringify(companies));
+    saveToLocalStorage(); // Ensure it also triggers the main save
 }
+
+// Global Storage Strategy
+function saveToLocalStorage() {
+    const data = {
+        buildings: allBuildings,
+        companies: companies
+    };
+    localStorage.setItem('VestaLogic_Storage', JSON.stringify(data));
+}
+
 
 // Audit Logging Function
 function logAudit(action) {
@@ -63,6 +75,20 @@ function renderAuditLogs() {
 
 async function loadBuildings() {
     try {
+        const storedDataStr = localStorage.getItem('VestaLogic_Storage');
+        if (storedDataStr) {
+            const storedData = JSON.parse(storedDataStr);
+            allBuildings = storedData.buildings || [];
+            if (storedData.companies) {
+                companies = storedData.companies;
+                saveCompanies();
+                populateCompanyDropdowns();
+                renderClientManager();
+            }
+            renderBuildings(allBuildings);
+            return;
+        }
+
         const response = await fetch('buildings.json');
         const rawBuildings = await response.json();
         allBuildings = rawBuildings.map(building => {
@@ -375,6 +401,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', () => {
             allBuildings.splice(buildingIndex, 1);
             logAudit(`Deleted building: ${buildingName}`);
         }
+            saveToLocalStorage();
     } else if (deleteTarget.type === 'account') {
         const building = allBuildings.find(b => b.id === deleteTarget.buildingId);
         if (building) {
@@ -383,6 +410,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', () => {
                 building.accounts.splice(accountIndex, 1);
                 logAudit(`Deleted account ${deleteTarget.accountId} from building ${building.name}`);
             }
+                saveToLocalStorage();
         }
     } else if (deleteTarget.type === 'company') {
         const companyIndex = companies.findIndex(c => c.id === deleteTarget.companyId);
@@ -400,6 +428,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', () => {
             renderClientManager();
             populateCompanyDropdowns();
         }
+            saveToLocalStorage();
     }
 
     deleteTarget = null;
@@ -876,6 +905,28 @@ document.addEventListener('DOMContentLoaded', () => {
     renderChart();
     renderClientManager();
 
+    // Setup Backup Data
+    const backupBtn = document.getElementById('backup-data-btn');
+    if (backupBtn) {
+        backupBtn.addEventListener('click', () => {
+            const dataStr = localStorage.getItem('VestaLogic_Storage');
+            if (dataStr) {
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'vestalogic_backup.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                logAudit('Exported Data Backup');
+            } else {
+                alert('No data to backup.');
+            }
+        });
+    }
+
     // Setup Export CSV
     const exportBtn = document.getElementById('export-csv-btn');
     if (exportBtn) {
@@ -1033,6 +1084,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 companies[companyIndex].industry = indInput;
                 logAudit(`Edited company: ${nameInput}`);
             }
+                saveToLocalStorage();
         } else {
             // Add new
             if (companies.find(c => c.id === idInput)) {
@@ -1042,6 +1094,7 @@ document.addEventListener('DOMContentLoaded', () => {
             companies.push({ id: idInput, name: nameInput, industry: indInput });
             logAudit(`Added new company: ${nameInput}`);
         }
+        saveToLocalStorage();
 
         saveCompanies();
         populateCompanyDropdowns();
@@ -1158,6 +1211,8 @@ document.addEventListener('DOMContentLoaded', () => {
         addBuildingModal.style.display = 'none';
         document.getElementById('add-building-form').reset();
 
+        saveToLocalStorage();
+
         updateFilters();
     });
 
@@ -1185,6 +1240,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             logAudit(`Edited building: ${allBuildings[buildingIndex].name}`);
         }
+            saveToLocalStorage();
 
         editBuildingModal.style.display = 'none';
         updateFilters();
@@ -1210,6 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
             building.accounts.push(newAcc);
             logAudit(`Added ${newAcc.type} MPRN for ${newAcc.account_address} at Building ${building.name}`);
         }
+            saveToLocalStorage();
         addAccountModal.style.display = 'none';
         updateFilters();
     });
@@ -1231,6 +1288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 building.accounts[accIndex].contractEndDate = document.getElementById('edit-acc-enddate').value;
                 logAudit(`Edited ${building.accounts[accIndex].type} account on ${building.name}`);
             }
+                saveToLocalStorage();
         }
         editAccountModal.style.display = 'none';
         updateFilters();
@@ -1537,6 +1595,7 @@ document.getElementById('tracker-form')?.addEventListener('submit', function(e) 
                 logAudit(`Edited ${accType} account details during reading entry for ${building.name}`);
                 updateFilters(); // Refresh the building table in case accordion is open
             }
+                saveToLocalStorage();
         }
     }
 
