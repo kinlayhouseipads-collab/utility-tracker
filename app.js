@@ -5,7 +5,7 @@ let sortEndDateAscending = true; // Track sorting state globally
 let currentUserRole = null;
 let currentUserId = null;
 
-const companies = [
+let companies = JSON.parse(localStorage.getItem('utility_companies')) || [
     { id: 'oracle', name: 'Oracle', industry: 'Technology' },
     { id: 'google', name: 'Google', industry: 'Technology' },
     { id: 'amazon', name: 'Amazon', industry: 'E-commerce' },
@@ -13,6 +13,11 @@ const companies = [
     { id: 'apple', name: 'Apple', industry: 'Technology' },
     { id: 'microsoft', name: 'Microsoft', industry: 'Technology' }
 ];
+
+// Function to save companies
+function saveCompanies() {
+    localStorage.setItem('utility_companies', JSON.stringify(companies));
+}
 
 // Audit Logging Function
 function logAudit(action) {
@@ -99,6 +104,13 @@ async function loadBuildings() {
     }
 }
 
+// Helper to format date as DD/MM/YYYY
+function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    const d = new Date(dateStr);
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+}
+
 function renderBuildings(buildings) {
     const list = document.getElementById('buildings-list');
     list.innerHTML = '';
@@ -176,12 +188,6 @@ function renderBuildings(buildings) {
         const companyObj = companies.find(c => c.id === building.companyId);
         const companyName = companyObj ? companyObj.name : 'Unknown';
 
-        // Helper to format date as DD/MM/YYYY
-        const formatDate = (dateStr) => {
-            if (!dateStr) return 'N/A';
-            const d = new Date(dateStr);
-            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-        };
 
         const today = new Date('2026-03-12T00:00:00');
 
@@ -307,6 +313,10 @@ window.requestDeleteBuilding = function(id) {
     deleteTarget = { type: 'building', buildingId: id };
     document.getElementById('confirm-title').innerText = 'Delete Building';
     document.getElementById('confirm-message').innerText = `Are you sure you want to delete "${building.name}"? All associated accounts and readings will be lost.`;
+
+    document.getElementById('double-confirm-container').style.display = 'block';
+    document.getElementById('double-confirm-input').value = '';
+
     document.getElementById('confirm-modal').style.display = 'block';
 };
 
@@ -319,16 +329,43 @@ window.requestDeleteAccount = function(buildingId, accountId) {
     deleteTarget = { type: 'account', buildingId: buildingId, accountId: accountId };
     document.getElementById('confirm-title').innerText = 'Delete Account';
     document.getElementById('confirm-message').innerText = `Are you sure you want to delete ${account.type} Account (${accountId}) from "${building.name}"?`;
+
+    document.getElementById('double-confirm-container').style.display = 'block';
+    document.getElementById('double-confirm-input').value = '';
+
+    document.getElementById('confirm-modal').style.display = 'block';
+};
+
+window.requestDeleteCompany = function(companyId) {
+    const company = companies.find(c => c.id === companyId);
+    if (!company) return;
+    deleteTarget = { type: 'company', companyId: companyId };
+    document.getElementById('confirm-title').innerText = 'Delete Company';
+    document.getElementById('confirm-message').innerText = `Are you sure you want to delete the company "${company.name}"? This will archive/delete all associated buildings.`;
+
+    document.getElementById('double-confirm-container').style.display = 'block';
+    document.getElementById('double-confirm-input').value = '';
+
     document.getElementById('confirm-modal').style.display = 'block';
 };
 
 document.getElementById('confirm-cancel')?.addEventListener('click', () => {
     deleteTarget = null;
+    document.getElementById('double-confirm-container').style.display = 'none';
     document.getElementById('confirm-modal').style.display = 'none';
 });
 
 document.getElementById('confirm-yes')?.addEventListener('click', () => {
     if (!deleteTarget) return;
+
+    // Double confirmation check
+    const doubleConfirmInput = document.getElementById('double-confirm-input');
+    if (document.getElementById('double-confirm-container').style.display !== 'none') {
+        if (doubleConfirmInput.value !== 'DELETE') {
+            alert('Please type DELETE to confirm this action.');
+            return;
+        }
+    }
 
     if (deleteTarget.type === 'building') {
         const buildingIndex = allBuildings.findIndex(b => b.id === deleteTarget.buildingId);
@@ -346,9 +383,26 @@ document.getElementById('confirm-yes')?.addEventListener('click', () => {
                 logAudit(`Deleted account ${deleteTarget.accountId} from building ${building.name}`);
             }
         }
+    } else if (deleteTarget.type === 'company') {
+        const companyIndex = companies.findIndex(c => c.id === deleteTarget.companyId);
+        if (companyIndex !== -1) {
+            const companyName = companies[companyIndex].name;
+            companies.splice(companyIndex, 1);
+            saveCompanies();
+            // Archive/Delete associated buildings
+            const buildingsToDelete = allBuildings.filter(b => b.companyId === deleteTarget.companyId);
+            buildingsToDelete.forEach(b => {
+                const bIndex = allBuildings.findIndex(bx => bx.id === b.id);
+                if (bIndex !== -1) allBuildings.splice(bIndex, 1);
+            });
+            logAudit(`Deleted company: ${companyName} and ${buildingsToDelete.length} associated buildings.`);
+            renderClientManager();
+            populateCompanyDropdowns();
+        }
     }
 
     deleteTarget = null;
+    document.getElementById('double-confirm-container').style.display = 'none';
     document.getElementById('confirm-modal').style.display = 'none';
     updateFilters();
     updateDashboard();
@@ -521,6 +575,18 @@ function renderChart() {
     const currentYearData = monthlyCosts[currentYear] || Array(12).fill(0);
     const lastYearData = monthlyCosts[lastYear] || Array(12).fill(0);
 
+    // Calculate simple forecast (e.g. 5% inflation/increase on last year for future months if current year has no data)
+    const forecastData = Array(12).fill(0);
+    const currentMonth = new Date().getMonth();
+    for (let i = 0; i < 12; i++) {
+        if (i <= currentMonth && currentYearData[i] > 0) {
+            forecastData[i] = currentYearData[i];
+        } else {
+            // Future months based on last year * 1.05
+            forecastData[i] = lastYearData[i] > 0 ? lastYearData[i] * 1.05 : 0;
+        }
+    }
+
     const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     const ctx = document.getElementById('utilityChart').getContext('2d');
@@ -539,7 +605,17 @@ function renderChart() {
                     data: currentYearData,
                     borderColor: '#2563eb',
                     backgroundColor: '#2563eb',
-                    tension: 0.4
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: `Forecasted Cost (€)`,
+                    data: forecastData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'transparent',
+                    borderDash: [2, 2],
+                    tension: 0.4,
+                    fill: false
                 },
                 {
                     label: `Total Cost ${lastYear} (€)`,
@@ -547,7 +623,8 @@ function renderChart() {
                     borderColor: '#94a3b8',
                     backgroundColor: 'transparent',
                     borderDash: [5, 5], // Dashed line for comparative chart
-                    tension: 0.4
+                    tension: 0.4,
+                    fill: false
                 }
             ]
         },
@@ -614,11 +691,376 @@ function updateFilters() {
     updateDashboard();
 }
 
+function populateCompanyDropdowns() {
+    const dropdowns = ['company-filter', 'add-b-company', 'edit-b-company', 'wizard-company'];
+
+    dropdowns.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+
+        // Keep the first default option if it exists
+        const firstOption = select.options.length > 0 && select.options[0].value === "" ? select.options[0].outerHTML : '<option value="" disabled selected>Select Company</option>';
+        if (id === 'company-filter') {
+            select.innerHTML = '<option value="">All Companies</option>';
+        } else {
+            select.innerHTML = firstOption;
+        }
+
+        companies.forEach(company => {
+            const opt = document.createElement('option');
+            opt.value = company.id;
+            opt.textContent = company.name;
+            select.appendChild(opt);
+        });
+    });
+}
+
+function renderClientManager() {
+    const list = document.getElementById('client-manager-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    companies.forEach((company, index) => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid #e2e8f0';
+        if (index % 2 === 0) tr.style.backgroundColor = 'rgba(0,0,0,0.02)';
+
+        tr.innerHTML = `
+            <td style="padding: 12px 15px; font-weight: 500;">${company.id}</td>
+            <td style="padding: 12px 15px;">${company.name}</td>
+            <td style="padding: 12px 15px;">${company.industry}</td>
+            <td style="padding: 12px 15px; text-align: center;">
+                <button onclick="openEditCompanyModal('${company.id}')" style="background: transparent; border: none; cursor: pointer; color: #64748b; margin-right: 10px;" title="Edit Company">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="requestDeleteCompany('${company.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Company">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        list.appendChild(tr);
+    });
+}
+
+window.openEditCompanyModal = function(id) {
+    const company = companies.find(c => c.id === id);
+    if (!company) return;
+
+    document.getElementById('company-modal-title').innerText = 'Edit Company';
+    document.getElementById('company-edit-id').value = company.id;
+
+    const idInput = document.getElementById('company-id-input');
+    idInput.value = company.id;
+    idInput.disabled = true; // Don't allow changing ID of existing company easily
+
+    document.getElementById('company-name-input').value = company.name;
+    document.getElementById('company-industry-input').value = company.industry;
+
+    document.getElementById('company-modal').style.display = 'block';
+};
+
+
+function checkAlerts() {
+    const notifications = [];
+    const today = new Date('2026-03-12T00:00:00'); // Static today per context
+
+    // Only check buildings visible to user
+    let targetBuildings = allBuildings;
+    if (currentUserRole === 'Company-Admin') {
+        const authCompany = sessionStorage.getItem('auth_company');
+        targetBuildings = allBuildings.filter(b => b.companyId === authCompany);
+    }
+
+    targetBuildings.forEach(building => {
+        // Expiring Contracts
+        if (building.accounts && building.accounts.length > 0) {
+            building.accounts.forEach(acc => {
+                if (acc.contractEndDate) {
+                    const end = new Date(acc.contractEndDate);
+                    const diffDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+                    if (diffDays >= 0 && diffDays < 30) {
+                        notifications.push({
+                            type: 'Expiring Contract',
+                            message: `${acc.type} Account (${acc.id_number}) expires in ${diffDays} days`,
+                            buildingId: building.id,
+                            accountId: acc.id_number
+                        });
+                    } else if (diffDays < 0) {
+                        notifications.push({
+                            type: 'Expired Contract',
+                            message: `${acc.type} Account (${acc.id_number}) expired ${Math.abs(diffDays)} days ago`,
+                            buildingId: building.id,
+                            accountId: acc.id_number
+                        });
+                    }
+                }
+            });
+        }
+
+        // Stale Readings
+        let maxDate = 0;
+        if (building.billHistory && building.billHistory.length > 0) {
+            maxDate = Math.max(...building.billHistory.map(b => new Date(b.date).getTime()));
+        }
+        // Check localStorage readings too
+        let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+        const localReadings = readings.filter(r => r.building_id === building.id);
+        if (localReadings.length > 0) {
+            const localMax = Math.max(...localReadings.map(r => new Date(r.date).getTime()));
+            maxDate = Math.max(maxDate, localMax);
+        }
+
+        if (maxDate > 0) {
+            const diffStaleDays = Math.ceil((today - maxDate) / (1000 * 60 * 60 * 24));
+            if (diffStaleDays > 60) {
+                notifications.push({
+                    type: 'Stale Reading',
+                    message: `${building.name} hasn't been updated in ${diffStaleDays} days`,
+                    buildingId: building.id
+                });
+            }
+        } else {
+             notifications.push({
+                type: 'No Data',
+                message: `${building.name} has no readings`,
+                buildingId: building.id
+            });
+        }
+    });
+
+    // Render Notifications
+    const badge = document.getElementById('notification-badge');
+    const notifList = document.getElementById('notification-list');
+
+    if (badge && notifList) {
+        if (notifications.length > 0) {
+            badge.style.display = 'flex';
+            badge.textContent = notifications.length;
+
+            notifList.innerHTML = '';
+            notifications.forEach(n => {
+                const el = document.createElement('div');
+                el.style.padding = '15px';
+                el.style.borderBottom = '1px solid #e2e8f0';
+                el.style.cursor = 'pointer';
+                el.style.transition = 'background-color 0.2s';
+
+                let iconColor = n.type.includes('Contract') ? '#f59e0b' : '#ef4444';
+
+                el.innerHTML = `
+                    <div style="font-weight: 600; color: ${iconColor}; font-size: 0.9em; margin-bottom: 5px;">${n.type}</div>
+                    <div style="color: #334155; font-size: 0.95em;">${n.message}</div>
+                `;
+
+                el.addEventListener('mouseover', () => el.style.backgroundColor = '#f8fafc');
+                el.addEventListener('mouseout', () => el.style.backgroundColor = '#ffffff');
+
+                el.addEventListener('click', () => {
+                    document.getElementById('notification-dropdown').style.display = 'none';
+                    // Navigation logic
+                    const building = allBuildings.find(b => b.id === n.buildingId);
+                    if (building) {
+                        selectBuilding(building);
+                        // Optional: if it's an account, you could auto-expand the accordion here
+                    }
+                });
+
+                notifList.appendChild(el);
+            });
+        } else {
+            badge.style.display = 'none';
+            notifList.innerHTML = '<div style="padding: 15px; color: #64748b; text-align: center;">No alerts at this time.</div>';
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    populateCompanyDropdowns();
     checkAuth();
     loadBuildings();
     updateDashboard();
     renderChart();
+    renderClientManager();
+
+    // Setup Export CSV
+    const exportBtn = document.getElementById('export-csv-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            // Get currently filtered buildings
+            const searchBar = document.getElementById('search-bar');
+            const companyFilter = document.getElementById('company-filter');
+            const startDateFilter = document.getElementById('start-date-filter');
+            const endDateFilter = document.getElementById('end-date-filter');
+
+            let filteredBuildings = allBuildings;
+
+            // Apply Auth filters
+            if (currentUserRole === 'Company-Admin') {
+                const authCompany = sessionStorage.getItem('auth_company');
+                filteredBuildings = filteredBuildings.filter(b => b.companyId === authCompany);
+            } else if (companyFilter && companyFilter.value) {
+                filteredBuildings = filteredBuildings.filter(b => b.companyId === companyFilter.value);
+            }
+
+            if (searchBar && searchBar.value) {
+                const searchTerm = searchBar.value.toLowerCase();
+                filteredBuildings = filteredBuildings.filter(building =>
+                    building.name.toLowerCase().includes(searchTerm) ||
+                    building.address.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (startDateFilter && endDateFilter && startDateFilter.value && endDateFilter.value) {
+                const start = new Date(startDateFilter.value);
+                const end = new Date(endDateFilter.value);
+
+                filteredBuildings = filteredBuildings.filter(building => {
+                    if (!building.billHistory || building.billHistory.length === 0) return false;
+                    return building.billHistory.some(bill => {
+                        const billDate = new Date(bill.date);
+                        return billDate >= start && billDate <= end;
+                    });
+                });
+            }
+
+            // Generate CSV
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Building Name,Address,Company,MPRN,GPRN,Status,Efficiency (€/m²)\n";
+
+            const today = new Date('2026-03-12T00:00:00');
+
+            filteredBuildings.forEach(building => {
+                const companyObj = companies.find(c => c.id === building.companyId);
+                const companyName = companyObj ? companyObj.name : 'Unknown';
+
+                let mprn = 'N/A';
+                let gprn = 'N/A';
+                if (building.accounts) {
+                    const elec = building.accounts.find(a => a.type === 'Electricity');
+                    if (elec) mprn = elec.id_number;
+                    const gas = building.accounts.find(a => a.type === 'Gas');
+                    if (gas) gprn = gas.id_number;
+                }
+
+                // Determine Status
+                let status = 'Active';
+                let maxDate = 0;
+                if (building.billHistory && building.billHistory.length > 0) {
+                    maxDate = Math.max(...building.billHistory.map(b => new Date(b.date).getTime()));
+                }
+                let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+                const localReadings = readings.filter(r => r.building_id === building.id);
+                if (localReadings.length > 0) {
+                    const localMax = Math.max(...localReadings.map(r => new Date(r.date).getTime()));
+                    maxDate = Math.max(maxDate, localMax);
+                }
+                if (maxDate > 0) {
+                    const diffStaleDays = Math.ceil((today - maxDate) / (1000 * 60 * 60 * 24));
+                    if (diffStaleDays > 60) status = 'Stale';
+                } else {
+                    status = 'No Data';
+                }
+
+                // Calculate Efficiency
+                let buildingTotalCost = 0;
+                if (building.billHistory) {
+                    buildingTotalCost = building.billHistory.reduce((sum, bill) => sum + (parseFloat(bill.cost) || 0), 0);
+                }
+                let efficiency = building.area > 0 ? (buildingTotalCost / building.area) : 0;
+
+                // Escape CSV fields
+                const escapeCSV = (str) => `"${String(str).replace(/"/g, '""')}"`;
+
+                csvContent += `${escapeCSV(building.name)},${escapeCSV(building.address)},${escapeCSV(companyName)},${escapeCSV(mprn)},${escapeCSV(gprn)},${escapeCSV(status)},${efficiency.toFixed(2)}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Executive_Report.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            logAudit('Exported CSV Report');
+        });
+    }
+
+    // Setup Notification Bell
+    const bell = document.getElementById('notification-bell');
+    const notifDropdown = document.getElementById('notification-dropdown');
+
+    if (bell && notifDropdown) {
+        bell.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (notifDropdown.style.display === 'none') {
+                checkAlerts(); // refresh before opening
+                notifDropdown.style.display = 'block';
+            } else {
+                notifDropdown.style.display = 'none';
+            }
+        });
+    }
+
+    // Client Manager toggle
+    const clientManagerBtn = document.getElementById('client-manager-btn');
+    const clientManagerSection = document.getElementById('client-manager-section');
+    if (clientManagerBtn) {
+        clientManagerBtn.addEventListener('click', () => {
+            if (clientManagerSection.style.display === 'none') {
+                clientManagerSection.style.display = 'block';
+                clientManagerBtn.style.background = '#4f46e5';
+            } else {
+                clientManagerSection.style.display = 'none';
+                clientManagerBtn.style.background = '#6366f1';
+            }
+        });
+    }
+
+    // Company Modal logic
+    const companyModal = document.getElementById('company-modal');
+    document.getElementById('add-company-btn')?.addEventListener('click', () => {
+        document.getElementById('company-form').reset();
+        document.getElementById('company-edit-id').value = '';
+        document.getElementById('company-id-input').disabled = false;
+        document.getElementById('company-modal-title').innerText = 'Add Company';
+        companyModal.style.display = 'block';
+    });
+
+    document.getElementById('close-company-modal')?.addEventListener('click', () => {
+        companyModal.style.display = 'none';
+    });
+
+    document.getElementById('company-form')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const editId = document.getElementById('company-edit-id').value;
+        const idInput = document.getElementById('company-id-input').value.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const nameInput = document.getElementById('company-name-input').value;
+        const indInput = document.getElementById('company-industry-input').value;
+
+        if (editId) {
+            // Edit existing
+            const companyIndex = companies.findIndex(c => c.id === editId);
+            if (companyIndex !== -1) {
+                companies[companyIndex].name = nameInput;
+                companies[companyIndex].industry = indInput;
+                logAudit(`Edited company: ${nameInput}`);
+            }
+        } else {
+            // Add new
+            if (companies.find(c => c.id === idInput)) {
+                alert('A company with this ID already exists!');
+                return;
+            }
+            companies.push({ id: idInput, name: nameInput, industry: indInput });
+            logAudit(`Added new company: ${nameInput}`);
+        }
+
+        saveCompanies();
+        populateCompanyDropdowns();
+        renderClientManager();
+        companyModal.style.display = 'none';
+    });
 
     const searchBar = document.getElementById('search-bar');
     const companyFilter = document.getElementById('company-filter');
@@ -663,10 +1105,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const item = document.createElement('div');
                 item.style.padding = '10px';
                 item.style.borderBottom = '1px solid #e2e8f0';
+
+                const formattedDate = formatDate(bill.date);
+
                 item.innerHTML = `
                     <div style="display: flex; justify-content: space-between; font-weight: bold;">
-                        <span>${bill.date}</span>
-                        <span style="color: var(--primary);">$${parseFloat(bill.cost).toFixed(2)}</span>
+                        <span>${formattedDate}</span>
+                        <span style="color: var(--primary);">€${parseFloat(bill.cost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     <div style="font-size: 0.9em; color: #64748b; margin-top: 5px;">
                         <span>Electricity: ${parseFloat(bill.usage_kwh).toFixed(2)} kWh</span> |
@@ -848,6 +1293,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target == editBuildingModal) {
             editBuildingModal.style.display = 'none';
         }
+    const notifDropdown = document.getElementById('notification-dropdown');
+    if (notifDropdown && event.target !== notifDropdown && !notifDropdown.contains(event.target)) {
+        const bell = document.getElementById('notification-bell');
+        if (bell && event.target !== bell && !bell.contains(event.target)) {
+            notifDropdown.style.display = 'none';
+        }
+    }
     });
 });
 
@@ -894,6 +1346,7 @@ function checkAuth() {
     const authModal = document.getElementById('auth-modal');
     const appContent = document.getElementById('app-content');
     const companyFilter = document.getElementById('company-filter');
+    const clientManagerBtn = document.getElementById('client-manager-btn');
 
     if (!authRole) {
         authModal.style.display = 'flex';
@@ -910,14 +1363,23 @@ function checkAuth() {
                 companyFilter.value = authCompany;
                 companyFilter.disabled = true;
             }
+            if (clientManagerBtn) {
+                clientManagerBtn.style.display = 'none';
+            }
         } else if (authRole === 'Super-Admin') {
             if (companyFilter) {
                 companyFilter.disabled = false;
             }
+            if (clientManagerBtn) {
+                clientManagerBtn.style.display = 'inline-block';
+            }
         }
 
         // Trigger filter update with the applied roles
-        setTimeout(() => updateFilters(), 100);
+        setTimeout(() => {
+            updateFilters();
+            checkAlerts();
+        }, 100);
     }
 }
 
