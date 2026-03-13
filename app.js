@@ -178,6 +178,7 @@ function renderBuildings(buildings) {
     }, 0);
 
     const tbody = document.createElement('tbody');
+    const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
 
     buildings.forEach((building, index) => {
         const row = document.createElement('tr');
@@ -243,6 +244,34 @@ function renderBuildings(buildings) {
             buildingTotalCost = building.billHistory.reduce((sum, bill) => sum + (parseFloat(bill.cost) || 0), 0);
         }
 
+        let localReadings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+        localReadings = localReadings.filter(r => r.building_id === building.id);
+        if (localReadings.length > 0) {
+            buildingTotalCost += localReadings.reduce((sum, r) => sum + (parseFloat(r.cost) || 0), 0);
+            const localMax = Math.max(...localReadings.map(r => new Date(r.date).getTime()));
+            if (building.billHistory && building.billHistory.length > 0) {
+                const maxDate = new Date(Math.max(...building.billHistory.map(b => new Date(b.date).getTime())));
+                if (localMax > maxDate.getTime()) {
+                    diffStaleDays = Math.ceil((today - new Date(localMax)) / (1000 * 60 * 60 * 24));
+                    if (diffStaleDays > 60) {
+                        lastUpdatedText = `<span style="color: #ef4444; font-weight: bold;">STALE</span> (${diffStaleDays} days)`;
+                        row.style.backgroundColor = '#fee2e2';
+                    } else {
+                        lastUpdatedText = `${diffStaleDays} days`;
+                        row.style.backgroundColor = index % 2 === 0 ? 'rgba(0,0,0,0.02)' : 'transparent';
+                    }
+                }
+            } else {
+                diffStaleDays = Math.ceil((today - new Date(localMax)) / (1000 * 60 * 60 * 24));
+                if (diffStaleDays > 60) {
+                    lastUpdatedText = `<span style="color: #ef4444; font-weight: bold;">STALE</span> (${diffStaleDays} days)`;
+                    row.style.backgroundColor = '#fee2e2';
+                } else {
+                    lastUpdatedText = `${diffStaleDays} days`;
+                }
+            }
+        }
+
         row.innerHTML = `
             <td style="padding: 15px;">
                 <div style="font-weight: 500; font-size: 1.05em; color: #1e293b;">${building.name}</div>
@@ -261,7 +290,7 @@ function renderBuildings(buildings) {
                 ${lastUpdatedText}
             </td>
             <td style="padding: 15px; font-size: 0.95em; font-weight: bold; color: var(--primary);">
-                €${buildingTotalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                ${formatCurrency.format(buildingTotalCost)}
             </td>
             <td style="padding: 15px; text-align: center;">
                 <button onclick="openEditModal('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #64748b; margin-right: 10px;" title="Edit Building">
@@ -279,10 +308,12 @@ function renderBuildings(buildings) {
         accordionRow.style.backgroundColor = '#f8fafc';
 
         let accountsHtml = '<div style="padding: 15px 40px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #e2e8f0;">';
+
+        // --- Linked Accounts Table ---
         accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #334155;">Linked Accounts</h4>';
         accountsHtml += `<button class="btn-primary" onclick="openAddAccountModal('${building.id}')" style="padding: 6px 12px; font-size: 0.85em;">+ Add Account</button></div>`;
 
-        accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
+        accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px;">';
         accountsHtml += '<thead><tr style="border-bottom: 1px solid #cbd5e1;"><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Provider</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Address/Location</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Account # (MPRN/GPRN)</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">End Date</th><th style="text-align: center; padding: 8px; color: #64748b; font-size: 0.85em;">Actions</th></tr></thead>';
         accountsHtml += '<tbody>';
 
@@ -301,10 +332,70 @@ function renderBuildings(buildings) {
                 </tr>`;
             });
         } else {
-            accountsHtml += `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #64748b;">No accounts linked to this building.</td></tr>`;
+            accountsHtml += `<tr><td colspan="6" style="padding: 15px; text-align: center; color: #64748b;">No accounts linked to this building.</td></tr>`;
+        }
+        accountsHtml += '</tbody></table>';
+
+        // --- Bill History Table ---
+        accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #334155;">Bill History</h4></div>';
+        accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
+        accountsHtml += '<thead><tr style="border-bottom: 1px solid #cbd5e1;"><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Date</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Account Address</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Reading</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Cost</th></tr></thead>';
+        accountsHtml += '<tbody>';
+
+        let allBills = [];
+        if (building.billHistory) {
+            building.billHistory.forEach(bill => {
+                if (parseFloat(bill.usage_kwh) > 0) {
+                    allBills.push({
+                        date: bill.date,
+                        account_address: building.accounts?.find(a => a.type === 'Electricity')?.account_address || building.address,
+                        type: 'Electricity',
+                        reading: `${parseFloat(bill.usage_kwh).toFixed(2)} kWh`,
+                        cost: parseFloat(bill.cost) / (parseFloat(bill.usage_m3) > 0 ? 2 : 1)
+                    });
+                }
+                if (parseFloat(bill.usage_m3) > 0) {
+                    allBills.push({
+                        date: bill.date,
+                        account_address: building.accounts?.find(a => a.type === 'Gas' || a.type === 'Water')?.account_address || building.address,
+                        type: 'Water/Gas',
+                        reading: `${parseFloat(bill.usage_m3).toFixed(2)} m³`,
+                        cost: parseFloat(bill.cost) / (parseFloat(bill.usage_kwh) > 0 ? 2 : 1)
+                    });
+                }
+            });
+        }
+        if (localReadings.length > 0) {
+            localReadings.forEach(r => {
+                const acc = building.accounts?.find(a => a.id_number === r.account_number);
+                allBills.push({
+                    date: r.date,
+                    account_address: acc ? acc.account_address : building.address,
+                    type: r.type.charAt(0).toUpperCase() + r.type.slice(1),
+                    reading: `${parseFloat(r.value).toFixed(2)} ${r.type === 'electricity' ? 'kWh' : (r.type === 'water' ? 'm³' : 'units')}`,
+                    cost: parseFloat(r.cost)
+                });
+            });
+        }
+
+        allBills.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        if (allBills.length > 0) {
+            allBills.forEach(bill => {
+                accountsHtml += `<tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
+                    <td style="padding: 8px; color: #475569;">${formatDate(bill.date)}</td>
+                    <td style="padding: 8px; color: #475569;">${bill.account_address}</td>
+                    <td style="padding: 8px; font-weight: 600; color: #1e293b;">${bill.type}</td>
+                    <td style="padding: 8px; color: #475569;">${bill.reading}</td>
+                    <td style="padding: 8px; font-weight: bold; color: var(--primary);">${formatCurrency.format(bill.cost)}</td>
+                </tr>`;
+            });
+        } else {
+            accountsHtml += `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #64748b;">No bills found for this building.</td></tr>`;
         }
 
         accountsHtml += '</tbody></table>';
+
         accountsHtml += '</div>';
 
         accordionRow.innerHTML = `<td colspan="6" style="padding: 0;">${accountsHtml}</td>`;
@@ -559,7 +650,24 @@ function updateDashboard() {
         totalArea += parseFloat(building.area) || 1000;
     });
 
-    document.getElementById('stat-cost').textContent = '€' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    readings.forEach(reading => {
+        const building = allBuildings.find(b => b.id === reading.building_id);
+        if (!building) return;
+
+        if (activeBuildingId && reading.building_id !== activeBuildingId) return;
+        if (!activeBuildingId && companyFilter && building.companyId !== companyFilter) return;
+        if (searchBar) {
+            const searchTerm = searchBar.toLowerCase();
+            if (!building.name.toLowerCase().includes(searchTerm) && !building.address.toLowerCase().includes(searchTerm)) {
+                return;
+            }
+        }
+
+        grandTotal += parseFloat(reading.cost) || 0;
+    });
+
+    const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
+    document.getElementById('stat-cost').textContent = formatCurrency.format(grandTotal);
 }
 
 function renderChart() {
@@ -571,6 +679,8 @@ function renderChart() {
         targetBuildings = targetBuildings.filter(b => b.id === activeBuildingId);
     }
 
+    let localReadings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
@@ -580,6 +690,14 @@ function renderChart() {
                 });
             });
         }
+
+        let buildingReadings = localReadings.filter(r => r.building_id === b.id);
+        buildingReadings.forEach(r => {
+            readings.push({
+                date: r.date,
+                cost: parseFloat(r.cost) || 0
+            });
+        });
     });
 
     // Group costs by month-year
@@ -1603,8 +1721,8 @@ document.getElementById('tracker-form')?.addEventListener('submit', function(e) 
         building_id: bId,
         type: accType.toLowerCase(),
         account_number: newAccNum,
-        value: document.getElementById('reading-value').value,
-        cost: document.getElementById('reading-cost').value,
+        value: Number(document.getElementById('reading-value').value),
+        cost: Number(document.getElementById('reading-cost').value),
         date: document.getElementById('reading-date').value
     };
 
@@ -1613,7 +1731,12 @@ document.getElementById('tracker-form')?.addEventListener('submit', function(e) 
     readings.push(data);
     localStorage.setItem('utility_readings', JSON.stringify(readings));
 
-    logAudit(`Added new ${accType} reading for account ${newAccNum}`);
+    // Also save directly to building.billHistory to persist properly if logic expects it there, but utility_readings array is primary mechanism to keep track across reloads.
+    // Wait, let's explicitly invoke saveToLocalStorage() to ensure buildings are saved if they were modified (e.g. account edits).
+    saveToLocalStorage();
+
+    const buildingName = building ? building.name : 'Unknown Building';
+    logAudit(`New bill added to ${buildingName} history.`);
 
     alert('Reading Saved!');
     this.reset();
