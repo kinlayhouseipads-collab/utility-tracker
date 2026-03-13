@@ -21,13 +21,63 @@ function saveCompanies() {
     saveToLocalStorage(); // Ensure it also triggers the main save
 }
 
+
+function showToast(message, type='success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.style.background = type === 'success' ? '#10b981' : '#3b82f6';
+    toast.style.color = '#fff';
+    toast.style.padding = '12px 20px';
+    toast.style.borderRadius = '8px';
+    toast.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+    toast.style.fontSize = '0.9em';
+    toast.style.fontWeight = '600';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(20px)';
+    toast.style.transition = 'all 0.3s ease';
+    toast.style.display = 'flex';
+    toast.style.alignItems = 'center';
+    toast.style.gap = '8px';
+
+    const icon = document.createElement('i');
+    icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-spinner fa-spin';
+    toast.appendChild(icon);
+
+    const text = document.createElement('span');
+    text.textContent = message;
+    toast.appendChild(text);
+
+    container.appendChild(toast);
+
+    // Animate in
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+    }, 10);
+
+    // Animate out and remove
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            if (toast.parentElement) toast.parentElement.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
 // Global Storage Strategy
 function saveToLocalStorage() {
+    showToast('Saving...', 'info');
     const data = {
         buildings: allBuildings,
         companies: companies
     };
     localStorage.setItem('VestaLogic_Storage', JSON.stringify(data));
+    setTimeout(() => {
+        showToast('VestaLogic ledger updated', 'success');
+    }, 500); // slight delay to show the sequence
 }
 
 
@@ -677,6 +727,11 @@ function renderChart() {
     let targetBuildings = allBuildings;
     if (activeBuildingId) {
         targetBuildings = targetBuildings.filter(b => b.id === activeBuildingId);
+    } else {
+        const companyFilter = document.getElementById('company-filter')?.value;
+        if (companyFilter) {
+            targetBuildings = targetBuildings.filter(b => b.companyId === companyFilter);
+        }
     }
 
     let localReadings = JSON.parse(localStorage.getItem('utility_readings')) || [];
@@ -830,6 +885,7 @@ function updateFilters() {
 
     renderBuildings(filteredBuildings);
     updateDashboard();
+    renderChart();
 }
 
 function populateCompanyDropdowns() {
@@ -1351,14 +1407,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const buildingIndex = allBuildings.findIndex(b => b.id === id);
 
         if (buildingIndex !== -1) {
-            allBuildings[buildingIndex].name = document.getElementById('edit-b-name').value;
-            allBuildings[buildingIndex].address = document.getElementById('edit-b-address').value;
-            allBuildings[buildingIndex].companyId = document.getElementById('edit-b-company').value;
-            allBuildings[buildingIndex].area = parseFloat(document.getElementById('edit-b-area').value) || 1000;
+            const updatedFields = {
+                name: document.getElementById('edit-b-name').value,
+                address: document.getElementById('edit-b-address').value,
+                companyId: document.getElementById('edit-b-company').value,
+                area: parseFloat(document.getElementById('edit-b-area').value) || 1000
+            };
+            allBuildings = allBuildings.map(b => b.id === id ? { ...b, ...updatedFields } : b);
 
-            logAudit(`Edited building: ${allBuildings[buildingIndex].name}`);
+            logAudit(`Edited building: ${updatedFields.name}`);
         }
-            saveToLocalStorage();
+        saveToLocalStorage();
 
         editBuildingModal.style.display = 'none';
         updateFilters();
@@ -1400,13 +1459,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (building && building.accounts) {
             const accIndex = building.accounts.findIndex(a => a.id_number === origId);
             if (accIndex !== -1) {
-                building.accounts[accIndex].id_number = document.getElementById('edit-acc-id').value;
-                building.accounts[accIndex].provider = document.getElementById('edit-acc-provider').value;
-                building.accounts[accIndex].account_address = document.getElementById('edit-acc-address').value;
-                building.accounts[accIndex].contractEndDate = document.getElementById('edit-acc-enddate').value;
+                const updatedAcc = {
+                    id_number: document.getElementById('edit-acc-id').value,
+                    provider: document.getElementById('edit-acc-provider').value,
+                    account_address: document.getElementById('edit-acc-address').value,
+                    contractEndDate: document.getElementById('edit-acc-enddate').value
+                };
+
+                allBuildings = allBuildings.map(b => b.id === bId ? {
+                    ...b,
+                    accounts: b.accounts.map(a => a.id_number === origId ? { ...a, ...updatedAcc } : a)
+                } : b);
+
                 logAudit(`Edited ${building.accounts[accIndex].type} account on ${building.name}`);
             }
-                saveToLocalStorage();
+            saveToLocalStorage();
         }
         editAccountModal.style.display = 'none';
         updateFilters();
@@ -1701,19 +1768,19 @@ document.getElementById('tracker-form')?.addEventListener('submit', function(e) 
         const accIndex = building.accounts.findIndex(a => a.id_number === oldAccNum);
         if (accIndex !== -1) {
             let edited = false;
-            if (building.accounts[accIndex].id_number !== newAccNum) {
-                building.accounts[accIndex].id_number = newAccNum;
+            if (building.accounts[accIndex].id_number !== newAccNum || building.accounts[accIndex].contractEndDate !== newEndDate) {
                 edited = true;
-            }
-            if (building.accounts[accIndex].contractEndDate !== newEndDate) {
-                building.accounts[accIndex].contractEndDate = newEndDate;
-                edited = true;
+
+                allBuildings = allBuildings.map(b => b.id === bId ? {
+                    ...b,
+                    accounts: b.accounts.map(a => a.id_number === oldAccNum ? { ...a, id_number: newAccNum, contractEndDate: newEndDate } : a)
+                } : b);
             }
             if (edited) {
                 logAudit(`Edited ${accType} account details during reading entry for ${building.name}`);
                 updateFilters(); // Refresh the building table in case accordion is open
             }
-                saveToLocalStorage();
+            saveToLocalStorage();
         }
     }
 
