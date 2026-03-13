@@ -257,7 +257,7 @@ function renderBuildings(buildings) {
         accountsHtml += `<button class="btn-primary" onclick="openAddAccountModal('${building.id}')" style="padding: 6px 12px; font-size: 0.85em;">+ Add Account</button></div>`;
 
         accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
-        accountsHtml += '<thead><tr style="border-bottom: 1px solid #cbd5e1;"><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Provider</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Account # (MPRN/GPRN)</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">End Date</th><th style="text-align: center; padding: 8px; color: #64748b; font-size: 0.85em;">Actions</th></tr></thead>';
+        accountsHtml += '<thead><tr style="border-bottom: 1px solid #cbd5e1;"><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Provider</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Address/Location</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Account # (MPRN/GPRN)</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">End Date</th><th style="text-align: center; padding: 8px; color: #64748b; font-size: 0.85em;">Actions</th></tr></thead>';
         accountsHtml += '<tbody>';
 
         if (building.accounts && building.accounts.length > 0) {
@@ -265,6 +265,7 @@ function renderBuildings(buildings) {
                 accountsHtml += `<tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
                     <td style="padding: 8px; font-weight: 600; color: #1e293b;">${acc.type}</td>
                     <td style="padding: 8px; color: #475569;">${acc.provider || 'N/A'}</td>
+                    <td style="padding: 8px;">${acc.account_address || 'N/A'}</td>
                     <td style="padding: 8px;" class="monospace">${acc.id_number || 'N/A'}</td>
                     <td style="padding: 8px; color: #475569;">${formatDate(acc.contractEndDate)}</td>
                     <td style="padding: 8px; text-align: center;">
@@ -530,13 +531,6 @@ function updateDashboard() {
     });
 
     document.getElementById('stat-cost').textContent = '€' + grandTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-    // Efficiency KPI
-    let efficiency = totalArea > 0 ? (grandTotal / totalArea) : 0;
-    const statEff = document.getElementById('stat-efficiency');
-    if (statEff) {
-        statEff.textContent = '€' + efficiency.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' /m²';
-    }
 }
 
 function renderChart() {
@@ -925,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Generate CSV
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Building Name,Address,Company,MPRN,GPRN,Status,Efficiency (€/m²)\n";
+            csvContent += "Building Name,Address,Company,MPRN,GPRN,Status\n";
 
             const today = new Date('2026-03-12T00:00:00');
 
@@ -961,17 +955,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     status = 'No Data';
                 }
 
-                // Calculate Efficiency
-                let buildingTotalCost = 0;
-                if (building.billHistory) {
-                    buildingTotalCost = building.billHistory.reduce((sum, bill) => sum + (parseFloat(bill.cost) || 0), 0);
-                }
-                let efficiency = building.area > 0 ? (buildingTotalCost / building.area) : 0;
-
                 // Escape CSV fields
                 const escapeCSV = (str) => `"${String(str).replace(/"/g, '""')}"`;
 
-                csvContent += `${escapeCSV(building.name)},${escapeCSV(building.address)},${escapeCSV(companyName)},${escapeCSV(mprn)},${escapeCSV(gprn)},${escapeCSV(status)},${efficiency.toFixed(2)}\n`;
+                csvContent += `${escapeCSV(building.name)},${escapeCSV(building.address)},${escapeCSV(companyName)},${escapeCSV(mprn)},${escapeCSV(gprn)},${escapeCSV(status)}\n`;
             });
 
             const encodedUri = encodeURI(csvContent);
@@ -1216,11 +1203,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 type: document.getElementById('add-acc-type').value,
                 id_number: document.getElementById('add-acc-id').value,
                 provider: document.getElementById('add-acc-provider').value,
+                account_address: document.getElementById('add-acc-address').value,
                 contractEndDate: document.getElementById('add-acc-enddate').value
             };
             if (!building.accounts) building.accounts = [];
             building.accounts.push(newAcc);
-            logAudit(`Added ${newAcc.type} account to ${building.name}`);
+            logAudit(`Added ${newAcc.type} MPRN for ${newAcc.account_address} at Building ${building.name}`);
         }
         addAccountModal.style.display = 'none';
         updateFilters();
@@ -1239,6 +1227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (accIndex !== -1) {
                 building.accounts[accIndex].id_number = document.getElementById('edit-acc-id').value;
                 building.accounts[accIndex].provider = document.getElementById('edit-acc-provider').value;
+                building.accounts[accIndex].account_address = document.getElementById('edit-acc-address').value;
                 building.accounts[accIndex].contractEndDate = document.getElementById('edit-acc-enddate').value;
                 logAudit(`Edited ${building.accounts[accIndex].type} account on ${building.name}`);
             }
@@ -1332,6 +1321,7 @@ window.openEditAccountModal = function(buildingId, accountId) {
             document.getElementById('edit-acc-original-id').value = accountId;
             document.getElementById('edit-acc-id').value = account.id_number || '';
             document.getElementById('edit-acc-provider').value = account.provider || '';
+            document.getElementById('edit-acc-address').value = account.account_address || '';
             document.getElementById('edit-acc-enddate').value = account.contractEndDate || '';
             document.getElementById('edit-account-modal').style.display = 'block';
         }

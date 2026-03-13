@@ -89,10 +89,6 @@
                 <h3>Total Monthly Cost</h3>
                 <p class="stat" id="stat-cost">-- €</p>
             </div>
-            <div class="card e" style="background: #e0f2fe; border-color: #bae6fd;">
-                <h3>Efficiency</h3>
-                <p class="stat" id="stat-efficiency" style="color: #0369a1;">-- €/m²</p>
-            </div>
         </section>
 
         <section class="chart-section" style="margin-top: 40px; background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
@@ -197,6 +193,7 @@
                     <input type="text" id="edit-acc-type" placeholder="Type (e.g., Electricity)" required readonly style="background-color: #f1f5f9;">
                     <input type="text" id="edit-acc-id" placeholder="Account Number / MPRN" required>
                     <input type="text" id="edit-acc-provider" placeholder="Provider" required>
+                    <input type="text" id="edit-acc-address" placeholder="Service Address/Location (e.g., Rear Basement)" required>
                     <label style="font-size:0.9rem; margin-bottom:-10px;">Contract End Date</label>
                     <input type="date" id="edit-acc-enddate" required>
                     <button type="submit" class="btn-primary">Update Account</button>
@@ -219,6 +216,7 @@
                     </select>
                     <input type="text" id="add-acc-id" placeholder="Account Number / MPRN" required>
                     <input type="text" id="add-acc-provider" placeholder="Provider" required>
+                    <input type="text" id="add-acc-address" placeholder="Service Address/Location (e.g., Rear Basement)" required>
                     <label style="font-size:0.9rem; margin-bottom:-10px;">Contract End Date</label>
                     <input type="date" id="add-acc-enddate" required>
                     <button type="submit" class="btn-primary">Add Account</button>
