@@ -28,12 +28,6 @@
                 <div id="filter-controls" style="display: flex; gap: 10px; align-items: center;">
                     <select id="company-filter" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff;">
                         <option value="">All Companies</option>
-                        <option value="oracle">Oracle</option>
-                        <option value="google">Google</option>
-                        <option value="amazon">Amazon</option>
-                        <option value="meta">Meta</option>
-                        <option value="apple">Apple</option>
-                        <option value="microsoft">Microsoft</option>
                     </select>
                     <label for="start-date-filter">Start Date</label>
                     <input type="date" id="start-date-filter" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff;">
@@ -41,8 +35,14 @@
                     <input type="date" id="end-date-filter" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff;">
                 </div>
                 <button id="view-stats">Trends</button>
+                <button id="client-manager-btn" class="btn-primary" style="display: none; background: #6366f1;">Client Manager</button>
                 <button id="add-building" class="btn-primary">+ New Building</button>
                 <button id="add-entry" class="btn-primary">+ New Entry</button>
+                <div id="notification-bell" style="position: relative; cursor: pointer; padding: 0 10px; font-size: 1.2rem; color: #475569;">
+                    <i class="fas fa-bell"></i>
+                    <span id="notification-badge" style="display: none; position: absolute; top: -5px; right: 0; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">0</span>
+                </div>
+                <button id="export-csv-btn" class="btn-primary" style="background: #10b981;">Export CSV</button>
                 <button id="logout-btn" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Logout</button>
             </nav>
         </div>
@@ -54,6 +54,14 @@
         <section class="search-section" style="margin-top: 20px;">
             <input type="text" id="search-bar" placeholder="Search buildings by name or address..." style="width: 100%; padding: 15px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
         </section>
+
+        <!-- Notification Dropdown -->
+        <div id="notification-dropdown" style="display: none; position: absolute; right: 20px; top: 70px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; width: 350px; max-height: 400px; overflow-y: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 2000;">
+            <div style="padding: 15px; border-bottom: 1px solid #e2e8f0; font-weight: bold; color: #1e293b;">Action Needed</div>
+            <div id="notification-list" style="display: flex; flex-direction: column;">
+                <!-- Notifications go here -->
+            </div>
+        </div>
 
         <section id="buildings-list" style="margin-top: 20px; max-height: 400px; overflow-y: auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
             <!-- Buildings will be rendered here -->
@@ -91,6 +99,42 @@
             <canvas id="utilityChart"></canvas>
         </section>
 
+        <!-- Client Manager Section -->
+        <section id="client-manager-section" style="display: none; margin-top: 40px; background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">Client Manager</h2>
+                <button id="add-company-btn" class="btn-primary" style="background: #10b981;">+ New Company</button>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">
+                        <th style="padding: 12px 15px;">ID</th>
+                        <th style="padding: 12px 15px;">Company Name</th>
+                        <th style="padding: 12px 15px;">Industry</th>
+                        <th style="padding: 12px 15px; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="client-manager-list">
+                    <!-- Companies will be rendered here -->
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Add/Edit Company Modal -->
+        <section id="company-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+            <div class="modal-content" style="background: #ffffff; margin: 10% auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; width: 80%; max-width: 500px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <span id="close-company-modal" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                <h2 id="company-modal-title">Add Company</h2>
+                <form id="company-form">
+                    <input type="hidden" id="company-edit-id">
+                    <input type="text" id="company-id-input" placeholder="Company ID (e.g. oracle)" required>
+                    <input type="text" id="company-name-input" placeholder="Company Name" required>
+                    <input type="text" id="company-industry-input" placeholder="Industry" required>
+                    <button type="submit" class="btn-primary">Save Company</button>
+                </form>
+            </div>
+        </section>
+
         <section id="add-building-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
             <div class="modal-content" style="background: #ffffff; margin: 10% auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; width: 80%; max-width: 500px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
                 <span id="close-add-building-modal" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
@@ -100,12 +144,6 @@
                     <input type="text" id="add-b-address" placeholder="Address" required>
                     <select id="add-b-company" required>
                         <option value="" disabled selected>Select Company</option>
-                        <option value="oracle">Oracle</option>
-                        <option value="google">Google</option>
-                        <option value="amazon">Amazon</option>
-                        <option value="meta">Meta</option>
-                        <option value="apple">Apple</option>
-                        <option value="microsoft">Microsoft</option>
                     </select>
                     <input type="number" id="add-b-area" placeholder="Building Area (m²)" required>
                     <button type="submit" class="btn-primary">Save Building</button>
@@ -118,6 +156,12 @@
             <div class="modal-content" style="background: #ffffff; margin: 15% auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; width: 80%; max-width: 400px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center;">
                 <h2 id="confirm-title">Are you sure?</h2>
                 <p id="confirm-message">This action cannot be undone.</p>
+
+                <div id="double-confirm-container" style="display: none; margin-top: 15px; background: #fee2e2; padding: 15px; border-radius: 8px; border: 1px solid #fca5a5;">
+                    <p style="color: #b91c1c; font-weight: bold; margin-top: 0; font-size: 0.9em;">WARNING: Are you absolutely certain? Type DELETE to confirm.</p>
+                    <input type="text" id="double-confirm-input" placeholder="DELETE" style="width: 100%; text-align: center; border: 1px solid #f87171;">
+                </div>
+
                 <div style="display: flex; justify-content: center; gap: 15px; margin-top: 20px;">
                     <button id="confirm-cancel" style="padding: 10px 20px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; cursor: pointer;">Cancel</button>
                     <button id="confirm-yes" style="padding: 10px 20px; border-radius: 6px; border: none; background: #ef4444; color: white; font-weight: bold; cursor: pointer;">Yes, Delete</button>
@@ -135,12 +179,6 @@
                     <input type="text" id="edit-b-address" placeholder="Address" required>
                     <select id="edit-b-company" required>
                         <option value="" disabled selected>Select Company</option>
-                        <option value="oracle">Oracle</option>
-                        <option value="google">Google</option>
-                        <option value="amazon">Amazon</option>
-                        <option value="meta">Meta</option>
-                        <option value="apple">Apple</option>
-                        <option value="microsoft">Microsoft</option>
                     </select>
                     <input type="number" id="edit-b-area" placeholder="Building Area (m²)" required>
                     <button type="submit" class="btn-primary">Update Building</button>
@@ -198,12 +236,6 @@
                     <h3>Step 1: Select Company</h3>
                     <select id="wizard-company" required style="width: 100%; margin-bottom: 15px;">
                         <option value="" disabled selected>Select Company</option>
-                        <option value="oracle">Oracle</option>
-                        <option value="google">Google</option>
-                        <option value="amazon">Amazon</option>
-                        <option value="meta">Meta</option>
-                        <option value="apple">Apple</option>
-                        <option value="microsoft">Microsoft</option>
                     </select>
                     <button id="wizard-next-1" class="btn-primary" style="width: 100%;">Next: Select Building</button>
                 </div>
