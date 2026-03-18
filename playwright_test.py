@@ -27,8 +27,8 @@ async def run():
         await page.screenshot(path='screenshot_accordion.png', full_page=False)
 
         # Click the add account button inside the FIRST accordion row (which is the 2nd tr, so index 1)
-        # Because we have multiple buttons with "+ Add Account", wait for the visible one
-        add_account_btn = page.locator('button:has-text("+ Add Account")').nth(0)
+        # Because we have multiple buttons with "+ Add Metered Account", wait for the visible one
+        add_account_btn = page.locator('button:has-text("+ Add Metered Account")').nth(0)
         await add_account_btn.click(force=True)
         await page.wait_for_timeout(500)
 
