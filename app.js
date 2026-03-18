@@ -117,7 +117,7 @@ function renderAuditLogs() {
         el.innerHTML = `
             <div style="color: #64748b; font-size: 0.9em; margin-bottom: 4px;">${log.timestamp}</div>
             <div style="font-weight: 600; color: #1e293b;">${log.userId}</div>
-            <div style="color: #334155; margin-top: 2px;">${log.action}</div>
+            <div style="color: #cbd5e1; margin-top: 2px;">${log.action}</div>
         `;
         container.appendChild(el);
     });
@@ -1142,7 +1142,7 @@ function checkAlerts() {
 
                 el.innerHTML = `
                     <div style="font-weight: 600; color: ${iconColor}; font-size: 0.9em; margin-bottom: 5px;">${n.type}</div>
-                    <div style="color: #334155; font-size: 0.95em;">${n.message}</div>
+                    <div style="color: #cbd5e1; font-size: 0.95em;">${n.message}</div>
                 `;
 
                 el.addEventListener('mouseover', () => el.style.backgroundColor = '#f8fafc');

@@ -178,3 +178,4 @@ h1, h2, h3, h4, h5, h6 {
 .monospace {
     font-family: 'Courier New', Courier, monospace;
 }
+select option { background-color: #0f172a; color: #f8fafc; }
