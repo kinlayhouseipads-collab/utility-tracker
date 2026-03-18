@@ -1,15 +1,16 @@
 :root {
-    --primary: #2563eb;
-    --bg: #f8fafc; /* Keep as fallback if image fails, but will be overriden by glassmorphism bg */
-    --card-bg: rgba(255, 255, 255, 0.6);
-    --text: #1e293b;
-    --glass-border: rgba(255, 255, 255, 0.4);
+    --primary: #635BFF;
+    --accent: #00E5E5;
+    --bg: #020617; /* Keep as fallback if image fails, but will be overriden by glassmorphism bg */
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --text: #f8fafc;
+    --glass-border: rgba(255, 255, 255, 0.1);
     --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 }
 
 body {
     font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+    background: #020617;
     background-attachment: fixed;
     color: var(--text);
     margin: 0;
@@ -22,7 +23,7 @@ body {
 }
 
 .app-header {
-    background: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--glass-border);
@@ -54,15 +55,46 @@ body {
 .card.c { grid-area: c; }
 .card.d { grid-area: d; }
 
-.card, .high-priority-glass {
-    background: var(--card-bg);
+.card, .high-priority-glass, .search-section input, .chart-section {
+    background: var(--card-bg) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 16px !important;
     padding: 20px;
     text-align: center;
     box-shadow: var(--glass-shadow);
+}
+
+.search-section input {
+    text-align: left;
+    color: var(--text);
+}
+
+.chart-section {
+    text-align: left;
+}
+
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: scale(1.02);
+}
+
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+.skeleton {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(to right, rgba(255,255,255,0.05) 4%, rgba(255,255,255,0.1) 25%, rgba(255,255,255,0.05) 36%);
+    background-size: 1000px 100%;
+    height: 60px;
+    margin-bottom: 10px;
+    border-radius: 8px;
 }
 
 .stat {
@@ -88,14 +120,58 @@ form {
 
 input, select {
     padding: 12px;
-    border: 1px solid #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
 }
 
 #company-filter, #start-date-filter, #end-date-filter {
     z-index: 100;
     position: relative;
-    border-color: #2563eb;
+    border-color: var(--primary);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+#audit-sidebar {
+    width: 60px;
+    background: rgba(255, 255, 255, 0.05);
+    border-left: 1px solid var(--glass-border);
+    padding: 20px 10px;
+    height: calc(100vh - 80px);
+    overflow: hidden;
+    white-space: nowrap;
+    transition: width 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-sizing: border-box;
+}
+
+#audit-sidebar:hover {
+    width: 300px;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+#audit-sidebar .sidebar-text {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#audit-sidebar:hover .sidebar-text {
+    display: inline;
+    opacity: 1;
+}
+
+#audit-sidebar h3 i {
+    font-size: 1.2rem;
+    color: var(--primary);
+    margin-right: 10px;
 }
 
 /* Specific Fonts */
