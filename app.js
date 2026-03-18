@@ -1,7 +1,6 @@
-const supabaseUrlRaw = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL ? process.env.NEXT_PUBLIC_SUPABASE_URL : 'dummy_url';
-const supabaseUrl = supabaseUrlRaw.endsWith('.com') ? supabaseUrlRaw.slice(0, -4) + '.co' : supabaseUrlRaw;
+const supabaseUrl = 'https://jzzbbttgvkdqwkjynuxi.supabase.co';
 const supabaseKey = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY : 'dummy_key';
-const supabaseClient = typeof window !== 'undefined' && window.supabase && supabaseUrl !== 'dummy_url' ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+const supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
 let utilityChartInstance = null;
 let activeBuildingId = null;
