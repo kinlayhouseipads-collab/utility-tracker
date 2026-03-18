@@ -587,8 +587,9 @@ window.syncNow = async function() {
                         company_id: building.companyId,
                         property_name: building.name,
                         usage_kwh: Number(kwhValue),
+                        unit_rate: Number((costValue / kwhValue).toFixed(4)),
                         total_cost: Number(costValue),
-                        unit_rate: Number((costValue / kwhValue).toFixed(4))
+                        current_kwh: Number(kwhValue)
                     };
 
                     console.log('Attempting Supabase Save...', supabaseData);
@@ -1235,15 +1236,84 @@ function checkAlerts() {
 }
 
 async function fetchEnergyData() {
-    console.log('Fetching energy data from Supabase...');
+    console.log('Fetching data from Supabase for Grids...');
+    const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
+
     if (typeof supabase !== 'undefined') {
         try {
-            const { data, error } = await supabase.from('energy_accounts').select('*');
-            if (error) {
-                console.error('Error fetching from Supabase', error);
+            // Fetch Energy Accounts
+            const { data: energyData, error: energyError } = await supabase.from('energy_accounts').select('*');
+            if (energyError) {
+                console.error('Error fetching energy_accounts from Supabase', energyError);
             } else {
-                console.log('Supabase fetch result:', data);
+                console.log('Supabase energy_accounts fetch result:', energyData);
+                const energyGrid = document.getElementById('energy-list-grid');
+                if (energyGrid && energyData) {
+                    energyGrid.innerHTML = '';
+                    energyData.forEach(account => {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.style.textAlign = 'left';
+                        card.style.cursor = 'pointer';
+
+                        // Action: Open the new reading wizard when clicked
+                        card.onclick = () => {
+                            const addEntryBtn = document.getElementById('add-entry');
+                            if (addEntryBtn) addEntryBtn.click();
+                        };
+
+                        card.innerHTML = `
+                            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${account.property_name || 'Unknown Property'}</h3>
+                            <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">${account.mprn || 'N/A'}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
+                                <div>
+                                    <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Usage</div>
+                                    <div style="font-weight: 600; color: #f8fafc;">${account.usage_kwh ? Number(account.usage_kwh).toLocaleString() + ' kWh' : '0 kWh'}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Total Cost</div>
+                                    <div class="monospace" style="font-weight: bold; color: var(--primary);">${formatCurrency.format(Number(account.total_cost || 0))}</div>
+                                </div>
+                            </div>
+                        `;
+                        energyGrid.appendChild(card);
+                    });
+                }
             }
+
+            // Fetch Insurance Vault
+            const { data: insuranceData, error: insuranceError } = await supabase.from('insurance_vault').select('*');
+            if (insuranceError) {
+                console.error('Error fetching insurance_vault from Supabase', insuranceError);
+            } else {
+                console.log('Supabase insurance_vault fetch result:', insuranceData);
+                const insuranceGrid = document.getElementById('insurance-vault-grid');
+                if (insuranceGrid && insuranceData) {
+                    insuranceGrid.innerHTML = '';
+                    insuranceData.forEach(policy => {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.style.textAlign = 'left';
+
+                        card.innerHTML = `
+                            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${policy.broker_name || policy.provider || 'Unknown Provider'}</h3>
+                            <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">${policy.policy_type || policy.policy_number || 'N/A'}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
+                                <div>
+                                    <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Renewal Date</div>
+                                    <div style="font-weight: 600; color: #f8fafc;">${policy.renewal_date ? formatDate(policy.renewal_date) : 'N/A'}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Premium</div>
+                                    <div class="monospace" style="font-weight: bold; color: #eab308;">${formatCurrency.format(Number(policy.premium_cost || 0))}</div>
+                                </div>
+                            </div>
+                        `;
+                        insuranceGrid.appendChild(card);
+                    });
+                }
+            }
+
         } catch(err) {
             console.error('Exception fetching from supabase:', err);
         }
@@ -1400,6 +1470,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const dashboardGridSec = document.querySelector('.dashboard-grid');
     const chartSectionSec = document.querySelector('.chart-section');
     const searchSectionSec = document.querySelector('.search-section');
+    const energyListGridSec = document.getElementById('energy-list-grid');
+    const energyGridHeader = energyListGridSec ? energyListGridSec.previousElementSibling : null;
+    const insuranceVaultGridSec = document.getElementById('insurance-vault-grid');
+    const insuranceGridHeader = insuranceVaultGridSec ? insuranceVaultGridSec.previousElementSibling : null;
 
     if (viewContractsBtn) {
         viewContractsBtn.addEventListener('click', () => {
@@ -1411,6 +1485,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(chartSectionSec) chartSectionSec.style.display = 'none';
                 if(searchSectionSec) searchSectionSec.style.display = 'none';
                 if(clientManagerSection) clientManagerSection.style.display = 'none';
+                if(energyListGridSec) { energyListGridSec.style.display = 'none'; if (energyGridHeader) energyGridHeader.style.display = 'none'; }
+                if(insuranceVaultGridSec) { insuranceVaultGridSec.style.display = 'none'; if (insuranceGridHeader) insuranceGridHeader.style.display = 'none'; }
                 viewContractsBtn.textContent = 'Back to Dashboard';
                 renderContractDates();
             } else {
@@ -1420,6 +1496,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(dashboardGridSec) dashboardGridSec.style.display = 'grid';
                 if(chartSectionSec) chartSectionSec.style.display = 'block';
                 if(searchSectionSec) searchSectionSec.style.display = 'block';
+                if(energyListGridSec) { energyListGridSec.style.display = 'grid'; if (energyGridHeader) energyGridHeader.style.display = 'flex'; }
+                if(insuranceGridHeader) insuranceGridHeader.style.display = 'flex'; // Vault content toggles via button
                 viewContractsBtn.textContent = 'Contract Dates';
             }
         });
@@ -1437,6 +1515,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(chartSectionSec) chartSectionSec.style.display = 'none';
                 if(searchSectionSec) searchSectionSec.style.display = 'none';
                 if(contractDatesSection) contractDatesSection.style.display = 'none';
+                if(energyListGridSec) { energyListGridSec.style.display = 'none'; if (energyGridHeader) energyGridHeader.style.display = 'none'; }
+                if(insuranceVaultGridSec) { insuranceVaultGridSec.style.display = 'none'; if (insuranceGridHeader) insuranceGridHeader.style.display = 'none'; }
                 clientManagerBtn.textContent = 'Back to Dashboard';
                 if(viewContractsBtn) viewContractsBtn.textContent = 'Contract Dates';
             } else {
@@ -1445,7 +1525,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(dashboardGridSec) dashboardGridSec.style.display = 'grid';
                 if(chartSectionSec) chartSectionSec.style.display = 'block';
                 if(searchSectionSec) searchSectionSec.style.display = 'block';
+                if(energyListGridSec) { energyListGridSec.style.display = 'grid'; if (energyGridHeader) energyGridHeader.style.display = 'flex'; }
+                if(insuranceGridHeader) insuranceGridHeader.style.display = 'flex';
                 clientManagerBtn.textContent = 'Client Manager';
+            }
+        });
+    }
+
+    // Toggle Insurance Vault
+    const toggleInsuranceBtn = document.getElementById('toggle-insurance-btn');
+    if (toggleInsuranceBtn && insuranceVaultGridSec) {
+        toggleInsuranceBtn.addEventListener('click', () => {
+            if (insuranceVaultGridSec.style.display === 'none') {
+                insuranceVaultGridSec.style.display = 'grid';
+                toggleInsuranceBtn.textContent = 'Hide Insurance';
+            } else {
+                insuranceVaultGridSec.style.display = 'none';
+                toggleInsuranceBtn.textContent = 'Show Insurance';
             }
         });
     }
@@ -2053,6 +2149,25 @@ if (wAccount) {
     });
 }
 
+const rValueInput = document.getElementById('reading-value');
+const rUnitRateInput = document.getElementById('reading-unit-rate');
+const rCostInput = document.getElementById('reading-cost');
+
+function calculateTotalCost() {
+    if (rValueInput && rUnitRateInput && rCostInput) {
+        const usage = Number(rValueInput.value) || 0;
+        const rate = Number(rUnitRateInput.value) || 0;
+        if (usage > 0 && rate > 0) {
+            rCostInput.value = (usage * rate).toFixed(2);
+        } else {
+            rCostInput.value = '';
+        }
+    }
+}
+
+if (rValueInput) rValueInput.addEventListener('input', calculateTotalCost);
+if (rUnitRateInput) rUnitRateInput.addEventListener('input', calculateTotalCost);
+
 document.getElementById('tracker-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
@@ -2104,14 +2219,16 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
 
     const usageVal = Number(document.getElementById('reading-value').value);
     const costVal = Number(document.getElementById('reading-cost').value);
+    const unitRateVal = Number(document.getElementById('reading-unit-rate').value);
 
     const supabaseData = {
         mprn: newAccNum,
         company_id: buildingCompanyId,
         property_name: buildingName,
         usage_kwh: usageVal,
+        unit_rate: unitRateVal > 0 ? unitRateVal : (usageVal > 0 ? Number((costVal / usageVal).toFixed(4)) : 0),
         total_cost: costVal,
-        unit_rate: usageVal > 0 ? Number((costVal / usageVal).toFixed(4)) : 0
+        current_kwh: usageVal
     };
 
     console.log('Attempting Supabase Save...', supabaseData);
