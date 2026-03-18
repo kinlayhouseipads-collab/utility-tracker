@@ -9,7 +9,7 @@ def capture_header():
         # Log in first to see the full app header
         page.fill('#login-username', 'Super_Admin')
         page.click('button[type="submit"]')
-        page.wait_for_selector('#app-content', state='visible')
+        page.wait_for_selector('#main-dashboard', state='visible')
 
         # Take a screenshot of the header
         header = page.locator('.app-header')
