@@ -1167,6 +1167,11 @@ function checkAlerts() {
     }
 }
 
+async function fetchEnergyData() {
+    // Stub for Supabase data fetching process
+    console.log('Fetching energy data from Supabase...');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     populateCompanyDropdowns();
     checkAuth();
@@ -1652,6 +1657,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     alert('Company not found in registry.');
                 }
+            } else if (username === 'dobutilities') {
+                sessionStorage.setItem('auth_role', 'Company-Admin');
+                sessionStorage.setItem('auth_user_id', 'dobutilities');
+                logAudit(`Logged in as dobutilities`);
+                checkAuth();
+                fetchEnergyData();
             } else {
                 alert('Invalid username format. Try Super_Admin or [Company]_Admin');
             }
@@ -1792,8 +1803,8 @@ function checkAuth() {
     currentUserId = sessionStorage.getItem('auth_user_id');
     currentUserRole = authRole;
 
-    const authModal = document.getElementById('auth-modal');
-    const appContent = document.getElementById('app-content');
+    const authModal = document.getElementById('auth-gate');
+    const appContent = document.getElementById('main-dashboard');
     const companyFilter = document.getElementById('company-filter');
     const clientManagerBtn = document.getElementById('client-manager-btn');
 

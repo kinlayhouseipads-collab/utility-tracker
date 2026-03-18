@@ -16,7 +16,7 @@ async def verify_backup():
         await page.fill("#login-username", "Super_Admin")
         await page.click("button[type='submit']")
 
-        await page.wait_for_selector("#app-content", state="visible")
+        await page.wait_for_selector("#main-dashboard", state="visible")
 
         # Take screenshot of new button
         await page.screenshot(path="screenshot_with_backup_button.png")
@@ -50,7 +50,7 @@ async def verify_backup():
         await page.reload()
 
         # Check if building is still there
-        await page.wait_for_selector("#app-content", state="visible")
+        await page.wait_for_selector("#main-dashboard", state="visible")
         await asyncio.sleep(1)
         await page.screenshot(path="screenshot_after_refresh.png")
         print("Screenshot saved: screenshot_after_refresh.png")
