@@ -125,6 +125,11 @@ function renderAuditLogs() {
 
 async function loadBuildings() {
     try {
+        const buildingsListContainer = document.getElementById('buildings-list');
+        if (buildingsListContainer) {
+            buildingsListContainer.innerHTML = '<div style="padding: 20px;"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>';
+        }
+
         const storedDataStr = localStorage.getItem('VestaLogic_Storage');
         if (storedDataStr) {
             const storedData = JSON.parse(storedDataStr);
@@ -135,7 +140,9 @@ async function loadBuildings() {
                 populateCompanyDropdowns();
                 renderClientManager();
             }
-            renderBuildings(allBuildings);
+            setTimeout(() => {
+                renderBuildings(allBuildings);
+            }, 500);
             return;
         }
 
@@ -174,7 +181,9 @@ async function loadBuildings() {
             return building;
         });
 
-        renderBuildings(allBuildings);
+        setTimeout(() => {
+            renderBuildings(allBuildings);
+        }, 500);
     } catch (error) {
         console.error('Error loading buildings:', error);
     }
@@ -199,12 +208,12 @@ function renderBuildings(buildings) {
     const thead = document.createElement('thead');
     thead.innerHTML = `
         <tr style="background: var(--card-bg); position: sticky; top: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); z-index: 10;">
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Property Name/Address</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Company Badge</th>
-            <th id="sort-end-date" style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase; cursor: pointer;">Contract End Date &#x21C5;</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Days Since Last Bill</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Total Cost</th>
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase; text-align: center;">Actions</th>
+            <th style="padding: 20px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Property Name/Address</th>
+            <th style="padding: 20px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Company Badge</th>
+            <th id="sort-end-date" style="padding: 20px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-weight: 600; font-size: 0.9em; text-transform: uppercase; cursor: pointer;">Contract End Date &#x21C5;</th>
+            <th style="padding: 20px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Days Since Last Bill</th>
+            <th style="padding: 20px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Total Cost</th>
+            <th style="padding: 20px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; font-weight: 600; font-size: 0.9em; text-transform: uppercase; text-align: center;">Actions</th>
         </tr>
     `;
     table.appendChild(thead);
@@ -233,32 +242,22 @@ function renderBuildings(buildings) {
     buildings.forEach((building, index) => {
         const row = document.createElement('tr');
         row.style.cursor = 'pointer';
-        row.style.borderBottom = '1px solid #e2e8f0';
+        row.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
         row.style.transition = 'background-color 0.2s';
-
-        // Zebra striping
-        if (index % 2 === 0) {
-            row.style.backgroundColor = 'rgba(0,0,0,0.02)';
-        } else {
-            row.style.backgroundColor = 'transparent';
-        }
 
         // Active selection styling
         if (building.id === activeBuildingId) {
-            row.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
-            row.style.borderLeft = '4px solid var(--primary)';
-        } else {
-            row.style.borderLeft = '4px solid transparent';
+            row.style.backgroundColor = 'rgba(0, 229, 229, 0.1)';
         }
 
         row.addEventListener('mouseover', () => {
             if (building.id !== activeBuildingId) {
-                row.style.backgroundColor = 'rgba(0,0,0,0.05)';
+                row.style.backgroundColor = 'rgba(255,255,255,0.05)';
             }
         });
         row.addEventListener('mouseout', () => {
             if (building.id !== activeBuildingId) {
-                row.style.backgroundColor = index % 2 === 0 ? 'rgba(0,0,0,0.02)' : 'transparent';
+                row.style.backgroundColor = 'transparent';
             }
         });
 
@@ -271,11 +270,11 @@ function renderBuildings(buildings) {
         // Contract End Date logic
         const end = new Date(building.contractEndDate);
         const diffEndDays = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
-        const endStyle = diffEndDays < 30 ? 'color: #ef4444; font-weight: bold;' : 'color: #334155;';
+        const endStyle = diffEndDays < 30 ? 'color: #ef4444; font-weight: bold;' : 'color: #cbd5e1;';
 
         // Last Updated (Staleness logic)
         let lastUpdatedText = 'No bills';
-        let stalenessStyle = 'color: #334155;';
+        let stalenessStyle = 'color: #cbd5e1;';
         let buildingTotalCost = 0;
         let diffStaleDays = -1;
 
@@ -330,10 +329,10 @@ function renderBuildings(buildings) {
                     diffStaleDays = Math.ceil((today - new Date(localMax)) / (1000 * 60 * 60 * 24));
                     if (diffStaleDays > 60) {
                         lastUpdatedText = `<span style="color: #ef4444; font-weight: bold;">STALE</span> (${diffStaleDays} days)`;
-                        row.style.backgroundColor = '#fee2e2';
+                        row.style.backgroundColor = '#450a0a';
                     } else {
                         lastUpdatedText = `${diffStaleDays} days`;
-                        row.style.backgroundColor = index % 2 === 0 ? 'rgba(0,0,0,0.02)' : 'transparent';
+                        row.style.backgroundColor = 'transparent';
                     }
                 }
             } else {
@@ -348,27 +347,27 @@ function renderBuildings(buildings) {
         }
 
         row.innerHTML = `
-            <td style="padding: 15px;">
-                <div style="font-weight: 500; font-size: 1.05em; color: #1e293b;">${building.name}</div>
-                <div style="color: #64748b; font-size: 0.85em; margin-top: 4px;">${building.address}</div>
+            <td style="padding: 20px 15px;">
+                <div style="font-weight: 500; font-size: 1.05em; color: #f8fafc;">${building.name}</div>
+                <div style="color: #cbd5e1; font-size: 0.85em; margin-top: 4px;">${building.address}</div>
             </td>
-            <td style="padding: 15px;">
-                <span style="background: #e2e8f0; color: #334155; padding: 6px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+            <td style="padding: 20px 15px;">
+                <span style="background: rgba(255,255,255,0.1); color: #f8fafc; padding: 6px 10px; border-radius: 6px; font-size: 0.85em; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
                     <span style="display:inline-block; width:8px; height:8px; background:var(--primary); border-radius:50%;"></span>
                     ${companyName}
                 </span>
             </td>
-            <td style="padding: 15px; font-size: 0.95em; ${endStyle}">
+            <td style="padding: 20px 15px; font-size: 0.95em; ${endStyle}">
                 ${formatDate(building.contractEndDate)}
             </td>
-            <td style="padding: 15px; font-size: 0.95em; ${stalenessStyle}">
+            <td style="padding: 20px 15px; font-size: 0.95em; ${stalenessStyle}">
                 ${lastUpdatedText}
             </td>
-            <td style="padding: 15px; font-size: 0.95em; font-weight: bold; color: var(--primary);">
+            <td style="padding: 20px 15px; font-size: 0.95em; font-weight: bold; color: var(--primary);" class="monospace">
                 ${formatCurrency.format(buildingTotalCost)}
             </td>
-            <td style="padding: 15px; text-align: center;">
-                <button onclick="openEditModal('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #64748b; margin-right: 10px;" title="Edit Property">
+            <td style="padding: 20px 15px; text-align: center;">
+                <button onclick="openEditModal('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #cbd5e1; margin-right: 10px;" title="Edit Property">
                     <i class="fas fa-edit"></i>
                 </button>
                 <button onclick="requestDeleteBuilding('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Property">
@@ -380,41 +379,41 @@ function renderBuildings(buildings) {
         // Create Expandable Accordion Row for Accounts
         const accordionRow = document.createElement('tr');
         accordionRow.style.display = 'none';
-        accordionRow.style.backgroundColor = '#f8fafc';
+        accordionRow.style.backgroundColor = 'rgba(255,255,255,0.02)';
 
-        let accountsHtml = '<div style="padding: 15px 40px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #e2e8f0;">';
+        let accountsHtml = '<div style="padding: 15px 40px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1);">';
 
         // --- Linked Metered Accounts Table ---
-        accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #334155;">Linked Metered Accounts</h4>';
+        accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #f8fafc;">Linked Metered Accounts</h4>';
         accountsHtml += `<button class="btn-primary" onclick="openAddAccountModal('${building.id}')" style="padding: 6px 12px; font-size: 0.85em;">+ Add Metered Account</button></div>`;
 
         accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px;">';
-        accountsHtml += '<thead><tr style="border-bottom: 1px solid #cbd5e1;"><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Provider</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Address/Location</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Account # (MPRN/GPRN)</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">End Date</th><th style="text-align: center; padding: 8px; color: #64748b; font-size: 0.85em;">Actions</th></tr></thead>';
+        accountsHtml += '<thead><tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Provider</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Address/Location</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Account # (MPRN/GPRN)</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">End Date</th><th style="text-align: center; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Actions</th></tr></thead>';
         accountsHtml += '<tbody>';
 
         if (building.accounts && building.accounts.length > 0) {
             building.accounts.forEach(acc => {
-                accountsHtml += `<tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
-                    <td style="padding: 8px; font-weight: 600; color: #1e293b;">${acc.type}</td>
-                    <td style="padding: 8px; color: #475569;">${acc.provider || 'N/A'}</td>
-                    <td style="padding: 8px;">${acc.account_address || 'N/A'}</td>
-                    <td style="padding: 8px;" class="monospace">${acc.id_number || 'N/A'}</td>
-                    <td style="padding: 8px; color: #475569;">${formatDate(acc.contractEndDate)}</td>
+                accountsHtml += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: transparent;">
+                    <td style="padding: 8px; font-weight: 600; color: #f8fafc;">${acc.type}</td>
+                    <td style="padding: 8px; color: #cbd5e1;">${acc.provider || 'N/A'}</td>
+                    <td style="padding: 8px; color: #cbd5e1;">${acc.account_address || 'N/A'}</td>
+                    <td style="padding: 8px; color: #cbd5e1;" class="monospace">${acc.id_number || 'N/A'}</td>
+                    <td style="padding: 8px; color: #cbd5e1;">${formatDate(acc.contractEndDate)}</td>
                     <td style="padding: 8px; text-align: center;">
-                        <button onclick="openEditAccountModal('${building.id}', '${acc.id_number}')" style="background: transparent; border: none; cursor: pointer; color: #64748b; margin-right: 5px;"><i class="fas fa-edit"></i></button>
+                        <button onclick="openEditAccountModal('${building.id}', '${acc.id_number}')" style="background: transparent; border: none; cursor: pointer; color: #cbd5e1; margin-right: 5px;"><i class="fas fa-edit"></i></button>
                         <button onclick="requestDeleteAccount('${building.id}', '${acc.id_number}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`;
             });
         } else {
-            accountsHtml += `<tr><td colspan="6" style="padding: 15px; text-align: center; color: #64748b;">No accounts linked to this building.</td></tr>`;
+            accountsHtml += `<tr><td colspan="6" style="padding: 15px; text-align: center; color: #cbd5e1;">No accounts linked to this building.</td></tr>`;
         }
         accountsHtml += '</tbody></table>';
 
         // --- Bill History Table ---
-        accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #334155;">Bill History</h4></div>';
+        accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #f8fafc;">Bill History</h4></div>';
         accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
-        accountsHtml += '<thead><tr style="border-bottom: 1px solid #cbd5e1;"><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Date</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Account Address</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Reading</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Cost</th></tr></thead>';
+        accountsHtml += '<thead><tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Date</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Account Address</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Reading</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Cost</th></tr></thead>';
         accountsHtml += '<tbody>';
 
         let allBills = [];
@@ -457,16 +456,16 @@ function renderBuildings(buildings) {
 
         if (allBills.length > 0) {
             allBills.forEach(bill => {
-                accountsHtml += `<tr style="border-bottom: 1px solid #e2e8f0; background: #ffffff;">
-                    <td style="padding: 8px; color: #475569;">${formatDate(bill.date)}</td>
-                    <td style="padding: 8px; color: #475569;">${bill.account_address}</td>
-                    <td style="padding: 8px; font-weight: 600; color: #1e293b;">${bill.type}</td>
-                    <td style="padding: 8px; color: #475569;">${bill.reading}</td>
-                    <td style="padding: 8px; font-weight: bold; color: var(--primary);">${formatCurrency.format(bill.cost)}</td>
+                accountsHtml += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: transparent;">
+                    <td style="padding: 8px; color: #cbd5e1;">${formatDate(bill.date)}</td>
+                    <td style="padding: 8px; color: #cbd5e1;">${bill.account_address}</td>
+                    <td style="padding: 8px; font-weight: 600; color: #f8fafc;">${bill.type}</td>
+                    <td style="padding: 8px; color: #cbd5e1;">${bill.reading}</td>
+                    <td style="padding: 8px; font-weight: bold; color: var(--primary);" class="monospace">${formatCurrency.format(bill.cost)}</td>
                 </tr>`;
             });
         } else {
-            accountsHtml += `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #64748b;">No bills found for this building.</td></tr>`;
+            accountsHtml += `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #cbd5e1;">No bills found for this building.</td></tr>`;
         }
 
         accountsHtml += '</tbody></table>';
@@ -880,8 +879,8 @@ function renderChart() {
                 {
                     label: `Total Cost ${currentYear} (€)`,
                     data: currentYearData,
-                    borderColor: '#2563eb',
-                    backgroundColor: '#2563eb',
+                    borderColor: '#00E5E5',
+                    backgroundColor: '#00E5E5',
                     tension: 0.4,
                     fill: false
                 },
@@ -910,16 +909,34 @@ function renderChart() {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Total Portfolio Cost: Current vs Previous Year'
+                    text: 'Total Portfolio Cost: Current vs Previous Year',
+                    color: '#f8fafc'
+                },
+                legend: {
+                    labels: {
+                        color: '#f8fafc'
+                    }
                 }
             },
             scales: {
+                x: {
+                    ticks: {
+                        color: '#f8fafc'
+                    },
+                    grid: {
+                        color: 'rgba(255,255,255,0.1)'
+                    }
+                },
                 y: {
                     beginAtZero: true,
                     ticks: {
+                        color: '#f8fafc',
                         callback: function(value) {
                             return '€' + value;
                         }
+                    },
+                    grid: {
+                        color: 'rgba(255,255,255,0.1)'
                     }
                 }
             }
@@ -984,15 +1001,14 @@ function renderClientManager() {
 
     companies.forEach((company, index) => {
         const tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid #e2e8f0';
-        if (index % 2 === 0) tr.style.backgroundColor = 'rgba(0,0,0,0.02)';
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
 
         tr.innerHTML = `
-            <td style="padding: 12px 15px; font-weight: 500;">${company.id}</td>
-            <td style="padding: 12px 15px;">${company.name}</td>
-            <td style="padding: 12px 15px;">${company.industry}</td>
-            <td style="padding: 12px 15px; text-align: center;">
-                <button onclick="openEditCompanyModal('${company.id}')" style="background: transparent; border: none; cursor: pointer; color: #64748b; margin-right: 10px;" title="Edit Company">
+            <td style="padding: 20px 15px; font-weight: 500;">${company.id}</td>
+            <td style="padding: 20px 15px;">${company.name}</td>
+            <td style="padding: 20px 15px;">${company.industry}</td>
+            <td style="padding: 20px 15px; text-align: center;">
+                <button onclick="openEditCompanyModal('${company.id}')" style="background: transparent; border: none; cursor: pointer; color: #cbd5e1; margin-right: 10px;" title="Edit Company">
                     <i class="fas fa-edit"></i>
                 </button>
                 <button onclick="requestDeleteCompany('${company.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Company">
