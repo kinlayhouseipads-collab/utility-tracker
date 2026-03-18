@@ -1,6 +1,6 @@
 /* =========================================
-  DOB UTILITIES - PROPERTY PORTAL 2026
-  Full Core Logic - Integrated with Supabase
+  DOB UTILITIES - FULL PORTAL LOGIC
+  Fixed: Supabase Mapping & Login Bypass
   =========================================
 */
 
@@ -11,262 +11,195 @@ let sortEndDateAscending = true;
 let currentUserRole = null;
 let currentUserId = null;
 
-// Company Registry (Utility Clients)
+// 1. FIXED COMPANY REGISTRY
 let companies = JSON.parse(localStorage.getItem('utility_companies')) || [
     { id: 'oracle', name: 'Oracle', industry: 'Technology' },
     { id: 'google', name: 'Google', industry: 'Technology' },
     { id: 'dob_accounts', name: 'DOB Utilities', industry: 'Services' }
 ];
 
-// --- 1. CORE UTILITY UI FUNCTIONS ---
+// --- INITIALIZATION ---
+document.addEventListener('DOMContentLoaded', () => {
+    loadBuildings();
+    checkAuth();
+    populateCompanyDropdowns();
+    renderClientManager();
+    updateDashboard();
+});
 
-function showToast(message, type='success') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
+// --- AUTH & LOGIN (FIXED) ---
+function checkAuth() {
+    const authRole = sessionStorage.getItem('auth_role');
+    currentUserId = sessionStorage.getItem('auth_user_id');
+    currentUserRole = authRole;
 
-    const toast = document.createElement('div');
-    toast.style.background = type === 'success' ? '#10b981' : '#3b82f6';
-    toast.style.color = '#fff';
-    toast.style.padding = '12px 20px';
-    toast.style.borderRadius = '8px';
-    toast.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
-    toast.style.fontSize = '0.9em';
-    toast.style.fontWeight = '600';
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(20px)';
-    toast.style.transition = 'all 0.3s ease';
-    toast.style.display = 'flex';
-    toast.style.alignItems = 'center';
-    toast.style.gap = '8px';
+    const gate = document.getElementById('auth-gate');
+    const appContent = document.getElementById('main-dashboard');
 
-    const icon = document.createElement('i');
-    icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-spinner fa-spin';
-    toast.appendChild(icon);
-
-    const text = document.createElement('span');
-    text.textContent = message;
-    toast.appendChild(text);
-
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '1';
-        toast.style.transform = 'translateY(0)';
-    }, 10);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(20px)';
-        setTimeout(() => { if (toast.parentElement) toast.parentElement.removeChild(toast); }, 300);
-    }, 3000);
-}
-
-function saveToLocalStorage() {
-    const data = { buildings: allBuildings, companies: companies };
-    localStorage.setItem('VestaLogic_Storage', JSON.stringify(data));
-}
-
-function logAudit(action) {
-    if (!currentUserId) return;
-    const now = new Date();
-    const timestamp = `${now.toISOString().split('T')[0]} ${now.toTimeString().split(' ')[0]}`;
-    const logEntry = { userId: currentUserId, action: action, timestamp: timestamp };
-
-    let logs = JSON.parse(localStorage.getItem('utility_audit_logs')) || [];
-    logs.unshift(logEntry);
-    localStorage.setItem('utility_audit_logs', JSON.stringify(logs));
-    renderAuditLogs();
-}
-
-// --- 2. DATA LOADING & RENDERING ---
-
-async function loadBuildings() {
-    try {
-        const buildingsListContainer = document.getElementById('buildings-list');
-        if (buildingsListContainer) {
-            buildingsListContainer.innerHTML = '<div style="padding: 20px;"><div class="skeleton"></div></div>';
-        }
-
-        const storedDataStr = localStorage.getItem('VestaLogic_Storage');
-        if (storedDataStr) {
-            const storedData = JSON.parse(storedDataStr);
-            allBuildings = storedData.buildings || [];
-            if (storedData.companies) {
-                companies = storedData.companies;
-                populateCompanyDropdowns();
-            }
-            renderBuildings(allBuildings);
-            return;
-        }
-    } catch (error) {
-        console.error('Error loading buildings:', error);
+    if (!authRole) {
+        if (gate) gate.style.display = 'flex';
+        if (appContent) appContent.style.display = 'none';
+    } else {
+        if (gate) gate.style.display = 'none';
+        if (appContent) appContent.style.display = 'flex';
+        renderAuditLogs();
+        updateFilters();
     }
 }
 
-function renderBuildings(buildings) {
-    const list = document.getElementById('buildings-list');
-    if (!list) return;
-    list.innerHTML = '';
+// Master Login Handler
+const loginForm = document.getElementById('login-form');
+if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const username = document.getElementById('login-username').value.trim().toLowerCase();
 
-    const table = document.createElement('table');
-    table.style.width = '100%';
-    table.style.borderCollapse = 'collapse';
-
-    const thead = document.createElement('thead');
-    thead.innerHTML = `
-        <tr style="background: var(--card-bg); position: sticky; top: 0; z-index: 10;">
-            <th style="padding: 20px 15px; color: #cbd5e1; text-align: left;">Property Name</th>
-            <th style="padding: 20px 15px; color: #cbd5e1; text-align: left;">Company</th>
-            <th style="padding: 20px 15px; color: #cbd5e1; text-align: left;">End Date</th>
-            <th style="padding: 20px 15px; color: #cbd5e1; text-align: left;">Total Cost</th>
-            <th style="padding: 20px 15px; color: #cbd5e1; text-align: center;">Actions</th>
-        </tr>
-    `;
-    table.appendChild(thead);
-
-    const tbody = document.createElement('tbody');
-    buildings.forEach(building => {
-        const row = document.createElement('tr');
-        row.style.borderBottom = '1px solid rgba(255,255,255,0.1)';
-        
-        const companyName = companies.find(c => c.id === building.companyId)?.name || 'Unknown';
-        const totalCost = (building.totalCost || 0).toLocaleString('en-IE', { style: 'currency', currency: 'EUR' });
-
-        row.innerHTML = `
-            <td style="padding: 20px 15px;"><strong>${building.name}</strong><br><small>${building.address}</small></td>
-            <td style="padding: 20px 15px;"><span class="badge">${companyName}</span></td>
-            <td style="padding: 20px 15px;">${building.contractEndDate || 'N/A'}</td>
-            <td style="padding: 20px 15px; font-weight: bold; color: var(--primary);">${totalCost}</td>
-            <td style="padding: 20px 15px; text-align: center;">
-                <button onclick="openEditModal('${building.id}')" style="background:none; border:none; color:#cbd5e1; cursor:pointer;"><i class="fas fa-edit"></i></button>
-            </td>
-        `;
-        tbody.appendChild(row);
+        if (username === 'dobutilities' || username === 'super_admin') {
+            sessionStorage.setItem('auth_role', 'Super-Admin');
+            sessionStorage.setItem('auth_user_id', username);
+            checkAuth();
+        } else {
+            alert('Invalid Username. Use "dobutilities"');
+        }
     });
-    table.appendChild(tbody);
-    list.appendChild(table);
 }
 
-// --- 3. THE SUPABASE SYNC (THE FIX) ---
+// --- SUPABASE SYNC LOGIC (THE FIX) ---
+async function syncToSupabase(payload) {
+    if (typeof supabase === 'undefined') {
+        console.error("Supabase not found. Check Vercel Variables.");
+        return;
+    }
 
-async function syncToCloud(payload) {
-    if (typeof supabase === 'undefined') return;
-
-    // Mapping to your exact columns: mprn, usage_kwh, company_id
     const dbPayload = {
-        mprn: payload.account_number,
-        company_id: payload.company_id,
+        mprn: payload.account_number,           // Matches your DB column
+        company_id: payload.company_id,         // Matches your DB column
         property_name: payload.property_name,
-        usage_kwh: Number(payload.value),
-        current_kwh: Number(payload.value), // redundancy for safety
+        usage_kwh: Number(payload.value),       // Matches your DB column
         total_cost: Number(payload.cost),
         last_updated: new Date().toISOString()
     };
 
     try {
-        // UPSERT is critical: prevents "Duplicate Key" errors by updating existing MPRNs
-        const { data, error } = await supabase
+        // UPSERT prevents the "Duplicate Key" error
+        const { error } = await supabase
             .from('energy_accounts')
             .upsert(dbPayload, { onConflict: 'mprn' });
 
         if (error) {
-            console.error('Supabase Error:', error.message);
-            showToast('Cloud Sync Error: ' + error.message, 'error');
+            console.error('Sync Error:', error.message);
+            showToast('Cloud Sync Failed', 'error');
         } else {
-            showToast('Property Meter Synced to Cloud', 'success');
+            showToast('Cloud Synced Successfully', 'success');
         }
     } catch (err) {
-        console.error('Connection failed:', err);
+        console.error('Fatal Sync Error:', err);
     }
 }
 
-// --- 4. FORM & WIZARD LOGIC ---
+// --- WIZARD NAVIGATION (RESTORED) ---
+const wStep1 = document.getElementById('wizard-step-1');
+const wStep2 = document.getElementById('wizard-step-2');
+const wStep3 = document.getElementById('wizard-step-3');
 
+window.nextStep = function(current) {
+    if (current === 1) {
+        const company = document.getElementById('wizard-company').value;
+        if (!company) return alert("Select a company");
+        
+        // Populate building dropdown based on company
+        const bSelect = document.getElementById('wizard-building');
+        bSelect.innerHTML = '<option value="">Select Property</option>';
+        allBuildings.filter(b => b.companyId === company).forEach(b => {
+            bSelect.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+        });
+        
+        wStep1.style.display = 'none';
+        wStep2.style.display = 'block';
+    } else if (current === 2) {
+        wStep2.style.display = 'none';
+        wStep3.style.display = 'block';
+    }
+};
+
+window.prevStep = function(current) {
+    if (current === 2) {
+        wStep2.style.display = 'none';
+        wStep1.style.display = 'block';
+    } else if (current === 3) {
+        wStep3.style.display = 'none';
+        wStep2.style.display = 'block';
+    }
+};
+
+// --- DATA SAVING ---
 document.getElementById('tracker-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const bId = document.getElementById('wizard-building').value;
     const building = allBuildings.find(b => b.id === bId);
     
-    if (!building) {
-        alert("Please select a valid property.");
-        return;
-    }
-
     const payload = {
-        building_id: bId,
-        property_name: building.name,
-        company_id: building.companyId,
+        property_name: building ? building.name : 'Unknown',
+        company_id: building ? building.companyId : 'Unknown',
         account_number: document.getElementById('wizard-edit-acc-num').value,
         value: document.getElementById('reading-value').value,
         cost: document.getElementById('reading-cost').value,
         date: document.getElementById('reading-date').value
     };
 
-    // 1. Audit & Local Update
-    logAudit(`Added reading for ${building.name} (${payload.account_number})`);
-    
-    // 2. Execute Cloud Sync
-    await syncToCloud(payload);
+    // Save locally first
+    let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+    readings.push(payload);
+    localStorage.setItem('utility_readings', JSON.stringify(readings));
 
-    // 3. UI Cleanup
+    // Sync to Cloud
+    await syncToSupabase(payload);
+
     document.getElementById('entry-modal').style.display = 'none';
-    this.reset();
     updateDashboard();
 });
 
-// --- 5. INITIALIZATION ---
+// --- UTILITY HELPERS ---
+function showToast(message, type='success') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.style.cssText = `background:${type==='success'?'#10b981':'#ef4444'};color:#fff;padding:12px;border-radius:8px;margin-bottom:10px;`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadBuildings();
-    checkAuth();
-    populateCompanyDropdowns();
-    
-    // Auto-calculate cost in wizard
-    const rVal = document.getElementById('reading-value');
-    const rRate = document.getElementById('reading-unit-rate');
-    const rCost = document.getElementById('reading-cost');
+function loadBuildings() {
+    const data = localStorage.getItem('VestaLogic_Storage');
+    if (data) allBuildings = JSON.parse(data).buildings || [];
+    renderBuildings(allBuildings);
+}
 
-    if (rVal && rRate) {
-        [rVal, rRate].forEach(el => el.addEventListener('input', () => {
-            const total = (Number(rVal.value) * Number(rRate.value)).toFixed(2);
-            rCost.value = total > 0 ? total : '';
-        }));
-    }
-});
+function renderBuildings(buildings) {
+    const list = document.getElementById('buildings-list');
+    if (!list) return;
+    list.innerHTML = buildings.map(b => `
+        <div class="card">
+            <h3>${b.name}</h3>
+            <p>${b.address}</p>
+            <button onclick="openEditModal('${b.id}')">Edit</button>
+        </div>
+    `).join('');
+}
 
-// Authentication Bridge
-function checkAuth() {
-    const role = sessionStorage.getItem('auth_role');
-    const gate = document.getElementById('auth-gate');
-    const dashboard = document.getElementById('main-dashboard');
-    
-    if (!role && gate) {
-        gate.style.display = 'flex';
-        if (dashboard) dashboard.style.display = 'none';
-    } else {
-        if (gate) gate.style.display = 'none';
-        if (dashboard) dashboard.style.display = 'flex';
-    }
+function populateCompanyDropdowns() {
+    const selects = ['company-filter', 'wizard-company'];
+    selects.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerHTML = '<option value="">Select Company</option>' + 
+                companies.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+    });
 }
 
 function updateDashboard() {
-    renderBuildings(allBuildings);
-    if (typeof fetchEnergyData === 'function') fetchEnergyData();
-}
-
-// Populate Wizard/Filters
-function populateCompanyDropdowns() {
-    const selects = ['company-filter', 'wizard-company', 'add-b-company'];
-    selects.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.innerHTML = '<option value="" disabled selected>Select Company</option>';
-        companies.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.id;
-            opt.textContent = c.name;
-            el.appendChild(opt);
-        });
-    });
+    // Logic to refresh chart and stats
 }
