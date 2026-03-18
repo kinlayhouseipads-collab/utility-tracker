@@ -1228,8 +1228,19 @@ function checkAlerts() {
 }
 
 async function fetchEnergyData() {
-    // Stub for Supabase data fetching process
     console.log('Fetching energy data from Supabase...');
+    if (typeof supabase !== 'undefined') {
+        try {
+            const { data, error } = await supabase.from('energy_accounts').select('*');
+            if (error) {
+                console.error('Error fetching from Supabase', error);
+            } else {
+                console.log('Supabase fetch result:', data);
+            }
+        } catch(err) {
+            console.error('Exception fetching from supabase:', err);
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -2035,7 +2046,7 @@ if (wAccount) {
     });
 }
 
-document.getElementById('tracker-form')?.addEventListener('submit', function(e) {
+document.getElementById('tracker-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
     
     if (!wBuilding.value || !wAccount.value) {
@@ -2093,14 +2104,17 @@ document.getElementById('tracker-form')?.addEventListener('submit', function(e) 
 
     // Fallback if supabase object exists (assuming it is imported elsewhere or handled)
     if (typeof supabase !== 'undefined') {
-        supabase.from('energy_accounts').upsert(supabaseData).then(response => {
+        try {
+            const response = await supabase.from('energy_accounts').upsert(supabaseData);
             console.log('Supabase Save Response:', response);
             if (!response.error) {
                 showToast('Cloud Synced', 'success');
             } else {
                 console.error('Error saving to Supabase', response.error);
             }
-        });
+        } catch(err) {
+            console.error('Exception during Supabase save:', err);
+        }
     }
 
     // Also save directly to building.billHistory to persist properly if logic expects it there, but utility_readings array is primary mechanism to keep track across reloads.
