@@ -1,4 +1,5 @@
-const supabaseUrl = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL ? process.env.NEXT_PUBLIC_SUPABASE_URL : 'dummy_url';
+const supabaseUrlRaw = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL ? process.env.NEXT_PUBLIC_SUPABASE_URL : 'dummy_url';
+const supabaseUrl = supabaseUrlRaw.endsWith('.com') ? supabaseUrlRaw.slice(0, -4) + '.co' : supabaseUrlRaw;
 const supabaseKey = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY : 'dummy_key';
 const supabaseClient = typeof window !== 'undefined' && window.supabase && supabaseUrl !== 'dummy_url' ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
@@ -589,22 +590,19 @@ window.syncNow = async function() {
                     const companyObj = companies.find(c => c.id === building.companyId);
                     const companyName = companyObj ? companyObj.name : 'Unknown';
 
-                    const supabaseData = {
+                    const payload = {
                         mprn_number: acc.id_number,
-                        company_name: companyName,
-                        property_name: building.name,
                         usage_kwh: Number(kwhValue),
-                        current_kwh: Number(kwhValue),
-                        unit_rate: 0,
                         total_cost: Number(costValue),
-                        last_updated: new Date().toISOString()
+                        company_name: companyName,
+                        property_name: building.name
                     };
 
-                    console.log('Attempting Supabase Save...', supabaseData);
+                    console.log('Attempting Supabase Save...', payload);
 
                     if (supabaseClient) {
                         try {
-                            const response = await supabaseClient.from('energy_accounts').upsert(supabaseData, { onConflict: 'mprn_number' });
+                            const response = await supabaseClient.from('energy_accounts').upsert(payload, { onConflict: 'mprn_number' });
                             console.log('Supabase Save Response:', response);
                             if (!response.error) {
                                 showToast('Cloud Synced', 'success');
@@ -612,6 +610,7 @@ window.syncNow = async function() {
                             } else {
                                 console.error('Error saving to Supabase', response.error);
                                 showToast(response.error.message, 'error');
+                                window.alert(response.error.message);
                             }
                         } catch (err) {
                             console.error('Exception during Supabase save:', err);
@@ -2234,29 +2233,27 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     const companyObj = companies.find(c => c.id === buildingCompanyId);
     const companyName = companyObj ? companyObj.name : 'Unknown';
 
-    const supabaseData = {
+    const payload = {
         mprn_number: newAccNum,
-        company_name: companyName,
-        property_name: buildingName,
         usage_kwh: Number(usageVal),
-        current_kwh: Number(usageVal),
-        unit_rate: Number(unitRateVal),
         total_cost: Number(costVal),
-        last_updated: new Date().toISOString()
+        company_name: companyName,
+        property_name: buildingName
     };
 
-    console.log('Attempting Supabase Save...', supabaseData);
+    console.log('Attempting Supabase Save...', payload);
 
     // Fallback if supabase object exists (assuming it is imported elsewhere or handled)
     if (supabaseClient) {
         try {
-            const response = await supabaseClient.from('energy_accounts').upsert(supabaseData, { onConflict: 'mprn_number' });
+            const response = await supabaseClient.from('energy_accounts').upsert(payload, { onConflict: 'mprn_number' });
             console.log('Supabase Save Response:', response);
             if (!response.error) {
                 showToast('Cloud Synced', 'success');
             } else {
                 console.error('Error saving to Supabase', response.error);
                 showToast(response.error.message, 'error');
+                window.alert(response.error.message);
             }
         } catch(err) {
             console.error('Exception during Supabase save:', err);
