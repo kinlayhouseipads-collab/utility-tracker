@@ -582,13 +582,13 @@ window.syncNow = async function() {
                 }
 
                 if (kwhValue > 0) {
+                    const companyObj = companies.find(c => c.id === building.companyId);
+                    const companyName = companyObj ? companyObj.name : 'Unknown';
+
                     const supabaseData = {
-                        mprn: acc.id_number,
-                        company_id: building.companyId,
+                        mprn_number: acc.id_number,
+                        company_name: companyName,
                         property_name: building.name,
-                        usage_kwh: Number(kwhValue),
-                        unit_rate: Number((costValue / kwhValue).toFixed(4)),
-                        total_cost: Number(costValue),
                         current_kwh: Number(kwhValue)
                     };
 
@@ -596,7 +596,7 @@ window.syncNow = async function() {
 
                     if (typeof supabase !== 'undefined') {
                         try {
-                            const response = await supabase.from('energy_accounts').upsert(supabaseData);
+                            const response = await supabase.from('energy_accounts').upsert(supabaseData, { onConflict: 'mprn_number' });
                             console.log('Supabase Save Response:', response);
                             if (!response.error) {
                                 showToast('Cloud Synced', 'success');
@@ -1264,11 +1264,11 @@ async function fetchEnergyData() {
 
                         card.innerHTML = `
                             <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${account.property_name || 'Unknown Property'}</h3>
-                            <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">${account.mprn || 'N/A'}</div>
+                            <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">${account.mprn_number || account.mprn || 'N/A'}</div>
                             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
                                 <div>
                                     <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Usage</div>
-                                    <div style="font-weight: 600; color: #f8fafc;">${account.usage_kwh ? Number(account.usage_kwh).toLocaleString() + ' kWh' : '0 kWh'}</div>
+                                    <div style="font-weight: 600; color: #f8fafc;">${(account.current_kwh || account.usage_kwh) ? Number(account.current_kwh || account.usage_kwh).toLocaleString() + ' kWh' : '0 kWh'}</div>
                                 </div>
                                 <div style="text-align: right;">
                                     <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Total Cost</div>
@@ -2221,13 +2221,13 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     const costVal = Number(document.getElementById('reading-cost').value);
     const unitRateVal = Number(document.getElementById('reading-unit-rate').value);
 
+    const companyObj = companies.find(c => c.id === buildingCompanyId);
+    const companyName = companyObj ? companyObj.name : 'Unknown';
+
     const supabaseData = {
-        mprn: newAccNum,
-        company_id: buildingCompanyId,
+        mprn_number: newAccNum,
+        company_name: companyName,
         property_name: buildingName,
-        usage_kwh: usageVal,
-        unit_rate: unitRateVal > 0 ? unitRateVal : (usageVal > 0 ? Number((costVal / usageVal).toFixed(4)) : 0),
-        total_cost: costVal,
         current_kwh: usageVal
     };
 
@@ -2236,7 +2236,7 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     // Fallback if supabase object exists (assuming it is imported elsewhere or handled)
     if (typeof supabase !== 'undefined') {
         try {
-            const response = await supabase.from('energy_accounts').upsert(supabaseData);
+            const response = await supabase.from('energy_accounts').upsert(supabaseData, { onConflict: 'mprn_number' });
             console.log('Supabase Save Response:', response);
             if (!response.error) {
                 showToast('Cloud Synced', 'success');

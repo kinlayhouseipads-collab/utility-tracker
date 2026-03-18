@@ -1,41 +1,64 @@
 from playwright.sync_api import sync_playwright
 
-def verify_app():
+def verify_grids():
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1280, "height": 1024})
 
-        # Go to the local server
+        # Inject mock supabase for testing locally
+        page.route('**/*', lambda route: route.continue_())
+
         page.goto('http://127.0.0.1:8000')
         page.wait_for_timeout(1000)
 
-        # Perform login as Super_Admin
-        page.fill('#login-username', 'Super_Admin')
+        page.evaluate("""
+            window.supabase = {
+                from: function(table) {
+                    return {
+                        select: async function(query) {
+                            if (table === 'energy_accounts') {
+                                return { data: [
+                                    { property_name: 'Oracle - Block A', mprn_number: '10123456789', current_kwh: 5400, total_cost: 1620 },
+                                    { property_name: 'Google HQ', mprn_number: '9876543210', current_kwh: 12000, total_cost: 3500 }
+                                ], error: null };
+                            } else if (table === 'insurance_vault') {
+                                return { data: [
+                                    { broker_name: 'Allianz', policy_number: 'POL-99123', renewal_date: '2027-01-15', premium_cost: 4500 },
+                                    { provider: 'Zurich', policy_type: 'Public Liability', renewal_date: '2026-11-20', premium_cost: 1200 }
+                                ], error: null };
+                            }
+                            return { data: [], error: null };
+                        },
+                        upsert: async function(data) {
+                            return { data: data, error: null };
+                        }
+                    };
+                }
+            };
+        """)
+
+        # Perform login as dobutilities to trigger fetchEnergyData
+        page.fill('#login-username', 'dobutilities')
         page.click('button[type="submit"]')
+        page.wait_for_timeout(2000)
+
+        # Scroll down to ensure grids are visible
+        page.evaluate("window.scrollBy(0, 500)")
+        page.wait_for_timeout(500)
+
+        page.screenshot(path='grids_energy_view_verified.png')
+        print("Energy grids view screenshot saved as grids_energy_view_verified.png")
+
+        page.evaluate("document.getElementById('add-entry').click()")
         page.wait_for_timeout(1000)
 
-        # Take a screenshot of the new table
-        page.screenshot(path='table_view.png')
-        print("Table screenshot saved as table_view.png")
-
-        # Click the first row to expand accordion
-        # tbody tr:first-child should be the first building row
-        page.click('tbody tr:first-child')
-        page.wait_for_timeout(1000)
-
-        # Take a screenshot of the expanded row
-        page.screenshot(path='accordion_view.png')
-        print("Accordion screenshot saved as accordion_view.png")
-
-        # Click header to sort
-        page.click('#sort-end-date')
-        page.wait_for_timeout(1000)
-
-        # Take a screenshot after sort
-        page.screenshot(path='sorted_view.png')
-        print("Sorted view screenshot saved as sorted_view.png")
+        # Fill in new reading info to test save function
+        page.fill('#reading-value', '500')
+        page.fill('#reading-cost', '100')
+        page.screenshot(path='wizard_modal_open_verified.png')
+        print("Wizard modal screenshot saved as wizard_modal_open_verified.png")
 
         browser.close()
 
 if __name__ == '__main__':
-    verify_app()
+    verify_grids()

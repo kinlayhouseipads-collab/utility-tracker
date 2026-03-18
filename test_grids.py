@@ -18,8 +18,8 @@ def verify_grids():
                         select: async function(query) {
                             if (table === 'energy_accounts') {
                                 return { data: [
-                                    { property_name: 'Oracle - Block A', mprn: '10123456789', usage_kwh: 5400, total_cost: 1620 },
-                                    { property_name: 'Google HQ', mprn: '9876543210', usage_kwh: 12000, total_cost: 3500 }
+                                    { property_name: 'Oracle - Block A', mprn_number: '10123456789', current_kwh: 5400, total_cost: 1620 },
+                                    { property_name: 'Google HQ', mprn_number: '9876543210', current_kwh: 12000, total_cost: 3500 }
                                 ], error: null };
                             } else if (table === 'insurance_vault') {
                                 return { data: [
