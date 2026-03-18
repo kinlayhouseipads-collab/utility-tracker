@@ -1,5 +1,5 @@
 const supabaseUrl = 'https://jzzbbttgvkdqwkjynuxi.supabase.co';
-const supabaseKey = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY : 'dummy_key';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY';
 const supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
 
 let utilityChartInstance = null;
