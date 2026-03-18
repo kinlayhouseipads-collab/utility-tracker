@@ -1813,7 +1813,8 @@ function checkAuth() {
         appContent.style.display = 'none';
     } else {
         authModal.style.display = 'none';
-        appContent.style.display = 'block';
+        appContent.style.display = 'flex';
+        appContent.style.flexDirection = 'column';
 
         renderAuditLogs();
 
