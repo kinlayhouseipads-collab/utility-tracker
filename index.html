@@ -27,15 +27,16 @@
             <h1>DOB <span>Accounts</span></h1>
             <nav style="display: flex; gap: 10px; align-items: center;">
                 <div id="filter-controls" style="display: flex; gap: 10px; align-items: center;">
-                    <select id="company-filter" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff;">
-                        <option value="">All Companies</option>
+                    <select id="company-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
+                        <option value="" style="background: #0f172a; color: #f8fafc;">All Companies</option>
                     </select>
                     <label for="start-date-filter">Start Date</label>
-                    <input type="date" id="start-date-filter" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff;">
+                    <input type="date" id="start-date-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc; color-scheme: dark;">
                     <label for="end-date-filter">End Date</label>
-                    <input type="date" id="end-date-filter" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff;">
+                    <input type="date" id="end-date-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc; color-scheme: dark;">
                 </div>
                 <button id="view-stats">Trends</button>
+                <button id="view-contracts" style="background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Contract Dates</button>
                 <button id="client-manager-btn" class="btn-primary" style="display: none; background: #6366f1;">Client Manager</button>
                 <button id="add-building" class="btn-primary">+ New Property</button>
                 <button id="add-entry" class="btn-primary">+ New Entry</button>
@@ -95,6 +96,28 @@
 
         <section class="chart-section" style="margin-top: 40px; background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
             <canvas id="utilityChart"></canvas>
+        </section>
+
+        <!-- Contract Dates Section -->
+        <section id="contract-dates-section" style="display: none; margin-top: 40px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); backdrop-filter: blur(10px);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">Contract Expirations</h2>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">
+                        <th style="padding: 12px 15px;">Property</th>
+                        <th style="padding: 12px 15px;">Company</th>
+                        <th style="padding: 12px 15px;">Account Type & ID</th>
+                        <th style="padding: 12px 15px;">Provider</th>
+                        <th style="padding: 12px 15px;">End Date</th>
+                        <th style="padding: 12px 15px;">Days Left</th>
+                    </tr>
+                </thead>
+                <tbody id="contract-dates-list">
+                    <!-- Contracts will be rendered here -->
+                </tbody>
+            </table>
         </section>
 
         <!-- Client Manager Section -->

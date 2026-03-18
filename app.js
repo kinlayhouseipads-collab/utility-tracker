@@ -1310,6 +1310,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // View Contracts Logic
+    const viewContractsBtn = document.getElementById('view-contracts');
+    const contractDatesSection = document.getElementById('contract-dates-section');
+    const buildingsListSec = document.getElementById('buildings-list');
+    const dashboardGridSec = document.querySelector('.dashboard-grid');
+    const chartSectionSec = document.querySelector('.chart-section');
+    const searchSectionSec = document.querySelector('.search-section');
+
+    if (viewContractsBtn) {
+        viewContractsBtn.addEventListener('click', () => {
+            if (contractDatesSection.style.display === 'none') {
+                // Show contract dates
+                contractDatesSection.style.display = 'block';
+                buildingsListSec.style.display = 'none';
+                if(dashboardGridSec) dashboardGridSec.style.display = 'none';
+                if(chartSectionSec) chartSectionSec.style.display = 'none';
+                if(searchSectionSec) searchSectionSec.style.display = 'none';
+                if(clientManagerSection) clientManagerSection.style.display = 'none';
+                viewContractsBtn.textContent = 'Back to Dashboard';
+                renderContractDates();
+            } else {
+                // Hide contract dates
+                contractDatesSection.style.display = 'none';
+                buildingsListSec.style.display = 'block';
+                if(dashboardGridSec) dashboardGridSec.style.display = 'grid';
+                if(chartSectionSec) chartSectionSec.style.display = 'block';
+                if(searchSectionSec) searchSectionSec.style.display = 'block';
+                viewContractsBtn.textContent = 'Contract Dates';
+            }
+        });
+    }
+
     // Client Manager toggle
     const clientManagerBtn = document.getElementById('client-manager-btn');
     const clientManagerSection = document.getElementById('client-manager-section');
@@ -1317,10 +1349,20 @@ document.addEventListener('DOMContentLoaded', () => {
         clientManagerBtn.addEventListener('click', () => {
             if (clientManagerSection.style.display === 'none') {
                 clientManagerSection.style.display = 'block';
-                clientManagerBtn.style.background = '#4f46e5';
+                buildingsListSec.style.display = 'none';
+                if(dashboardGridSec) dashboardGridSec.style.display = 'none';
+                if(chartSectionSec) chartSectionSec.style.display = 'none';
+                if(searchSectionSec) searchSectionSec.style.display = 'none';
+                if(contractDatesSection) contractDatesSection.style.display = 'none';
+                clientManagerBtn.textContent = 'Back to Dashboard';
+                if(viewContractsBtn) viewContractsBtn.textContent = 'Contract Dates';
             } else {
                 clientManagerSection.style.display = 'none';
-                clientManagerBtn.style.background = '#6366f1';
+                buildingsListSec.style.display = 'block';
+                if(dashboardGridSec) dashboardGridSec.style.display = 'grid';
+                if(chartSectionSec) chartSectionSec.style.display = 'block';
+                if(searchSectionSec) searchSectionSec.style.display = 'block';
+                clientManagerBtn.textContent = 'Client Manager';
             }
         });
     }
@@ -1677,6 +1719,73 @@ window.openEditAccountModal = function(buildingId, accountId) {
         }
     }
 };
+
+function renderContractDates() {
+    const contractDatesList = document.getElementById('contract-dates-list');
+    if (!contractDatesList) return;
+
+    contractDatesList.innerHTML = '';
+    let allContracts = [];
+    const today = new Date();
+
+    allBuildings.forEach(b => {
+        if (!b.accounts) return;
+        b.accounts.forEach(acc => {
+            if (acc.contractEndDate) {
+                const comp = companies.find(c => c.id === b.companyId) || { name: 'Unknown' };
+                // Ensure date string is parsed correctly
+                const dateParts = acc.contractEndDate.split('-');
+                let endDate = new Date(acc.contractEndDate);
+                if (dateParts.length === 3 && dateParts[0].length === 4) {
+                    endDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+                }
+
+                const diffTime = endDate.getTime() - today.getTime();
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                allContracts.push({
+                    buildingName: b.name,
+                    companyName: comp.name,
+                    accountType: acc.type,
+                    accountId: acc.id_number,
+                    provider: acc.provider,
+                    endDateStr: acc.contractEndDate,
+                    endDateObj: endDate,
+                    daysLeft: diffDays
+                });
+            }
+        });
+    });
+
+    allContracts.sort((a, b) => a.endDateObj - b.endDateObj);
+
+    allContracts.forEach(contract => {
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+
+        let daysColor = '#f8fafc';
+        if (contract.daysLeft < 0) daysColor = '#ef4444'; // red
+        else if (contract.daysLeft <= 30) daysColor = '#eab308'; // yellow
+        else if (contract.daysLeft > 90) daysColor = '#10b981'; // green
+
+        // Format date string to DD/MM/YYYY
+        let formattedDate = contract.endDateStr;
+        const p = contract.endDateStr.split('-');
+        if (p.length === 3 && p[0].length === 4) {
+             formattedDate = `${p[2]}/${p[1]}/${p[0]}`;
+        }
+
+        tr.innerHTML = `
+            <td style="padding: 15px;">${contract.buildingName}</td>
+            <td style="padding: 15px;">${contract.companyName}</td>
+            <td style="padding: 15px;">${contract.accountType} <br><span class="monospace" style="font-size: 0.8em; color: #94a3b8;">${contract.accountId}</span></td>
+            <td style="padding: 15px;">${contract.provider || 'N/A'}</td>
+            <td style="padding: 15px;">${formattedDate}</td>
+            <td style="padding: 15px; color: ${daysColor}; font-weight: bold;">${contract.daysLeft} days</td>
+        `;
+        contractDatesList.appendChild(tr);
+    });
+}
 
 function checkAuth() {
     const authRole = sessionStorage.getItem('auth_role');
