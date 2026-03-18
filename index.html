@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VestaLogic | Smart Tracker</title>
+    <title>DOB Accounts</title>
     <link rel="stylesheet" href="style.css">
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -12,7 +12,7 @@
     <!-- Login Modal -->
     <section id="auth-modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: #f8fafc; display: flex; justify-content: center; align-items: center;">
         <div style="background: #ffffff; padding: 40px; border: 1px solid #e2e8f0; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center;">
-            <h2 style="color: #1e293b; margin-top: 0;">UtilityPulse Login</h2>
+            <h2 style="color: #1e293b; margin-top: 0;">DOB Accounts Login</h2>
             <form id="login-form" style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
                 <input type="text" id="login-username" placeholder="Username (e.g. Oracle_Admin)" required style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 16px;">
                 <button type="submit" style="background: #2563eb; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold;">Login</button>
@@ -23,7 +23,7 @@
     <div id="app-content" style="display: none;">
     <header class="app-header">
         <div class="container">
-            <h1>Utility<span>Pulse</span></h1>
+            <h1>DOB <span>Accounts</span></h1>
             <nav style="display: flex; gap: 10px; align-items: center;">
                 <div id="filter-controls" style="display: flex; gap: 10px; align-items: center;">
                     <select id="company-filter" style="padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff;">
@@ -36,7 +36,7 @@
                 </div>
                 <button id="view-stats">Trends</button>
                 <button id="client-manager-btn" class="btn-primary" style="display: none; background: #6366f1;">Client Manager</button>
-                <button id="add-building" class="btn-primary">+ New Building</button>
+                <button id="add-building" class="btn-primary">+ New Property</button>
                 <button id="add-entry" class="btn-primary">+ New Entry</button>
                 <div id="notification-bell" style="position: relative; cursor: pointer; padding: 10px; font-size: 1.2rem; color: #475569; display: flex; align-items: center; justify-content: center;">
                     <i class="fas fa-bell"></i>
@@ -53,7 +53,7 @@
     <main class="container" style="flex: 1;">
 
         <section class="search-section" style="margin-top: 20px;">
-            <input type="text" id="search-bar" placeholder="Search buildings by name or address..." style="width: 100%; padding: 15px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
+            <input type="text" id="search-bar" placeholder="Search properties by name or address..." style="width: 100%; padding: 15px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
         </section>
 
         <!-- Notification Dropdown -->
@@ -65,11 +65,11 @@
         </div>
 
         <section id="buildings-list" style="margin-top: 20px; max-height: 400px; overflow-y: auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-            <!-- Buildings will be rendered here -->
+            <!-- Properties will be rendered here -->
         </section>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
-            <h2 id="selected-building-name" style="margin: 0;">All Buildings Dashboard</h2>
+            <h2 id="selected-building-name" style="margin: 0;">All Properties Dashboard</h2>
             <button id="view-bill-history" class="btn-primary" style="display: none;">View Bill History</button>
         </div>
 
@@ -135,15 +135,15 @@
         <section id="add-building-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
             <div class="modal-content" style="background: #ffffff; margin: 10% auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; width: 80%; max-width: 500px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
                 <span id="close-add-building-modal" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-                <h2>Add New Building</h2>
+                <h2>Add New Property</h2>
                 <form id="add-building-form">
-                    <input type="text" id="add-b-name" placeholder="Building Name" required>
+                    <input type="text" id="add-b-name" placeholder="Property Name" required>
                     <input type="text" id="add-b-address" placeholder="Address" required>
                     <select id="add-b-company" required>
                         <option value="" disabled selected>Select Company</option>
                     </select>
-                    <input type="number" id="add-b-area" placeholder="Building Area (m²)" required>
-                    <button type="submit" class="btn-primary">Save Building</button>
+                    <input type="number" id="add-b-area" placeholder="Property Area (m²)" required>
+                    <button type="submit" class="btn-primary">Save Property</button>
                 </form>
             </div>
         </section>
@@ -169,44 +169,44 @@
         <section id="edit-building-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
             <div class="modal-content" style="background: #ffffff; margin: 10% auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; width: 80%; max-width: 500px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
                 <span id="close-edit-building-modal" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-                <h2>Edit Building</h2>
+                <h2>Edit Property</h2>
                 <form id="edit-building-form">
                     <input type="hidden" id="edit-b-id">
-                    <input type="text" id="edit-b-name" placeholder="Building Name" required>
+                    <input type="text" id="edit-b-name" placeholder="Property Name" required>
                     <input type="text" id="edit-b-address" placeholder="Address" required>
                     <select id="edit-b-company" required>
                         <option value="" disabled selected>Select Company</option>
                     </select>
-                    <input type="number" id="edit-b-area" placeholder="Building Area (m²)" required>
-                    <button type="submit" class="btn-primary">Update Building</button>
+                    <input type="number" id="edit-b-area" placeholder="Property Area (m²)" required>
+                    <button type="submit" class="btn-primary">Update Property</button>
                 </form>
             </div>
         </section>
 
-        <!-- Edit Account Modal -->
+        <!-- Edit Metered Account Modal -->
         <section id="edit-account-modal" class="modal" style="display: none; position: fixed; z-index: 1500; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
             <div class="modal-content" style="background: #ffffff; margin: 10% auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; width: 80%; max-width: 500px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
                 <span id="close-edit-account-modal" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-                <h2>Edit Account</h2>
+                <h2>Edit Metered Account</h2>
                 <form id="edit-account-form">
                     <input type="hidden" id="edit-acc-building-id">
                     <input type="hidden" id="edit-acc-original-id">
                     <input type="text" id="edit-acc-type" placeholder="Type (e.g., Electricity)" required readonly style="background-color: #f1f5f9;">
-                    <input type="text" id="edit-acc-id" placeholder="Account Number / MPRN" required>
+                    <input type="text" id="edit-acc-id" placeholder="Account Number / MPRN" class="monospace" required>
                     <input type="text" id="edit-acc-provider" placeholder="Provider" required>
                     <input type="text" id="edit-acc-address" placeholder="Service Address/Location (e.g., Rear Basement)" required>
                     <label style="font-size:0.9rem; margin-bottom:-10px;">Contract End Date</label>
                     <input type="date" id="edit-acc-enddate" required>
-                    <button type="submit" class="btn-primary">Update Account</button>
+                    <button type="submit" class="btn-primary">Update Metered Account</button>
                 </form>
             </div>
         </section>
 
-        <!-- Add Account Modal -->
+        <!-- Add Metered Account Modal -->
         <section id="add-account-modal" class="modal" style="display: none; position: fixed; z-index: 1500; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
             <div class="modal-content" style="background: #ffffff; margin: 10% auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; width: 80%; max-width: 500px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
                 <span id="close-add-account-modal" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
-                <h2>Add Account</h2>
+                <h2>Add Metered Account</h2>
                 <form id="add-account-form">
                     <input type="hidden" id="add-acc-building-id">
                     <select id="add-acc-type" required>
@@ -215,12 +215,12 @@
                         <option value="Water">Water</option>
                         <option value="Gas">Gas</option>
                     </select>
-                    <input type="text" id="add-acc-id" placeholder="Account Number / MPRN" required>
+                    <input type="text" id="add-acc-id" placeholder="Account Number / MPRN" class="monospace" required>
                     <input type="text" id="add-acc-provider" placeholder="Provider" required>
                     <input type="text" id="add-acc-address" placeholder="Service Address/Location (e.g., Rear Basement)" required>
                     <label style="font-size:0.9rem; margin-bottom:-10px;">Contract End Date</label>
                     <input type="date" id="add-acc-enddate" required>
-                    <button type="submit" class="btn-primary">Add Account</button>
+                    <button type="submit" class="btn-primary">Add Metered Account</button>
                 </form>
             </div>
         </section>
@@ -236,17 +236,17 @@
                     <select id="wizard-company" required style="width: 100%; margin-bottom: 15px;">
                         <option value="" disabled selected>Select Company</option>
                     </select>
-                    <button id="wizard-next-1" class="btn-primary" style="width: 100%;">Next: Select Building</button>
+                    <button id="wizard-next-1" class="btn-primary" style="width: 100%;">Next: Select Property</button>
                 </div>
 
                 <div id="wizard-step-2" style="display: none;">
-                    <h3>Step 2: Select Building</h3>
+                    <h3>Step 2: Select Property</h3>
                     <select id="wizard-building" required style="width: 100%; margin-bottom: 15px;">
-                        <option value="" disabled selected>Select Building</option>
+                        <option value="" disabled selected>Select Property</option>
                     </select>
                     <div style="display: flex; gap: 10px;">
                         <button id="wizard-back-2" style="padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; cursor: pointer;">Back</button>
-                        <button id="wizard-next-2" class="btn-primary" style="flex: 1;">Next: Select Account</button>
+                        <button id="wizard-next-2" class="btn-primary" style="flex: 1;">Next: Select Metered Account</button>
                     </div>
                 </div>
 
@@ -254,11 +254,11 @@
                     <h3>Step 3: Account & Reading</h3>
                     <form id="tracker-form">
                         <select id="wizard-account" required style="width: 100%; margin-bottom: 10px;">
-                            <option value="" disabled selected>Select Account</option>
+                            <option value="" disabled selected>Select Metered Account</option>
                         </select>
                         <p style="font-size: 0.85em; color: #64748b; margin-top: -5px; margin-bottom: 15px;">Can edit Account Number & Contract End Date directly below if needed.</p>
 
-                        <input type="text" id="wizard-edit-acc-num" placeholder="Account Number" required style="margin-bottom: 15px;">
+                        <input type="text" id="wizard-edit-acc-num" placeholder="Account Number" class="monospace" required style="margin-bottom: 15px;">
                         <label style="font-size:0.9rem; margin-bottom:-10px; display: block;">Contract End Date</label>
                         <input type="date" id="wizard-edit-enddate" required style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
 
@@ -297,7 +297,7 @@
     </div>
 
     <footer class="app-footer" style="background: #ffffff; border-top: 1px solid #e2e8f0; padding: 15px; text-align: center;">
-        <p style="margin: 0; color: #64748b;">&copy; 2026 UtilityPulse. Data stored locally for privacy.</p>
+        <p style="margin: 0; color: #64748b;">&copy; 2026 DOB Accounts. Data stored locally for privacy.</p>
     </footer>
 
     </div>

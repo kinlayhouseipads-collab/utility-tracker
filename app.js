@@ -199,7 +199,7 @@ function renderBuildings(buildings) {
     const thead = document.createElement('thead');
     thead.innerHTML = `
         <tr style="background: var(--card-bg); position: sticky; top: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); z-index: 10;">
-            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Building Name/Address</th>
+            <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Property Name/Address</th>
             <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Company Badge</th>
             <th id="sort-end-date" style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase; cursor: pointer;">Contract End Date &#x21C5;</th>
             <th style="padding: 12px 15px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">Days Since Last Bill</th>
@@ -279,6 +279,9 @@ function renderBuildings(buildings) {
         let buildingTotalCost = 0;
         let diffStaleDays = -1;
 
+        const startDateFilter = document.getElementById('start-date-filter')?.value;
+        const endDateFilter = document.getElementById('end-date-filter')?.value;
+
         if (building.billHistory && building.billHistory.length > 0) {
             const maxDate = new Date(Math.max(...building.billHistory.map(b => new Date(b.date).getTime())));
             diffStaleDays = Math.ceil((today - maxDate) / (1000 * 60 * 60 * 24));
@@ -291,13 +294,35 @@ function renderBuildings(buildings) {
             }
 
             // Building Level Aggregation
-            buildingTotalCost = building.billHistory.reduce((sum, bill) => sum + (parseFloat(bill.cost) || 0), 0);
+            buildingTotalCost = building.billHistory.reduce((sum, bill) => {
+                let withinDateRange = true;
+                if (startDateFilter && endDateFilter) {
+                    const bDate = new Date(bill.date);
+                    const sDate = new Date(startDateFilter);
+                    const eDate = new Date(endDateFilter);
+                    if (bDate < sDate || bDate > eDate) {
+                        withinDateRange = false;
+                    }
+                }
+                return sum + (withinDateRange ? (parseFloat(bill.cost) || 0) : 0);
+            }, 0);
         }
 
         let localReadings = JSON.parse(localStorage.getItem('utility_readings')) || [];
         localReadings = localReadings.filter(r => r.building_id === building.id);
         if (localReadings.length > 0) {
-            buildingTotalCost += localReadings.reduce((sum, r) => sum + (parseFloat(r.cost) || 0), 0);
+            buildingTotalCost += localReadings.reduce((sum, r) => {
+                let withinDateRange = true;
+                if (startDateFilter && endDateFilter) {
+                    const rDate = new Date(r.date);
+                    const sDate = new Date(startDateFilter);
+                    const eDate = new Date(endDateFilter);
+                    if (rDate < sDate || rDate > eDate) {
+                        withinDateRange = false;
+                    }
+                }
+                return sum + (withinDateRange ? (parseFloat(r.cost) || 0) : 0);
+            }, 0);
             const localMax = Math.max(...localReadings.map(r => new Date(r.date).getTime()));
             if (building.billHistory && building.billHistory.length > 0) {
                 const maxDate = new Date(Math.max(...building.billHistory.map(b => new Date(b.date).getTime())));
@@ -343,10 +368,10 @@ function renderBuildings(buildings) {
                 ${formatCurrency.format(buildingTotalCost)}
             </td>
             <td style="padding: 15px; text-align: center;">
-                <button onclick="openEditModal('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #64748b; margin-right: 10px;" title="Edit Building">
+                <button onclick="openEditModal('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #64748b; margin-right: 10px;" title="Edit Property">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="requestDeleteBuilding('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Building">
+                <button onclick="requestDeleteBuilding('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Property">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -359,9 +384,9 @@ function renderBuildings(buildings) {
 
         let accountsHtml = '<div style="padding: 15px 40px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #e2e8f0;">';
 
-        // --- Linked Accounts Table ---
-        accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #334155;">Linked Accounts</h4>';
-        accountsHtml += `<button class="btn-primary" onclick="openAddAccountModal('${building.id}')" style="padding: 6px 12px; font-size: 0.85em;">+ Add Account</button></div>`;
+        // --- Linked Metered Accounts Table ---
+        accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #334155;">Linked Metered Accounts</h4>';
+        accountsHtml += `<button class="btn-primary" onclick="openAddAccountModal('${building.id}')" style="padding: 6px 12px; font-size: 0.85em;">+ Add Metered Account</button></div>`;
 
         accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px;">';
         accountsHtml += '<thead><tr style="border-bottom: 1px solid #cbd5e1;"><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Provider</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Address/Location</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">Account # (MPRN/GPRN)</th><th style="text-align: left; padding: 8px; color: #64748b; font-size: 0.85em;">End Date</th><th style="text-align: center; padding: 8px; color: #64748b; font-size: 0.85em;">Actions</th></tr></thead>';
@@ -479,7 +504,7 @@ window.requestDeleteBuilding = function(id) {
     const building = allBuildings.find(b => b.id === id);
     if (!building) return;
     deleteTarget = { type: 'building', buildingId: id };
-    document.getElementById('confirm-title').innerText = 'Delete Building';
+    document.getElementById('confirm-title').innerText = 'Delete Property';
     document.getElementById('confirm-message').innerText = `Are you sure you want to delete "${building.name}"? All associated accounts and readings will be lost.`;
 
     document.getElementById('double-confirm-container').style.display = 'block';
@@ -495,7 +520,7 @@ window.requestDeleteAccount = function(buildingId, accountId) {
     if (!account) return;
 
     deleteTarget = { type: 'account', buildingId: buildingId, accountId: accountId };
-    document.getElementById('confirm-title').innerText = 'Delete Account';
+    document.getElementById('confirm-title').innerText = 'Delete Metered Account';
     document.getElementById('confirm-message').innerText = `Are you sure you want to delete ${account.type} Account (${accountId}) from "${building.name}"?`;
 
     document.getElementById('double-confirm-container').style.display = 'block';
@@ -509,7 +534,7 @@ window.requestDeleteCompany = function(companyId) {
     if (!company) return;
     deleteTarget = { type: 'company', companyId: companyId };
     document.getElementById('confirm-title').innerText = 'Delete Company';
-    document.getElementById('confirm-message').innerText = `Are you sure you want to delete the company "${company.name}"? This will archive/delete all associated buildings.`;
+    document.getElementById('confirm-message').innerText = `Are you sure you want to delete the company "${company.name}"? This will archive/delete all associated properties.`;
 
     document.getElementById('double-confirm-container').style.display = 'block';
     document.getElementById('double-confirm-input').value = '';
@@ -540,7 +565,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', () => {
         if (buildingIndex !== -1) {
             const buildingName = allBuildings[buildingIndex].name;
             allBuildings.splice(buildingIndex, 1);
-            logAudit(`Deleted building: ${buildingName}`);
+            logAudit(`Deleted property: ${buildingName}`);
         }
             saveToLocalStorage();
     } else if (deleteTarget.type === 'account') {
@@ -559,13 +584,13 @@ document.getElementById('confirm-yes')?.addEventListener('click', () => {
             const companyName = companies[companyIndex].name;
             companies.splice(companyIndex, 1);
             saveCompanies();
-            // Archive/Delete associated buildings
+            // Archive/Delete associated properties
             const buildingsToDelete = allBuildings.filter(b => b.companyId === deleteTarget.companyId);
             buildingsToDelete.forEach(b => {
                 const bIndex = allBuildings.findIndex(bx => bx.id === b.id);
                 if (bIndex !== -1) allBuildings.splice(bIndex, 1);
             });
-            logAudit(`Deleted company: ${companyName} and ${buildingsToDelete.length} associated buildings.`);
+            logAudit(`Deleted company: ${companyName} and ${buildingsToDelete.length} associated properties.`);
             renderClientManager();
             populateCompanyDropdowns();
         }
@@ -584,7 +609,7 @@ function selectBuilding(building) {
     if (activeBuildingId === building.id) {
         // Deselect
         activeBuildingId = null;
-        document.getElementById('selected-building-name').textContent = 'All Buildings Dashboard';
+        document.getElementById('selected-building-name').textContent = 'All Properties Dashboard';
         document.getElementById('building-id').value = '';
         if (viewBillHistoryBtn) viewBillHistoryBtn.style.display = 'none';
     } else {
@@ -640,7 +665,7 @@ function updateDashboard() {
                     const end = new Date(endDateFilter);
                     withinDateRange = billDate >= start && billDate <= end;
                 } else {
-                    withinDateRange = billDate.getMonth() === currentMonth && billDate.getFullYear() === currentYear;
+                    withinDateRange = true;
                 }
 
                 if (withinDateRange) {
@@ -667,7 +692,7 @@ function updateDashboard() {
             const end = new Date(endDateFilter);
             withinDateRange = readingDate >= start && readingDate <= end;
         } else {
-            withinDateRange = readingDate.getMonth() === currentMonth && readingDate.getFullYear() === currentYear;
+            withinDateRange = true;
         }
 
         if (withinDateRange) {
@@ -690,14 +715,26 @@ function updateDashboard() {
     document.getElementById('stat-water').textContent = totalWater.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' m³';
     document.getElementById('stat-gas').textContent = totalGas.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' units';
 
-    // Total for entire filtered view over ALL time, per prompt: "Company Level: Create a header stat that sums the costs for the entire filtered view."
+    // Total for entire filtered view based on Date Filter
     let grandTotal = 0;
     let totalArea = 0;
     targetBuildings.forEach(building => {
         if (building.billHistory) {
-            grandTotal += building.billHistory.reduce((s, bill) => s + (parseFloat(bill.cost) || 0), 0);
+            grandTotal += building.billHistory.reduce((s, bill) => {
+                const billDate = new Date(bill.date);
+                let withinDateRange = false;
+
+                if (startDateFilter && endDateFilter) {
+                    const start = new Date(startDateFilter);
+                    const end = new Date(endDateFilter);
+                    withinDateRange = billDate >= start && billDate <= end;
+                } else {
+                    withinDateRange = true;
+                }
+                return s + (withinDateRange ? (parseFloat(bill.cost) || 0) : 0);
+            }, 0);
         }
-        totalArea += parseFloat(building.area) || 1000;
+        totalArea += Number(building.area) || 1000;
     });
 
     readings.forEach(reading => {
@@ -713,7 +750,20 @@ function updateDashboard() {
             }
         }
 
-        grandTotal += parseFloat(reading.cost) || 0;
+        const readingDate = new Date(reading.date);
+        let withinDateRange = false;
+
+        if (startDateFilter && endDateFilter) {
+            const start = new Date(startDateFilter);
+            const end = new Date(endDateFilter);
+            withinDateRange = readingDate >= start && readingDate <= end;
+        } else {
+            withinDateRange = true;
+        }
+
+        if (withinDateRange) {
+            grandTotal += parseFloat(reading.cost) || 0;
+        }
     });
 
     const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
@@ -729,29 +779,60 @@ function renderChart() {
         targetBuildings = targetBuildings.filter(b => b.id === activeBuildingId);
     } else {
         const companyFilter = document.getElementById('company-filter')?.value;
+        const searchBar = document.getElementById('search-bar')?.value;
+
         if (companyFilter) {
             targetBuildings = targetBuildings.filter(b => b.companyId === companyFilter);
+        }
+
+        if (searchBar) {
+            const searchTerm = searchBar.toLowerCase();
+            targetBuildings = targetBuildings.filter(building =>
+                building.name.toLowerCase().includes(searchTerm) ||
+                building.address.toLowerCase().includes(searchTerm)
+            );
         }
     }
 
     let localReadings = JSON.parse(localStorage.getItem('utility_readings')) || [];
 
+    const startDateFilter = document.getElementById('start-date-filter')?.value;
+    const endDateFilter = document.getElementById('end-date-filter')?.value;
+
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
-                readings.push({
-                    date: bill.date,
-                    cost: parseFloat(bill.cost) || 0
-                });
+                let withinDateRange = true;
+                if (startDateFilter && endDateFilter) {
+                    const billDate = new Date(bill.date);
+                    const start = new Date(startDateFilter);
+                    const end = new Date(endDateFilter);
+                    if (billDate < start || billDate > end) withinDateRange = false;
+                }
+                if (withinDateRange) {
+                    readings.push({
+                        date: bill.date,
+                        cost: parseFloat(bill.cost) || 0
+                    });
+                }
             });
         }
 
         let buildingReadings = localReadings.filter(r => r.building_id === b.id);
         buildingReadings.forEach(r => {
-            readings.push({
-                date: r.date,
-                cost: parseFloat(r.cost) || 0
-            });
+            let withinDateRange = true;
+            if (startDateFilter && endDateFilter) {
+                const rDate = new Date(r.date);
+                const start = new Date(startDateFilter);
+                const end = new Date(endDateFilter);
+                if (rDate < start || rDate > end) withinDateRange = false;
+            }
+            if (withinDateRange) {
+                readings.push({
+                    date: r.date,
+                    cost: parseFloat(r.cost) || 0
+                });
+            }
         });
     });
 
@@ -867,22 +948,6 @@ function updateFilters() {
         filteredBuildings = filteredBuildings.filter(b => b.companyId === companyFilter.value);
     }
 
-    // Advanced Date Filter for Buildings
-    if (startDateFilter && endDateFilter && startDateFilter.value && endDateFilter.value) {
-        const start = new Date(startDateFilter.value);
-        const end = new Date(endDateFilter.value);
-
-        filteredBuildings = filteredBuildings.filter(building => {
-            if (!building.billHistory || building.billHistory.length === 0) return false;
-
-            // Check if any bill is within the range
-            return building.billHistory.some(bill => {
-                const billDate = new Date(bill.date);
-                return billDate >= start && billDate <= end;
-            });
-        });
-    }
-
     renderBuildings(filteredBuildings);
     updateDashboard();
     renderChart();
@@ -994,33 +1059,48 @@ function checkAlerts() {
             });
         }
 
-        // Stale Readings
-        let maxDate = 0;
-        if (building.billHistory && building.billHistory.length > 0) {
-            maxDate = Math.max(...building.billHistory.map(b => new Date(b.date).getTime()));
-        }
-        // Check localStorage readings too
+        // Stale Readings per Account
         let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
         const localReadings = readings.filter(r => r.building_id === building.id);
-        if (localReadings.length > 0) {
-            const localMax = Math.max(...localReadings.map(r => new Date(r.date).getTime()));
-            maxDate = Math.max(maxDate, localMax);
-        }
 
-        if (maxDate > 0) {
-            const diffStaleDays = Math.ceil((today - maxDate) / (1000 * 60 * 60 * 24));
-            if (diffStaleDays > 60) {
-                notifications.push({
-                    type: 'Stale Reading',
-                    message: `${building.name} hasn't been updated in ${diffStaleDays} days`,
-                    buildingId: building.id
-                });
-            }
-        } else {
-             notifications.push({
-                type: 'No Data',
-                message: `${building.name} has no readings`,
-                buildingId: building.id
+        if (building.accounts && building.accounts.length > 0) {
+            building.accounts.forEach(acc => {
+                let maxDate = 0;
+
+                // check billHistory for this account's usage
+                if (building.billHistory && building.billHistory.length > 0) {
+                    building.billHistory.forEach(b => {
+                        if (acc.type === 'Electricity' && parseFloat(b.usage_kwh) > 0) {
+                            maxDate = Math.max(maxDate, new Date(b.date).getTime());
+                        } else if ((acc.type === 'Gas' || acc.type === 'Water') && parseFloat(b.usage_m3) > 0) {
+                            maxDate = Math.max(maxDate, new Date(b.date).getTime());
+                        }
+                    });
+                }
+
+                // check localReadings for this account number
+                const accReadings = localReadings.filter(r => r.account_number === acc.id_number);
+                if (accReadings.length > 0) {
+                    const localMax = Math.max(...accReadings.map(r => new Date(r.date).getTime()));
+                    maxDate = Math.max(maxDate, localMax);
+                }
+
+                if (maxDate > 0) {
+                    const diffStaleDays = Math.ceil((today - maxDate) / (1000 * 60 * 60 * 24));
+                    if (diffStaleDays > 60) {
+                        notifications.push({
+                            type: 'Stale Reading',
+                            message: `${acc.type} Account (${acc.id_number}) at ${building.name} hasn't been updated in ${diffStaleDays} days`,
+                            buildingId: building.id
+                        });
+                    }
+                } else {
+                    notifications.push({
+                        type: 'No Data',
+                        message: `${acc.type} Account (${acc.id_number}) at ${building.name} has no readings`,
+                        buildingId: building.id
+                    });
+                }
             });
         }
     });
@@ -1144,7 +1224,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Generate CSV
             let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += "Building Name,Address,Company,MPRN,GPRN,Status\n";
+            csvContent += "Property Name,Address,Company,MPRN,GPRN,Status\n";
 
             const today = new Date('2026-03-12T00:00:00');
 
@@ -1300,16 +1380,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let allBills = [];
             if (building.billHistory) {
-                allBills = [...building.billHistory];
+                building.billHistory.forEach(bill => {
+                    let addr = building.address;
+                    if (parseFloat(bill.usage_kwh) > 0) {
+                        addr = building.accounts?.find(a => a.type === 'Electricity')?.account_address || addr;
+                    } else if (parseFloat(bill.usage_m3) > 0) {
+                        addr = building.accounts?.find(a => a.type === 'Water' || a.type === 'Gas')?.account_address || addr;
+                    }
+                    allBills.push({...bill, account_address: addr});
+                });
             }
 
             let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
             readings.filter(r => r.building_id === activeBuildingId).forEach(r => {
+                const acc = building.accounts?.find(a => a.id_number === r.account_number);
                 allBills.push({
                     date: r.date,
                     cost: r.cost,
                     usage_kwh: r.type === 'electricity' ? r.value : '0',
-                    usage_m3: r.type === 'water' ? r.value : '0'
+                    usage_m3: (r.type === 'water' || r.type === 'gas') ? r.value : '0',
+                    account_address: acc ? acc.account_address : building.address
                 });
             });
 
@@ -1322,11 +1412,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const formattedDate = formatDate(bill.date);
 
+                const accAddressHtml = bill.account_address ? `<div style="font-size: 0.85em; color: #475569; margin-top: 2px;">Account Address: ${bill.account_address}</div>` : '';
                 item.innerHTML = `
                     <div style="display: flex; justify-content: space-between; font-weight: bold;">
                         <span>${formattedDate}</span>
                         <span style="color: var(--primary);">€${parseFloat(bill.cost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
+                    ${accAddressHtml}
                     <div style="font-size: 0.9em; color: #64748b; margin-top: 5px;">
                         <span>Electricity: ${parseFloat(bill.usage_kwh).toFixed(2)} kWh</span> |
                         <span>Water: ${parseFloat(bill.usage_m3).toFixed(2)} m³</span>
@@ -1375,13 +1467,13 @@ document.addEventListener('DOMContentLoaded', () => {
             address: document.getElementById('add-b-address').value,
             companyId: document.getElementById('add-b-company').value,
             accounts: [],
-            area: parseFloat(document.getElementById('add-b-area').value) || 1000,
+            area: Number(document.getElementById('add-b-area').value) || 1000,
             current_usage: "0.00 kWh",
             billHistory: []
         };
 
         allBuildings.push(newBuilding);
-        logAudit(`Created building: ${newBuilding.name}`);
+        logAudit(`Created property: ${newBuilding.name}`);
         addBuildingModal.style.display = 'none';
         document.getElementById('add-building-form').reset();
 
@@ -1390,7 +1482,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateFilters();
     });
 
-    // Edit Building Modal logic (the function is called from the table buttons)
+    // Edit Property Modal logic (the function is called from the table buttons)
     const editBuildingModal = document.getElementById('edit-building-modal');
     const closeEditBuildingModal = document.getElementById('close-edit-building-modal');
 
@@ -1411,11 +1503,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: document.getElementById('edit-b-name').value,
                 address: document.getElementById('edit-b-address').value,
                 companyId: document.getElementById('edit-b-company').value,
-                area: parseFloat(document.getElementById('edit-b-area').value) || 1000
+                area: Number(document.getElementById('edit-b-area').value) || 1000
             };
-            allBuildings = allBuildings.map(b => b.id === id ? { ...b, ...updatedFields } : b);
+            allBuildings = allBuildings.map(b => b.id === id ? Object.assign({}, b, updatedFields) : b);
 
-            logAudit(`Edited building: ${updatedFields.name}`);
+            logAudit(`Edited property: ${updatedFields.name}`);
         }
         saveToLocalStorage();
 
@@ -1466,10 +1558,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     contractEndDate: document.getElementById('edit-acc-enddate').value
                 };
 
-                allBuildings = allBuildings.map(b => b.id === bId ? {
-                    ...b,
-                    accounts: b.accounts.map(a => a.id_number === origId ? { ...a, ...updatedAcc } : a)
-                } : b);
+                allBuildings = allBuildings.map(b => b.id === bId ? Object.assign({}, b, {
+                    accounts: b.accounts.map(a => a.id_number === origId ? Object.assign({}, a, updatedAcc) : a)
+                }) : b);
 
                 logAudit(`Edited ${building.accounts[accIndex].type} account on ${building.name}`);
             }
@@ -1678,7 +1769,7 @@ if (wNext1) {
         }
 
         // Populate buildings
-        wBuilding.innerHTML = '<option value="" disabled selected>Select Building</option>';
+        wBuilding.innerHTML = '<option value="" disabled selected>Select Property</option>';
         const filtered = allBuildings.filter(b => b.companyId === wCompany.value);
         filtered.forEach(b => {
             const opt = document.createElement('option');
@@ -1712,7 +1803,7 @@ if (wNext2) {
         if (!b) return;
 
         // Populate accounts
-        wAccount.innerHTML = '<option value="" disabled selected>Select Account</option>';
+        wAccount.innerHTML = '<option value="" disabled selected>Select Metered Account</option>';
         if (b.accounts) {
             b.accounts.forEach(a => {
                 const opt = document.createElement('option');
@@ -1771,10 +1862,9 @@ document.getElementById('tracker-form')?.addEventListener('submit', function(e) 
             if (building.accounts[accIndex].id_number !== newAccNum || building.accounts[accIndex].contractEndDate !== newEndDate) {
                 edited = true;
 
-                allBuildings = allBuildings.map(b => b.id === bId ? {
-                    ...b,
-                    accounts: b.accounts.map(a => a.id_number === oldAccNum ? { ...a, id_number: newAccNum, contractEndDate: newEndDate } : a)
-                } : b);
+                allBuildings = allBuildings.map(b => b.id === bId ? Object.assign({}, b, {
+                    accounts: b.accounts.map(a => a.id_number === oldAccNum ? Object.assign({}, a, { id_number: newAccNum, contractEndDate: newEndDate }) : a)
+                }) : b);
             }
             if (edited) {
                 logAudit(`Edited ${accType} account details during reading entry for ${building.name}`);
@@ -1802,7 +1892,7 @@ document.getElementById('tracker-form')?.addEventListener('submit', function(e) 
     // Wait, let's explicitly invoke saveToLocalStorage() to ensure buildings are saved if they were modified (e.g. account edits).
     saveToLocalStorage();
 
-    const buildingName = building ? building.name : 'Unknown Building';
+    const buildingName = building ? building.name : 'Unknown Property';
     logAudit(`New bill added to ${buildingName} history.`);
 
     alert('Reading Saved!');
