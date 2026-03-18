@@ -590,17 +590,21 @@ window.syncNow = async function() {
                     const companyName = companyObj ? companyObj.name : 'Unknown';
 
                     const supabaseData = {
-                        mprn: acc.id_number,
-                        company_id: building.companyId,
+                        mprn_number: acc.id_number,
+                        company_name: companyName,
+                        property_name: building.name,
                         usage_kwh: Number(kwhValue),
-                        total_cost: Number(costValue)
+                        current_kwh: Number(kwhValue),
+                        unit_rate: 0,
+                        total_cost: Number(costValue),
+                        last_updated: new Date().toISOString()
                     };
 
                     console.log('Attempting Supabase Save...', supabaseData);
 
                     if (supabaseClient) {
                         try {
-                            const response = await supabaseClient.from('energy_accounts').upsert(supabaseData, { onConflict: 'mprn' });
+                            const response = await supabaseClient.from('energy_accounts').upsert(supabaseData, { onConflict: 'mprn_number' });
                             console.log('Supabase Save Response:', response);
                             if (!response.error) {
                                 showToast('Cloud Synced', 'success');
@@ -2231,10 +2235,14 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     const companyName = companyObj ? companyObj.name : 'Unknown';
 
     const supabaseData = {
-        mprn: newAccNum,
-        company_id: buildingCompanyId,
-        usage_kwh: usageVal,
-        total_cost: costVal
+        mprn_number: newAccNum,
+        company_name: companyName,
+        property_name: buildingName,
+        usage_kwh: Number(usageVal),
+        current_kwh: Number(usageVal),
+        unit_rate: Number(unitRateVal),
+        total_cost: Number(costVal),
+        last_updated: new Date().toISOString()
     };
 
     console.log('Attempting Supabase Save...', supabaseData);
@@ -2242,7 +2250,7 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     // Fallback if supabase object exists (assuming it is imported elsewhere or handled)
     if (supabaseClient) {
         try {
-            const response = await supabaseClient.from('energy_accounts').upsert(supabaseData, { onConflict: 'mprn' });
+            const response = await supabaseClient.from('energy_accounts').upsert(supabaseData, { onConflict: 'mprn_number' });
             console.log('Supabase Save Response:', response);
             if (!response.error) {
                 showToast('Cloud Synced', 'success');
