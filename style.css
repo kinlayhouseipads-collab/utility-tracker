@@ -50,6 +50,20 @@ body {
     margin-top: 40px;
 }
 
+.bento-list-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+#energy-list-grid .card {
+    border-top: 4px solid var(--primary) !important;
+}
+
+#insurance-vault-grid .card {
+    border-top: 4px solid #eab308 !important; /* Gold */
+}
+
 .card.a { grid-area: a; }
 .card.b { grid-area: b; }
 .card.c { grid-area: c; }
