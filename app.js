@@ -558,14 +558,17 @@ window.syncNow = async function() {
             for (const acc of building.accounts) {
                 // Find associated readings for this account to get the kWh value
                 let kwhValue = 0;
+                let costValue = 0;
 
                 // Search billHistory for usages
                 if (building.billHistory && building.billHistory.length > 0) {
                     for (const bill of building.billHistory) {
                         if (acc.type === 'Electricity' && parseFloat(bill.usage_kwh) > 0) {
                             kwhValue += parseFloat(bill.usage_kwh);
+                            costValue += parseFloat(bill.cost) || 0;
                         } else if ((acc.type === 'Gas' || acc.type === 'Water') && parseFloat(bill.usage_m3) > 0) {
                             kwhValue += parseFloat(bill.usage_m3);
+                            costValue += parseFloat(bill.cost) || 0;
                         }
                     }
                 }
@@ -575,13 +578,17 @@ window.syncNow = async function() {
                 const localReadings = readings.filter(r => r.account_number === acc.id_number);
                 for (const reading of localReadings) {
                     kwhValue += parseFloat(reading.value) || 0;
+                    costValue += parseFloat(reading.cost) || 0;
                 }
 
                 if (kwhValue > 0) {
                     const supabaseData = {
                         mprn: acc.id_number,
+                        company_id: building.companyId,
                         property_name: building.name,
-                        kwh: kwhValue
+                        usage_kwh: Number(kwhValue),
+                        total_cost: Number(costValue),
+                        unit_rate: Number((costValue / kwhValue).toFixed(4))
                     };
 
                     console.log('Attempting Supabase Save...', supabaseData);
@@ -2093,11 +2100,18 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     };
 
     const buildingName = building ? building.name : 'Unknown Property';
+    const buildingCompanyId = building ? building.companyId : wCompany.value;
+
+    const usageVal = Number(document.getElementById('reading-value').value);
+    const costVal = Number(document.getElementById('reading-cost').value);
 
     const supabaseData = {
         mprn: newAccNum,
+        company_id: buildingCompanyId,
         property_name: buildingName,
-        kwh: Number(document.getElementById('reading-value').value)
+        usage_kwh: usageVal,
+        total_cost: costVal,
+        unit_rate: usageVal > 0 ? Number((costVal / usageVal).toFixed(4)) : 0
     };
 
     console.log('Attempting Supabase Save...', supabaseData);
