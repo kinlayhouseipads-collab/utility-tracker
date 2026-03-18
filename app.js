@@ -1933,7 +1933,8 @@ if (wNext2) {
             b.accounts.forEach(a => {
                 const opt = document.createElement('option');
                 opt.value = a.id_number;
-                opt.textContent = `${a.type} - ${a.id_number}`;
+                const addressText = a.account_address ? ` (${a.account_address})` : '';
+                opt.textContent = `${a.type} - ${a.id_number}${addressText}`;
                 opt.dataset.type = a.type;
                 opt.dataset.enddate = a.contractEndDate;
                 wAccount.appendChild(opt);
