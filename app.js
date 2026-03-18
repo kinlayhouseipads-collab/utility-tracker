@@ -547,6 +547,66 @@ document.getElementById('confirm-cancel')?.addEventListener('click', () => {
     document.getElementById('confirm-modal').style.display = 'none';
 });
 
+window.syncNow = async function() {
+    console.log('Starting syncNow process...');
+
+    let syncCount = 0;
+
+    // Iterate through allBuildings
+    for (const building of allBuildings) {
+        if (building.accounts) {
+            for (const acc of building.accounts) {
+                // Find associated readings for this account to get the kWh value
+                let kwhValue = 0;
+
+                // Search billHistory for usages
+                if (building.billHistory && building.billHistory.length > 0) {
+                    for (const bill of building.billHistory) {
+                        if (acc.type === 'Electricity' && parseFloat(bill.usage_kwh) > 0) {
+                            kwhValue += parseFloat(bill.usage_kwh);
+                        } else if ((acc.type === 'Gas' || acc.type === 'Water') && parseFloat(bill.usage_m3) > 0) {
+                            kwhValue += parseFloat(bill.usage_m3);
+                        }
+                    }
+                }
+
+                // Add any localReadings
+                let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+                const localReadings = readings.filter(r => r.account_number === acc.id_number);
+                for (const reading of localReadings) {
+                    kwhValue += parseFloat(reading.value) || 0;
+                }
+
+                if (kwhValue > 0) {
+                    const supabaseData = {
+                        mprn: acc.id_number,
+                        property_name: building.name,
+                        kwh: kwhValue
+                    };
+
+                    console.log('Attempting Supabase Save...', supabaseData);
+
+                    if (typeof supabase !== 'undefined') {
+                        try {
+                            const response = await supabase.from('energy_accounts').upsert(supabaseData);
+                            console.log('Supabase Save Response:', response);
+                            if (!response.error) {
+                                showToast('Cloud Synced', 'success');
+                                syncCount++;
+                            } else {
+                                console.error('Error saving to Supabase', response.error);
+                            }
+                        } catch (err) {
+                            console.error('Exception during Supabase save:', err);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    console.log(`syncNow process finished. Synced ${syncCount} records.`);
+};
+
 document.getElementById('confirm-yes')?.addEventListener('click', () => {
     if (!deleteTarget) return;
 
@@ -2021,16 +2081,32 @@ document.getElementById('tracker-form')?.addEventListener('submit', function(e) 
         date: document.getElementById('reading-date').value
     };
 
-    // Save to LocalStorage (2026 simple storage)
-    let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
-    readings.push(data);
-    localStorage.setItem('utility_readings', JSON.stringify(readings));
+    const buildingName = building ? building.name : 'Unknown Property';
+
+    const supabaseData = {
+        mprn: newAccNum,
+        property_name: buildingName,
+        kwh: Number(document.getElementById('reading-value').value)
+    };
+
+    console.log('Attempting Supabase Save...', supabaseData);
+
+    // Fallback if supabase object exists (assuming it is imported elsewhere or handled)
+    if (typeof supabase !== 'undefined') {
+        supabase.from('energy_accounts').upsert(supabaseData).then(response => {
+            console.log('Supabase Save Response:', response);
+            if (!response.error) {
+                showToast('Cloud Synced', 'success');
+            } else {
+                console.error('Error saving to Supabase', response.error);
+            }
+        });
+    }
 
     // Also save directly to building.billHistory to persist properly if logic expects it there, but utility_readings array is primary mechanism to keep track across reloads.
     // Wait, let's explicitly invoke saveToLocalStorage() to ensure buildings are saved if they were modified (e.g. account edits).
     saveToLocalStorage();
 
-    const buildingName = building ? building.name : 'Unknown Property';
     logAudit(`New bill added to ${buildingName} history.`);
 
     alert('Reading Saved!');
