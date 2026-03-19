@@ -671,12 +671,10 @@ function selectBuilding(building) {
         activeBuildingId = null;
         document.getElementById('selected-building-name').textContent = 'All Properties Dashboard';
         document.getElementById('building-id').value = '';
-        if (viewBillHistoryBtn) viewBillHistoryBtn.style.display = 'none';
     } else {
         activeBuildingId = building.id;
         document.getElementById('selected-building-name').textContent = `${building.name} Dashboard`;
         document.getElementById('building-id').value = building.id;
-        if (viewBillHistoryBtn) viewBillHistoryBtn.style.display = 'block';
     }
 
     updateDashboard();
@@ -1620,64 +1618,57 @@ document.addEventListener('DOMContentLoaded', () => {
     if (endDateFilter) endDateFilter.addEventListener('change', updateFilters);
 
     if (viewBillHistoryBtn) {
-        viewBillHistoryBtn.addEventListener('click', () => {
-            if (!activeBuildingId) return;
-            const building = allBuildings.find(b => b.id === activeBuildingId);
-            if (!building) return;
-
+        viewBillHistoryBtn.addEventListener('click', async () => {
             const listContainer = document.getElementById('bill-history-list');
-            listContainer.innerHTML = '';
-
-            let allBills = [];
-            if (building.billHistory) {
-                building.billHistory.forEach(bill => {
-                    let addr = building.address;
-                    if (parseFloat(bill.usage_kwh) > 0) {
-                        addr = building.accounts?.find(a => a.type === 'Electricity')?.account_address || addr;
-                    } else if (parseFloat(bill.usage_m3) > 0) {
-                        addr = building.accounts?.find(a => a.type === 'Water' || a.type === 'Gas')?.account_address || addr;
-                    }
-                    allBills.push({...bill, account_address: addr});
-                });
-            }
-
-            let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
-            readings.filter(r => r.building_id === activeBuildingId).forEach(r => {
-                const acc = building.accounts?.find(a => a.id_number === r.account_number);
-                allBills.push({
-                    date: r.date,
-                    cost: r.cost,
-                    usage_kwh: r.type === 'electricity' ? r.value : '0',
-                    usage_m3: (r.type === 'water' || r.type === 'gas') ? r.value : '0',
-                    account_address: acc ? acc.account_address : building.address
-                });
-            });
-
-            allBills.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            allBills.forEach(bill => {
-                const item = document.createElement('div');
-                item.style.padding = '10px';
-                item.style.borderBottom = '1px solid #e2e8f0';
-
-                const formattedDate = formatDate(bill.date);
-
-                const accAddressHtml = bill.account_address ? `<div style="font-size: 0.85em; color: #475569; margin-top: 2px;">Account Address: ${bill.account_address}</div>` : '';
-                item.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; font-weight: bold;">
-                        <span>${formattedDate}</span>
-                        <span style="color: var(--primary);">€${parseFloat(bill.cost).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                    </div>
-                    ${accAddressHtml}
-                    <div style="font-size: 0.9em; color: #64748b; margin-top: 5px;">
-                        <span>Electricity: ${parseFloat(bill.usage_kwh).toFixed(2)} kWh</span> |
-                        <span>Water: ${parseFloat(bill.usage_m3).toFixed(2)} m³</span>
-                    </div>
-                `;
-                listContainer.appendChild(item);
-            });
-
+            listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #cbd5e1;">Loading history...</div>';
             billHistoryModal.style.display = 'block';
+
+            if (supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient.from('energy_accounts').select('*');
+
+                    if (error) {
+                        listContainer.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error: ${error.message}</div>`;
+                        return;
+                    }
+
+                    console.log('History Data:', data);
+
+                    listContainer.innerHTML = '';
+
+                    if (data && data.length > 0) {
+                        data.sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
+
+                        data.forEach(bill => {
+                            const item = document.createElement('div');
+                            item.style.padding = '10px';
+                            item.style.borderBottom = '1px solid #e2e8f0';
+
+                            const formattedDate = formatDate(bill.last_updated);
+                            const kwh = Number(bill.usage_kwh || bill.current_kwh || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                            const cost = Number(bill.total_cost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                            item.innerHTML = `
+                                <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                                    <span>${formattedDate}</span>
+                                    <span style="color: var(--primary);">€${cost}</span>
+                                </div>
+                                <div style="font-size: 0.85em; color: #475569; margin-top: 2px;">MPRN: ${bill.mprn_number || bill.mprn || 'N/A'} - ${bill.property_name || 'Unknown Property'}</div>
+                                <div style="font-size: 0.9em; color: #64748b; margin-top: 5px;">
+                                    <span>Usage: ${kwh} kWh</span>
+                                </div>
+                            `;
+                            listContainer.appendChild(item);
+                        });
+                    } else {
+                        listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #cbd5e1;">No billing history found.</div>';
+                    }
+                } catch (err) {
+                    listContainer.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Exception: ${err.message}</div>`;
+                }
+            } else {
+                listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">Database client not initialized.</div>';
+            }
         });
     }
 
