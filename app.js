@@ -668,6 +668,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             const buildingName = building.name;
 
             // Delete all associated accounts from Supabase
+            let hasError = false;
             if (supabaseClient && building.accounts) {
                 for (const acc of building.accounts) {
                     try {
@@ -679,43 +680,51 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
                         if (response.error) {
                             console.error('Error deleting from Supabase:', response.error);
                             window.alert(response.error.message);
-                        } else {
-                            fetchDataFromSupabase();
+                            hasError = true;
                         }
                     } catch (err) {
                         console.error('Exception during Supabase delete:', err);
                         window.alert(err.message);
+                        hasError = true;
                     }
                 }
             }
 
-            allBuildings.splice(buildingIndex, 1);
-            logAudit(`Deleted property: ${buildingName}`);
+            if (!hasError) {
+                allBuildings.splice(buildingIndex, 1);
+                logAudit(`Deleted property: ${buildingName}`);
+                saveToLocalStorage();
+                fetchDataFromSupabase();
+            }
         }
-            saveToLocalStorage();
     } else if (deleteTarget.type === 'account') {
         const building = allBuildings.find(b => b.id === deleteTarget.buildingId);
         if (building) {
             const accountIndex = building.accounts.findIndex(a => a.id_number === deleteTarget.accountId);
             if (accountIndex !== -1) {
+                let hasError = false;
                 if (supabaseClient) {
                     try {
                         const response = await supabaseClient.from('energy_accounts').delete().eq('mprn_number', deleteTarget.accountId);
                         if (response.error) {
                             console.error('Error deleting from Supabase:', response.error);
                             window.alert(response.error.message);
-                        } else {
-                            fetchDataFromSupabase();
+                            hasError = true;
                         }
                     } catch (err) {
                         console.error('Exception during Supabase delete:', err);
                         window.alert(err.message);
+                        hasError = true;
                     }
                 }
-                building.accounts.splice(accountIndex, 1);
-                logAudit(`Deleted account ${deleteTarget.accountId} from building ${building.name}`);
+
+                if (!hasError) {
+                    building.accounts.splice(accountIndex, 1);
+                    logAudit(`Deleted account ${deleteTarget.accountId} from building ${building.name}`);
+                    saveToLocalStorage();
+                    fetchDataFromSupabase();
+                }
             }
-                saveToLocalStorage();
         }
     } else if (deleteTarget.type === 'company') {
         const companyIndex = companies.findIndex(c => c.id === deleteTarget.companyId);
@@ -723,6 +732,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             const companyName = companies[companyIndex].name;
 
             // Cascade Delete in Supabase
+            let hasError = false;
             if (supabaseClient) {
                 try {
                     const response = await supabaseClient
@@ -733,28 +743,31 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
                     if (response.error) {
                         console.error('Error deleting from Supabase:', response.error);
                         window.alert(response.error.message);
-                    } else {
-                        fetchDataFromSupabase();
+                        hasError = true;
                     }
                 } catch (err) {
                     console.error('Exception during Supabase delete:', err);
                     window.alert(err.message);
+                    hasError = true;
                 }
             }
 
-            companies.splice(companyIndex, 1);
-            saveCompanies();
-            // Archive/Delete associated properties
-            const buildingsToDelete = allBuildings.filter(b => b.companyId === deleteTarget.companyId);
-            buildingsToDelete.forEach(b => {
-                const bIndex = allBuildings.findIndex(bx => bx.id === b.id);
-                if (bIndex !== -1) allBuildings.splice(bIndex, 1);
-            });
-            logAudit(`Deleted company: ${companyName} and ${buildingsToDelete.length} associated properties.`);
-            renderClientManager();
-            populateCompanyDropdowns();
+            if (!hasError) {
+                companies.splice(companyIndex, 1);
+                saveCompanies();
+                // Archive/Delete associated properties
+                const buildingsToDelete = allBuildings.filter(b => b.companyId === deleteTarget.companyId);
+                buildingsToDelete.forEach(b => {
+                    const bIndex = allBuildings.findIndex(bx => bx.id === b.id);
+                    if (bIndex !== -1) allBuildings.splice(bIndex, 1);
+                });
+                logAudit(`Deleted company: ${companyName} and ${buildingsToDelete.length} associated properties.`);
+                saveToLocalStorage();
+                renderClientManager();
+                populateCompanyDropdowns();
+                fetchDataFromSupabase();
+            }
         }
-            saveToLocalStorage();
     }
 
     deleteTarget = null;
