@@ -675,7 +675,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
                         const response = await supabaseClient
                             .from('energy_accounts')
                             .delete()
-                            .eq('mprn_number', acc.id_number);
+                            .eq('mprn_number', String(acc.id_number).trim());
 
                         if (response.error) {
                             console.error('Error deleting from Supabase:', response.error);
@@ -705,7 +705,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
                 let hasError = false;
                 if (supabaseClient) {
                     try {
-                        const response = await supabaseClient.from('energy_accounts').delete().eq('mprn_number', deleteTarget.accountId);
+                        const response = await supabaseClient.from('energy_accounts').delete().eq('mprn_number', String(deleteTarget.accountId).trim());
                         if (response.error) {
                             console.error('Error deleting from Supabase:', response.error);
                             window.alert(response.error.message);
@@ -738,7 +738,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
                     const response = await supabaseClient
                         .from('energy_accounts')
                         .delete()
-                        .eq('company_name', companyName);
+                        .eq('company_name', String(companyName).trim());
 
                     if (response.error) {
                         console.error('Error deleting from Supabase:', response.error);
