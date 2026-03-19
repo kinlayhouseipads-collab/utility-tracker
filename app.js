@@ -1,7 +1,15 @@
-const supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient('https://jzzbbttgvkdqwkjynuxi.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY') : null;
+const supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient(((typeof process !== 'undefined' && process.env && process.env.SUPABASE_URL) ? process.env.SUPABASE_URL : 'https://jzzbbttgvkdqwkjynuxi.supabase.co'), ((typeof process !== 'undefined' && process.env && process.env.SUPABASE_ANON_KEY) ? process.env.SUPABASE_ANON_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY')) : null;
 
 let utilityChartInstance = null;
 let activeBuildingId = null;
+
+function getReadings() {
+    if (sessionStorage.getItem('auth_role')) {
+        return window.cloudReadings || [];
+    }
+    return JSON.parse(localStorage.getItem('utility_readings')) || [];
+}
+
 let allBuildings = [];
 let sortEndDateAscending = true; // Track sorting state globally
 let currentUserRole = null;
@@ -70,8 +78,14 @@ function showToast(message, type='success') {
     }, 3000);
 }
 
+
 // Global Storage Strategy
 function saveToLocalStorage() {
+    const authRole = sessionStorage.getItem('auth_role');
+    if (authRole) {
+        return; // Disable fallback save if logged in
+    }
+
     showToast('Saving...', 'info');
     const data = {
         buildings: allBuildings,
@@ -126,12 +140,35 @@ function renderAuditLogs() {
     });
 }
 
+
 async function loadBuildings() {
     try {
+        const authRole = sessionStorage.getItem('auth_role');
         const buildingsListContainer = document.getElementById('buildings-list');
         if (buildingsListContainer) {
             buildingsListContainer.innerHTML = '<div style="padding: 20px;"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>';
         }
+
+        // Delete Local Fallback
+        if (authRole) {
+            localStorage.removeItem('VestaLogic_Storage');
+        } else {
+            const localDataStr = localStorage.getItem('VestaLogic_Storage');
+            if (localDataStr) {
+                const localData = JSON.parse(localDataStr);
+                if (localData && localData.buildings) {
+                    allBuildings = localData.buildings;
+                    if (localData.companies) {
+                        companies = localData.companies;
+                    }
+                    setTimeout(() => {
+                        renderBuildings(allBuildings);
+                    }, 500);
+                    return;
+                }
+            }
+        }
+
 
 
         const response = await fetch('buildings.json');
@@ -168,6 +205,10 @@ async function loadBuildings() {
 
             return building;
         });
+
+        if (sessionStorage.getItem('auth_role')) {
+            fetchDataFromSupabase();
+        }
 
         setTimeout(() => {
             renderBuildings(allBuildings);
@@ -295,7 +336,7 @@ function renderBuildings(buildings) {
             }, 0);
         }
 
-        let localReadings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+        let localReadings = getReadings();
         localReadings = localReadings.filter(r => r.building_id === building.id);
         if (localReadings.length > 0) {
             buildingTotalCost += localReadings.reduce((sum, r) => {
@@ -562,7 +603,7 @@ window.syncNow = async function() {
                 }
 
                 // Add any localReadings
-                let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+                let readings = getReadings();
                 const localReadings = readings.filter(r => r.account_number === acc.id_number);
                 for (const reading of localReadings) {
                     kwhValue += parseFloat(reading.value) || 0;
@@ -682,7 +723,7 @@ function selectBuilding(building) {
 }
 
 function updateDashboard() {
-    let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+    let readings = getReadings();
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
 
@@ -852,7 +893,7 @@ function renderChart() {
         }
     }
 
-    let localReadings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+    let localReadings = getReadings();
 
     const startDateFilter = document.getElementById('start-date-filter')?.value;
     const endDateFilter = document.getElementById('end-date-filter')?.value;
@@ -1135,7 +1176,7 @@ function checkAlerts() {
         }
 
         // Stale Readings per Account
-        let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+        let readings = getReadings();
         const localReadings = readings.filter(r => r.building_id === building.id);
 
         if (building.accounts && building.accounts.length > 0) {
@@ -1226,7 +1267,9 @@ function checkAlerts() {
     }
 }
 
-async function fetchEnergyData() {
+async function fetchDataFromSupabase() {
+    window.cloudReadings = [];
+
     console.log('Fetching data from Supabase for Grids...');
     const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
 
@@ -1236,11 +1279,11 @@ async function fetchEnergyData() {
                 .channel('schema-db-changes')
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'energy_accounts' }, payload => {
                     console.log('Realtime UPDATE received!', payload);
-                    fetchEnergyData();
+                    fetchDataFromSupabase();
                 })
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'energy_accounts' }, payload => {
                     console.log('Realtime INSERT received!', payload);
-                    fetchEnergyData();
+                    fetchDataFromSupabase();
                 })
                 .subscribe();
         }
@@ -1255,6 +1298,34 @@ async function fetchEnergyData() {
                 window.alert(energyError.message);
             } else {
                 console.log('Supabase energy_accounts fetch result:', energyData);
+
+                // State Management: Update the global state and call render functions
+                window.cloudEnergyData = energyData;
+                window.cloudReadings = energyData.map(ed => {
+                    let bId = null;
+                    let type = 'electricity';
+                    for(const b of allBuildings) {
+                        if (b.accounts) {
+                            const acc = b.accounts.find(a => a.id_number === ed.mprn_number);
+                            if (acc) {
+                                bId = b.id;
+                                type = acc.type.toLowerCase();
+                                break;
+                            }
+                        }
+                    }
+                    return {
+                        building_id: bId,
+                        type: type,
+                        account_number: ed.mprn_number,
+                        value: ed.usage_kwh || ed.current_kwh || 0,
+                        cost: ed.total_cost || 0,
+                        date: ed.last_updated || new Date().toISOString()
+                    };
+                });
+
+                updateFilters(); // call render functions
+
                 const energyGrid = document.getElementById('energy-list-grid');
                 if (energyGrid && energyData) {
                     energyGrid.innerHTML = '';
@@ -1427,7 +1498,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (building.billHistory && building.billHistory.length > 0) {
                     maxDate = Math.max(...building.billHistory.map(b => new Date(b.date).getTime()));
                 }
-                let readings = JSON.parse(localStorage.getItem('utility_readings')) || [];
+                let readings = getReadings();
                 const localReadings = readings.filter(r => r.building_id === building.id);
                 if (localReadings.length > 0) {
                     const localMax = Math.max(...localReadings.map(r => new Date(r.date).getTime()));
@@ -1840,7 +1911,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.setItem('auth_user_id', 'dobutilities');
                 logAudit(`Logged in as dobutilities`);
                 checkAuth();
-                fetchEnergyData();
+                fetchDataFromSupabase();
             } else {
                 alert('Invalid username format. Try Super_Admin or [Company]_Admin');
             }
@@ -2020,6 +2091,11 @@ function checkAuth() {
 
         // Trigger filter update with the applied roles
         setTimeout(() => {
+            if (authRole) {
+                // Delete Local Fallback: Completely disable the logic that loads data from VestaLogic_Storage
+                localStorage.removeItem('VestaLogic_Storage');
+                // Will fetch data in loadBuildings once it finishes
+            }
             updateFilters();
             checkAlerts();
         }, 100);

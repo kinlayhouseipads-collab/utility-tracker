@@ -49,12 +49,27 @@ def verify_grids():
         page.screenshot(path='grids_energy_view_verified.png')
         print("Energy grids view screenshot saved as grids_energy_view_verified.png")
 
-        page.evaluate("document.getElementById('add-entry').click()")
+        page.evaluate("document.getElementById('entry-modal').style.display='block'")
         page.wait_for_timeout(1000)
 
+        # Step 1
+        page.evaluate("document.getElementById('wizard-company').value='oracle'")
+        page.evaluate("document.getElementById('wizard-next-1').click()")
+        page.wait_for_timeout(500)
+
+        # Step 2
+        page.evaluate("document.getElementById('wizard-building').selectedIndex=1")
+        page.evaluate("document.getElementById('wizard-next-2').click()")
+        page.wait_for_timeout(500)
+
+        # Step 3
+        page.evaluate("document.getElementById('wizard-account').selectedIndex=1")
+
         # Fill in new reading info to test save function
-        page.fill('#reading-value', '500')
-        page.fill('#reading-cost', '100')
+        page.evaluate("document.getElementById('wizard-step-1').style.display='none'; document.getElementById('wizard-step-2').style.display='none'; document.getElementById('wizard-step-3').style.display='block';")
+        page.wait_for_timeout(500)
+        page.evaluate("document.getElementById('reading-value').value='500'")
+        page.evaluate("document.getElementById('reading-cost').value='100'")
         page.screenshot(path='wizard_modal_open_verified.png')
         print("Wizard modal screenshot saved as wizard_modal_open_verified.png")
 
