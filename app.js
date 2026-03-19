@@ -671,14 +671,16 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             if (supabaseClient && building.accounts) {
                 for (const acc of building.accounts) {
                     try {
-                        const { error } = await supabaseClient
+                        const response = await supabaseClient
                             .from('energy_accounts')
                             .delete()
                             .eq('mprn_number', acc.id_number);
 
-                        if (error) {
-                            console.error('Error deleting from Supabase:', error);
-                            window.alert(error.message);
+                        if (response.error) {
+                            console.error('Error deleting from Supabase:', response.error);
+                            window.alert(response.error.message);
+                        } else if (response.status === 204 || response.status === 200) {
+                            fetchDataFromSupabase();
                         }
                     } catch (err) {
                         console.error('Exception during Supabase delete:', err);
@@ -705,6 +707,27 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
         const companyIndex = companies.findIndex(c => c.id === deleteTarget.companyId);
         if (companyIndex !== -1) {
             const companyName = companies[companyIndex].name;
+
+            // Cascade Delete in Supabase
+            if (supabaseClient) {
+                try {
+                    const response = await supabaseClient
+                        .from('energy_accounts')
+                        .delete()
+                        .eq('company_name', companyName);
+
+                    if (response.error) {
+                        console.error('Error deleting from Supabase:', response.error);
+                        window.alert(response.error.message);
+                    } else if (response.status === 204 || response.status === 200) {
+                        fetchDataFromSupabase();
+                    }
+                } catch (err) {
+                    console.error('Exception during Supabase delete:', err);
+                    window.alert(err.message);
+                }
+            }
+
             companies.splice(companyIndex, 1);
             saveCompanies();
             // Archive/Delete associated properties
