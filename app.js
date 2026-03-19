@@ -6,6 +6,7 @@ let allBuildings = [];
 let sortEndDateAscending = true; // Track sorting state globally
 let currentUserRole = null;
 let currentUserId = null;
+let energyAccountsSubscription = null;
 
 let companies = JSON.parse(localStorage.getItem('utility_companies')) || [
     { id: 'oracle', name: 'Oracle', industry: 'Technology' },
@@ -1232,6 +1233,20 @@ async function fetchEnergyData() {
     const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
 
     if (supabaseClient) {
+        if (!energyAccountsSubscription) {
+            energyAccountsSubscription = supabaseClient
+                .channel('schema-db-changes')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'energy_accounts' }, payload => {
+                    console.log('Realtime UPDATE received!', payload);
+                    fetchEnergyData();
+                })
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'energy_accounts' }, payload => {
+                    console.log('Realtime INSERT received!', payload);
+                    fetchEnergyData();
+                })
+                .subscribe();
+        }
+
         try {
             // Fetch Energy Accounts
             const { data: energyData, error: energyError } = await supabaseClient.from('energy_accounts').select('*');
@@ -1845,6 +1860,10 @@ document.addEventListener('DOMContentLoaded', () => {
         logAudit('Logged out');
         sessionStorage.clear();
         checkAuth();
+        if (energyAccountsSubscription) {
+            energyAccountsSubscription.unsubscribe();
+            energyAccountsSubscription = null;
+        }
     });
 
     window.addEventListener('click', (event) => {
