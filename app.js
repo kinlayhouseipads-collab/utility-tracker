@@ -679,7 +679,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
                         if (response.error) {
                             console.error('Error deleting from Supabase:', response.error);
                             window.alert(response.error.message);
-                        } else if (response.status === 204 || response.status === 200) {
+                        } else {
                             fetchDataFromSupabase();
                         }
                     } catch (err) {
@@ -698,6 +698,20 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
         if (building) {
             const accountIndex = building.accounts.findIndex(a => a.id_number === deleteTarget.accountId);
             if (accountIndex !== -1) {
+                if (supabaseClient) {
+                    try {
+                        const response = await supabaseClient.from('energy_accounts').delete().eq('mprn_number', deleteTarget.accountId);
+                        if (response.error) {
+                            console.error('Error deleting from Supabase:', response.error);
+                            window.alert(response.error.message);
+                        } else {
+                            fetchDataFromSupabase();
+                        }
+                    } catch (err) {
+                        console.error('Exception during Supabase delete:', err);
+                        window.alert(err.message);
+                    }
+                }
                 building.accounts.splice(accountIndex, 1);
                 logAudit(`Deleted account ${deleteTarget.accountId} from building ${building.name}`);
             }
@@ -719,7 +733,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
                     if (response.error) {
                         console.error('Error deleting from Supabase:', response.error);
                         window.alert(response.error.message);
-                    } else if (response.status === 204 || response.status === 200) {
+                    } else {
                         fetchDataFromSupabase();
                     }
                 } catch (err) {
@@ -1328,6 +1342,10 @@ async function fetchDataFromSupabase() {
                 })
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'energy_accounts' }, payload => {
                     console.log('Realtime INSERT received!', payload);
+                    fetchDataFromSupabase();
+                })
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'energy_accounts' }, payload => {
+                    console.log('Realtime DELETE received!', payload);
                     fetchDataFromSupabase();
                 })
                 .subscribe();
