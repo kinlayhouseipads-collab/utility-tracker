@@ -649,7 +649,7 @@ window.syncNow = async function() {
     console.log(`syncNow process finished. Synced ${syncCount} records.`);
 };
 
-document.getElementById('confirm-yes')?.addEventListener('click', () => {
+document.getElementById('confirm-yes')?.addEventListener('click', async () => {
     if (!deleteTarget) return;
 
     // Double confirmation check
@@ -664,7 +664,29 @@ document.getElementById('confirm-yes')?.addEventListener('click', () => {
     if (deleteTarget.type === 'building') {
         const buildingIndex = allBuildings.findIndex(b => b.id === deleteTarget.buildingId);
         if (buildingIndex !== -1) {
-            const buildingName = allBuildings[buildingIndex].name;
+            const building = allBuildings[buildingIndex];
+            const buildingName = building.name;
+
+            // Delete all associated accounts from Supabase
+            if (supabaseClient && building.accounts) {
+                for (const acc of building.accounts) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('energy_accounts')
+                            .delete()
+                            .eq('mprn_number', acc.id_number);
+
+                        if (error) {
+                            console.error('Error deleting from Supabase:', error);
+                            window.alert(error.message);
+                        }
+                    } catch (err) {
+                        console.error('Exception during Supabase delete:', err);
+                        window.alert(err.message);
+                    }
+                }
+            }
+
             allBuildings.splice(buildingIndex, 1);
             logAudit(`Deleted property: ${buildingName}`);
         }
