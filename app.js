@@ -1,6 +1,4 @@
-const supabaseUrl = 'https://jzzbbttgvkdqwkjynuxi.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY';
-const supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+const supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient('https://jzzbbttgvkdqwkjynuxi.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY') : null;
 
 let utilityChartInstance = null;
 let activeBuildingId = null;
@@ -134,21 +132,6 @@ async function loadBuildings() {
             buildingsListContainer.innerHTML = '<div style="padding: 20px;"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>';
         }
 
-        const storedDataStr = localStorage.getItem('VestaLogic_Storage');
-        if (storedDataStr) {
-            const storedData = JSON.parse(storedDataStr);
-            allBuildings = storedData.buildings || [];
-            if (storedData.companies) {
-                companies = storedData.companies;
-                saveCompanies();
-                populateCompanyDropdowns();
-                renderClientManager();
-            }
-            setTimeout(() => {
-                renderBuildings(allBuildings);
-            }, 500);
-            return;
-        }
 
         const response = await fetch('buildings.json');
         const rawBuildings = await response.json();
@@ -614,6 +597,7 @@ window.syncNow = async function() {
                         } catch (err) {
                             console.error('Exception during Supabase save:', err);
                             showToast(err.message, 'error');
+                            window.alert(err.message);
                         }
                     }
                 }
@@ -1253,6 +1237,9 @@ async function fetchEnergyData() {
             const { data: energyData, error: energyError } = await supabaseClient.from('energy_accounts').select('*');
             if (energyError) {
                 console.error('Error fetching energy_accounts from Supabase', energyError);
+                const energyGrid = document.getElementById('energy-list-grid');
+                if (energyGrid) energyGrid.innerHTML = '';
+                window.alert(energyError.message);
             } else {
                 console.log('Supabase energy_accounts fetch result:', energyData);
                 const energyGrid = document.getElementById('energy-list-grid');
@@ -1293,6 +1280,9 @@ async function fetchEnergyData() {
             const { data: insuranceData, error: insuranceError } = await supabaseClient.from('insurance_vault').select('*');
             if (insuranceError) {
                 console.error('Error fetching insurance_vault from Supabase', insuranceError);
+                const insuranceGrid = document.getElementById('insurance-vault-grid');
+                if (insuranceGrid) insuranceGrid.innerHTML = '';
+                window.alert(insuranceError.message);
             } else {
                 console.log('Supabase insurance_vault fetch result:', insuranceData);
                 const insuranceGrid = document.getElementById('insurance-vault-grid');
@@ -2257,6 +2247,7 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
         } catch(err) {
             console.error('Exception during Supabase save:', err);
             showToast(err.message, 'error');
+            window.alert(err.message);
         }
     }
 
