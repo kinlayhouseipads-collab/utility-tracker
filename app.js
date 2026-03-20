@@ -1418,6 +1418,26 @@ async function fetchDataFromSupabase() {
 
                 // State Management: Update the global state and call render functions
                 window.cloudEnergyData = energyData;
+
+                // Sync allBuildings with cloud data to enforce 'Cloud-First' deletions
+                const cloudMprns = new Set(energyData.map(ed => String(ed.mprn_number).trim()));
+                for (let i = allBuildings.length - 1; i >= 0; i--) {
+                    const building = allBuildings[i];
+                    if (building.accounts) {
+                        for (let j = building.accounts.length - 1; j >= 0; j--) {
+                            const acc = building.accounts[j];
+                            if (!cloudMprns.has(String(acc.id_number).trim())) {
+                                console.warn(`🗑️ PRUNING [MPRN]: ${acc.id_number} from building ${building.id}`);
+                                building.accounts.splice(j, 1);
+                            }
+                        }
+                    }
+                    if (!building.accounts || building.accounts.length === 0) {
+                        console.warn(`🗑️ PRUNING [BUILDING]: ${building.id} because it has 0 accounts left`);
+                        allBuildings.splice(i, 1);
+                    }
+                }
+
                 window.cloudReadings = energyData.map(ed => {
                     let bId = null;
                     let type = 'electricity';
