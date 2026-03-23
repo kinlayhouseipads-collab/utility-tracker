@@ -151,7 +151,10 @@ async function loadBuildings() {
 
         // Delete Local Fallback
         if (authRole) {
+            allBuildings = [];
             localStorage.removeItem('VestaLogic_Storage');
+            fetchDataFromSupabase();
+            return;
         } else {
             const localDataStr = localStorage.getItem('VestaLogic_Storage');
             if (localDataStr) {
@@ -167,52 +170,46 @@ async function loadBuildings() {
                     return;
                 }
             }
+
+            const response = await fetch('buildings.json');
+            const rawBuildings = await response.json();
+            allBuildings = rawBuildings.map(building => {
+                // Relational Data Upgrade (Multi-Account)
+                const accounts = [];
+                if (building.mprn) {
+                    accounts.push({
+                        type: 'Electricity',
+                        id_number: building.mprn,
+                        provider: 'Utility Co',
+                        contractEndDate: building.contractEndDate
+                    });
+                }
+                if (building.gprn) {
+                    accounts.push({
+                        type: 'Gas',
+                        id_number: building.gprn,
+                        provider: 'Utility Co',
+                        contractEndDate: building.contractEndDate
+                    });
+                }
+
+                // Delete old flat fields and add accounts array
+                delete building.mprn;
+                delete building.gprn;
+                building.accounts = accounts;
+
+                // Set default area if missing
+                if (!building.area) {
+                    building.area = 1000;
+                }
+
+                return building;
+            });
+
+            setTimeout(() => {
+                renderBuildings(allBuildings);
+            }, 500);
         }
-
-
-
-        const response = await fetch('buildings.json');
-        const rawBuildings = await response.json();
-        allBuildings = rawBuildings.map(building => {
-            // Relational Data Upgrade (Multi-Account)
-            const accounts = [];
-            if (building.mprn) {
-                accounts.push({
-                    type: 'Electricity',
-                    id_number: building.mprn,
-                    provider: 'Utility Co',
-                    contractEndDate: building.contractEndDate
-                });
-            }
-            if (building.gprn) {
-                accounts.push({
-                    type: 'Gas',
-                    id_number: building.gprn,
-                    provider: 'Utility Co',
-                    contractEndDate: building.contractEndDate
-                });
-            }
-
-            // Delete old flat fields and add accounts array
-            delete building.mprn;
-            delete building.gprn;
-            building.accounts = accounts;
-
-            // Set default area if missing
-            if (!building.area) {
-                building.area = 1000;
-            }
-
-            return building;
-        });
-
-        if (sessionStorage.getItem('auth_role')) {
-            fetchDataFromSupabase();
-        }
-
-        setTimeout(() => {
-            renderBuildings(allBuildings);
-        }, 500);
     } catch (error) {
         console.error('Error loading buildings:', error);
     }
@@ -442,7 +439,7 @@ function renderBuildings(buildings) {
         // --- Bill History Table ---
         accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #f8fafc;">Bill History</h4></div>';
         accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
-        accountsHtml += '<thead><tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Date</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Account Address</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Reading</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Cost</th></tr></thead>';
+        accountsHtml += '<thead><tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Date</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Account Address</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Reading</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Cost</th><th style="text-align: center; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Actions</th></tr></thead>';
         accountsHtml += '<tbody>';
 
         let allBills = [];
@@ -454,7 +451,8 @@ function renderBuildings(buildings) {
                         account_address: building.accounts?.find(a => a.type === 'Electricity')?.account_address || building.address,
                         type: 'Electricity',
                         reading: `${parseFloat(bill.usage_kwh).toFixed(2)} kWh`,
-                        cost: parseFloat(bill.cost) / (parseFloat(bill.usage_m3) > 0 ? 2 : 1)
+                        cost: parseFloat(bill.cost) / (parseFloat(bill.usage_m3) > 0 ? 2 : 1),
+                        mprn_number: building.accounts?.find(a => a.type === 'Electricity')?.id_number || 'N/A'
                     });
                 }
                 if (parseFloat(bill.usage_m3) > 0) {
@@ -463,7 +461,8 @@ function renderBuildings(buildings) {
                         account_address: building.accounts?.find(a => a.type === 'Gas' || a.type === 'Water')?.account_address || building.address,
                         type: 'Water/Gas',
                         reading: `${parseFloat(bill.usage_m3).toFixed(2)} m³`,
-                        cost: parseFloat(bill.cost) / (parseFloat(bill.usage_kwh) > 0 ? 2 : 1)
+                        cost: parseFloat(bill.cost) / (parseFloat(bill.usage_kwh) > 0 ? 2 : 1),
+                        mprn_number: building.accounts?.find(a => a.type === 'Gas' || a.type === 'Water')?.id_number || 'N/A'
                     });
                 }
             });
@@ -476,7 +475,8 @@ function renderBuildings(buildings) {
                     account_address: acc ? acc.account_address : building.address,
                     type: r.type.charAt(0).toUpperCase() + r.type.slice(1),
                     reading: `${parseFloat(r.value).toFixed(2)} ${r.type === 'electricity' ? 'kWh' : (r.type === 'water' ? 'm³' : 'units')}`,
-                    cost: parseFloat(r.cost)
+                    cost: parseFloat(r.cost),
+                    mprn_number: r.account_number || 'N/A'
                 });
             });
         }
@@ -491,10 +491,15 @@ function renderBuildings(buildings) {
                     <td style="padding: 8px; font-weight: 600; color: #f8fafc;">${bill.type}</td>
                     <td style="padding: 8px; color: #cbd5e1;">${bill.reading}</td>
                     <td style="padding: 8px; font-weight: bold; color: var(--primary);" class="monospace">${formatCurrency.format(bill.cost)}</td>
+                    <td style="padding: 8px; text-align: center;">
+                        <button onclick="requestDeleteBill('${bill.mprn_number}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Bill">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
                 </tr>`;
             });
         } else {
-            accountsHtml += `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #cbd5e1;">No bills found for this building.</td></tr>`;
+            accountsHtml += `<tr><td colspan="6" style="padding: 15px; text-align: center; color: #cbd5e1;">No bills found for this building.</td></tr>`;
         }
 
         accountsHtml += '</tbody></table>';
@@ -539,6 +544,34 @@ window.requestDeleteBuilding = function(id) {
     document.getElementById('double-confirm-input').value = '';
 
     document.getElementById('confirm-modal').style.display = 'block';
+};
+
+window.requestDeleteBill = async function(mprn_number) {
+    if (!confirm('Are you sure you want to delete this bill? This will remove all cloud data for this MPRN.')) {
+        return;
+    }
+
+    if (supabaseClient) {
+        try {
+            const response = await supabaseClient
+                .from('energy_accounts')
+                .delete()
+                .eq('mprn_number', String(mprn_number).trim());
+
+            if (response.error) {
+                console.error('Error deleting bill from Supabase:', response.error);
+                window.alert(response.error.message);
+            } else {
+                showToast('Bill deleted successfully.', 'success');
+                logAudit(`Deleted bill associated with MPRN ${mprn_number}`);
+                // Realtime Auto-Recalculate: re-fetch from cloud, rebuilds arrays and updates dashboard automatically
+                fetchDataFromSupabase();
+            }
+        } catch (err) {
+            console.error('Exception during Supabase bill delete:', err);
+            window.alert(err.message);
+        }
+    }
 };
 
 window.requestDeleteAccount = function(buildingId, accountId) {
@@ -1395,24 +1428,39 @@ async function fetchDataFromSupabase() {
                 // State Management: Update the global state and call render functions
                 window.cloudEnergyData = energyData;
 
-                // Sync allBuildings with cloud data to enforce 'Cloud-First' deletions
-                const cloudMprns = new Set(energyData.map(ed => String(ed.mprn_number).trim()));
-                for (let i = allBuildings.length - 1; i >= 0; i--) {
-                    const building = allBuildings[i];
-                    if (building.accounts) {
-                        for (let j = building.accounts.length - 1; j >= 0; j--) {
-                            const acc = building.accounts[j];
-                            if (!cloudMprns.has(String(acc.id_number).trim())) {
-                                console.warn(`🗑️ PRUNING [MPRN]: ${acc.id_number} from building ${building.id}`);
-                                building.accounts.splice(j, 1);
-                            }
-                        }
+                // Rebuild allBuildings strictly from cloud data to enforce 'Cloud-Only' state
+                document.getElementById('buildings-list').innerHTML = '';
+                allBuildings = [];
+
+                const groupedBuildings = {};
+                let bCount = 1;
+
+                energyData.forEach(ed => {
+                    const propName = ed.property_name || 'Unknown Property';
+                    if (!groupedBuildings[propName]) {
+                        const newId = 'B' + String(bCount++).padStart(3, '0');
+                        groupedBuildings[propName] = {
+                            id: newId,
+                            name: propName,
+                            address: propName + ' Address',
+                            companyId: companies.find(c => c.name === (ed.company_name || ''))?.id || 'unknown',
+                            area: 1000,
+                            accounts: [],
+                            billHistory: []
+                        };
                     }
-                    if (!building.accounts || building.accounts.length === 0) {
-                        console.warn(`🗑️ PRUNING [BUILDING]: ${building.id} because it has 0 accounts left`);
-                        allBuildings.splice(i, 1);
+
+                    if (ed.mprn_number) {
+                        groupedBuildings[propName].accounts.push({
+                            type: 'Electricity',
+                            id_number: ed.mprn_number,
+                            provider: 'Utility Co',
+                            contractEndDate: '2026-12-31'
+                        });
                     }
-                }
+                });
+
+                allBuildings = Object.values(groupedBuildings);
 
                 window.cloudReadings = energyData.map(ed => {
                     let bId = null;
