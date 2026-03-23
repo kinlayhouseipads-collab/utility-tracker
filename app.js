@@ -16,14 +16,7 @@ let currentUserRole = null;
 let currentUserId = null;
 let energyAccountsSubscription = null;
 
-let companies = JSON.parse(localStorage.getItem('utility_companies')) || [
-    { id: 'oracle', name: 'Oracle', industry: 'Technology' },
-    { id: 'google', name: 'Google', industry: 'Technology' },
-    { id: 'amazon', name: 'Amazon', industry: 'E-commerce' },
-    { id: 'meta', name: 'Meta', industry: 'Technology' },
-    { id: 'apple', name: 'Apple', industry: 'Technology' },
-    { id: 'microsoft', name: 'Microsoft', industry: 'Technology' }
-];
+let companies = [];
 
 
 // Function to save companies
@@ -143,38 +136,16 @@ function renderAuditLogs() {
 
 async function loadBuildings() {
     try {
-        const authRole = sessionStorage.getItem('auth_role');
         const buildingsListContainer = document.getElementById('buildings-list');
         if (buildingsListContainer) {
             buildingsListContainer.innerHTML = '<div style="padding: 20px;"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>';
         }
 
-        // Delete Local Fallback
-        if (authRole) {
-            allBuildings = [];
-            localStorage.removeItem('VestaLogic_Storage');
-            fetchDataFromSupabase();
-            return;
-        } else {
-            const localDataStr = localStorage.getItem('VestaLogic_Storage');
-            if (localDataStr) {
-                const localData = JSON.parse(localDataStr);
-                if (localData && localData.buildings) {
-                    allBuildings = localData.buildings;
-                    if (localData.companies) {
-                        companies = localData.companies;
-                    }
-                    setTimeout(() => {
-                        renderBuildings(allBuildings);
-                    }, 500);
-                    return;
-                }
-            }
-
-            // Force fetch from cloud if no local backup
-            fetchDataFromSupabase();
-            return;
-        }
+        // Force fetch from cloud to ensure True Cloud-Only state
+        allBuildings = [];
+        companies = [];
+        localStorage.removeItem('VestaLogic_Storage');
+        fetchDataFromSupabase();
     } catch (error) {
         console.error('Error loading buildings:', error);
     }
@@ -1396,19 +1367,28 @@ async function fetchDataFromSupabase() {
                 // Rebuild allBuildings strictly from cloud data to enforce 'Cloud-Only' state
                 document.getElementById('buildings-list').innerHTML = '';
                 allBuildings = [];
+                companies = []; // Reset companies array for strict cloud-only dynamic build
 
                 const groupedBuildings = {};
                 let bCount = 1;
 
                 energyData.forEach(ed => {
                     const propName = ed.property_name || 'Unknown Property';
+                    const compName = ed.company_name || 'Unknown Company';
+                    const compId = compName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+                    // Dynamically build companies array without hard-coded fallbacks
+                    if (!companies.find(c => c.id === compId)) {
+                        companies.push({ id: compId, name: compName, industry: 'Unknown' });
+                    }
+
                     if (!groupedBuildings[propName]) {
                         const newId = 'B' + String(bCount++).padStart(3, '0');
                         groupedBuildings[propName] = {
                             id: newId,
                             name: propName,
                             address: propName + ' Address',
-                            companyId: companies.find(c => c.name === (ed.company_name || ''))?.id || 'unknown',
+                            companyId: compId,
                             area: 1000,
                             accounts: [],
                             billHistory: []
@@ -1426,6 +1406,9 @@ async function fetchDataFromSupabase() {
                 });
 
                 allBuildings = Object.values(groupedBuildings);
+
+                populateCompanyDropdowns();
+                renderClientManager();
 
                 window.cloudReadings = energyData.map(ed => {
                     let bId = null;
@@ -2025,17 +2008,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchDataFromSupabase();
             } else if (username.endsWith('_Admin')) {
                 const companyName = username.split('_')[0].toLowerCase();
-                const validCompany = companies.find(c => c.id === companyName);
-                if (validCompany) {
-                    sessionStorage.setItem('auth_role', 'Company-Admin');
-                    sessionStorage.setItem('auth_company', companyName);
-                    sessionStorage.setItem('auth_user_id', username);
-                    logAudit(`Logged in as Company-Admin for ${companyName}`);
-                    checkAuth();
-                    fetchDataFromSupabase();
-                } else {
-                    alert('Company not found in registry.');
-                }
+                // We no longer validate against 'companies' here since companies is strictly cloud-only
+                // and might be empty prior to the first fetch.
+                sessionStorage.setItem('auth_role', 'Company-Admin');
+                sessionStorage.setItem('auth_company', companyName);
+                sessionStorage.setItem('auth_user_id', username);
+                logAudit(`Logged in as Company-Admin for ${companyName}`);
+                checkAuth();
+                fetchDataFromSupabase();
             } else if (username === 'dobutilities') {
                 sessionStorage.setItem('auth_role', 'Super-Admin');
                 sessionStorage.setItem('auth_user_id', 'dobutilities');
