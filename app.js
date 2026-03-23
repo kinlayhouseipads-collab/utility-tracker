@@ -482,7 +482,7 @@ window.requestDeleteBuilding = function(id) {
     document.getElementById('confirm-modal').style.display = 'block';
 };
 
-window.requestDeleteBill = async function(mprn_number) {
+window.requestDeleteBill = async function(billMprn) {
     if (!confirm('Are you sure you want to delete this bill? This will remove all cloud data for this MPRN.')) {
         return;
     }
@@ -492,14 +492,14 @@ window.requestDeleteBill = async function(mprn_number) {
             const response = await supabaseClient
                 .from('energy_accounts')
                 .delete()
-                .eq('mprn_number', String(mprn_number).trim());
+                .eq('mprn_number', String(billMprn).trim());
 
             if (response.error) {
                 console.error('Error deleting bill from Supabase:', response.error);
                 window.alert(response.error.message);
             } else {
                 showToast('Bill deleted successfully.', 'success');
-                logAudit(`Deleted bill associated with MPRN ${mprn_number}`);
+                logAudit(`Deleted bill associated with MPRN ${billMprn}`);
                 // Realtime Auto-Recalculate: re-fetch from cloud, rebuilds arrays and updates dashboard automatically
                 fetchDataFromSupabase();
             }
@@ -777,11 +777,9 @@ function selectBuilding(building) {
         // Deselect
         activeBuildingId = null;
         document.getElementById('selected-building-name').textContent = 'All Properties Dashboard';
-        document.getElementById('building-id').value = '';
     } else {
         activeBuildingId = building.id;
         document.getElementById('selected-building-name').textContent = `${building.name} Dashboard`;
-        document.getElementById('building-id').value = building.id;
     }
 
     updateDashboard();
@@ -876,9 +874,13 @@ function updateDashboard() {
         }
     });
 
-    document.getElementById('stat-electricity').textContent = totalElectricity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh';
-    document.getElementById('stat-water').textContent = totalWater.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' m³';
-    document.getElementById('stat-gas').textContent = totalGas.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' units';
+    const totalEnergy = totalElectricity + totalGas;
+    const co2 = totalEnergy * 0.233;
+
+    document.getElementById('stat-electricity').textContent = totalEnergy.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh';
+    if (document.getElementById('stat-co2')) {
+        document.getElementById('stat-co2').textContent = co2.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg CO₂';
+    }
 
     // Total for entire filtered view based on Date Filter
     let grandTotal = 0;
@@ -961,6 +963,10 @@ function renderChart() {
 
     let localReadings = getReadings();
 
+    // Explicitly filter localReadings to ONLY include readings for target buildings
+    const targetBuildingIds = targetBuildings.map(b => b.id);
+    localReadings = localReadings.filter(r => targetBuildingIds.includes(r.building_id));
+
     const startDateFilter = document.getElementById('start-date-filter')?.value;
     const endDateFilter = document.getElementById('end-date-filter')?.value;
 
@@ -1037,6 +1043,22 @@ function renderChart() {
         utilityChartInstance.destroy();
     }
 
+    let chartTitle = 'Total Portfolio Cost: Current vs Previous Year';
+    if (activeBuildingId) {
+        const activeBuilding = allBuildings.find(b => b.id === activeBuildingId);
+        if (activeBuilding) {
+            chartTitle = `${activeBuilding.name} Cost: Current vs Previous Year`;
+        }
+    } else {
+        const companyFilter = document.getElementById('company-filter')?.value;
+        if (companyFilter) {
+            const comp = companies.find(c => c.id === companyFilter);
+            if (comp) {
+                chartTitle = `${comp.name} Portfolio Cost: Current vs Previous Year`;
+            }
+        }
+    }
+
     utilityChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1075,7 +1097,7 @@ function renderChart() {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Total Portfolio Cost: Current vs Previous Year',
+                    text: chartTitle,
                     color: '#f8fafc'
                 },
                 legend: {
@@ -2178,6 +2200,11 @@ function checkAuth() {
         authModal.style.display = 'none';
         appContent.style.display = 'flex';
         appContent.style.flexDirection = 'column';
+
+        const loggedInUserEl = document.getElementById('logged-in-user');
+        if (loggedInUserEl) {
+            loggedInUserEl.textContent = currentUserId;
+        }
 
         renderAuditLogs();
 

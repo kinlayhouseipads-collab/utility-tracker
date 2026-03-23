@@ -41,26 +41,28 @@
                 <button id="view-stats">Trends</button>
                 <button id="view-contracts" style="background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Contract Dates</button>
                 <button id="client-manager-btn" class="btn-primary" style="display: none; background: #6366f1;">Client Manager</button>
-                <button id="add-building" class="btn-primary">+ New Property</button>
-                <button id="add-entry" class="btn-primary">+ New Entry</button>
-                <div id="notification-bell" style="position: relative; cursor: pointer; padding: 10px; font-size: 1.2rem; color: #475569; display: flex; align-items: center; justify-content: center;">
+                <button id="add-building" class="btn-primary"><i class="fas fa-plus"></i> New Property</button>
+                <button id="add-entry" class="btn-primary"><i class="fas fa-plus-circle"></i> New Entry</button>
+                <div class="search-section" style="display: inline-block;">
+                    <input type="text" id="search-bar" placeholder="Search properties..." style="padding: 10px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: rgba(255,255,255,0.05); color: #f8fafc; min-width: 200px;">
+                </div>
+                <button id="export-csv-btn" class="btn-primary" style="background: #10b981; padding: 10px 15px;" title="Export CSV"><i class="fas fa-file-csv"></i></button>
+                <button id="backup-data-btn" class="btn-primary" style="background: #eab308; padding: 10px 15px;" title="Backup Data"><i class="fas fa-download"></i></button>
+                <button id="sync-data-btn" class="btn-primary" style="background: #8b5cf6; padding: 10px 15px;" onclick="syncNow()" title="Push Local Data to Cloud"><i class="fas fa-cloud-upload-alt"></i></button>
+                <div id="notification-bell" style="position: relative; cursor: pointer; padding: 10px; font-size: 1.2rem; color: #f8fafc; display: flex; align-items: center; justify-content: center;">
                     <i class="fas fa-bell"></i>
                     <span id="notification-badge" style="display: none; position: absolute; top: 0px; right: 0; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; align-items: center; justify-content: center; font-weight: bold;">0</span>
                 </div>
-                <button id="export-csv-btn" class="btn-primary" style="background: #10b981;">Export CSV</button>
-                <button id="backup-data-btn" class="btn-primary" style="background: #eab308;">Backup Data</button>
-                <button id="sync-data-btn" class="btn-primary" style="background: #8b5cf6;" onclick="syncNow()">Push Local Data to Cloud</button>
-                <button id="logout-btn" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Logout</button>
+                <div style="display: flex; align-items: center; gap: 10px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 10px; margin-left: 5px;">
+                    <span id="logged-in-user" style="color: #cbd5e1; font-weight: 500; font-size: 0.9em;"></span>
+                    <button id="logout-btn" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: bold;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
             </nav>
         </div>
     </header>
 
     <div style="display: flex;">
     <main class="container" style="flex: 1;">
-
-        <section class="search-section" style="margin-top: 20px;">
-            <input type="text" id="search-bar" placeholder="Search properties by name or address..." style="width: 100%; padding: 15px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box;">
-        </section>
 
         <!-- Notification Dropdown -->
         <div id="notification-dropdown" style="display: none; position: absolute; right: 20px; top: 70px; background: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px; width: 350px; max-height: 400px; overflow-y: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 2000;">
@@ -81,20 +83,16 @@
 
         <section class="dashboard-grid">
             <div class="card a">
-                <h3>Electricity</h3>
-                <p class="stat" id="stat-electricity">-- kWh</p>
+                <h3>Total Portfolio Cost</h3>
+                <p class="stat monospace" id="stat-cost">-- €</p>
             </div>
             <div class="card b">
-                <h3>Water</h3>
-                <p class="stat" id="stat-water">-- m³</p>
+                <h3>Total Energy</h3>
+                <p class="stat" id="stat-electricity">-- kWh</p>
             </div>
             <div class="card c">
-                <h3>Gas</h3>
-                <p class="stat" id="stat-gas">-- units</p>
-            </div>
-            <div class="card d">
-                <h3>Total Monthly Cost</h3>
-                <p class="stat monospace" id="stat-cost">-- €</p>
+                <h3>Carbon Footprint</h3>
+                <p class="stat" id="stat-co2">-- kg CO₂</p>
             </div>
         </section>
 
