@@ -26,7 +26,7 @@ def test():
 
         # Step 2
         page.wait_for_selector("#wizard-step-2", state="visible")
-        page.select_option("#wizard-building", label="Building A1")
+        page.select_option("#wizard-building", label="Global Head Office")
         page.click("#wizard-next-2")
 
         # Step 3

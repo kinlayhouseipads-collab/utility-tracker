@@ -747,51 +747,35 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
         if (companyIndex !== -1) {
             const companyName = companies[companyIndex].name;
 
-            // Cascade Delete in Supabase explicitly using mprn_number
+            // Delete Company in Supabase explicitly using company_name
             let hasError = false;
-            let successCount = 0;
-            let totalAccounts = 0;
+            let success = false;
 
-            // Collect all accounts to delete for this company
-            const accountsToDelete = [];
-            for (const b of allBuildings) {
-                if (b.companyId === deleteTarget.companyId && b.accounts) {
-                    for (const acc of b.accounts) {
-                        accountsToDelete.push(String(acc.id_number).trim());
-                    }
-                }
-            }
-            totalAccounts = accountsToDelete.length;
+            if (supabaseClient) {
+                try {
+                    const response = await supabaseClient
+                        .from('energy_accounts')
+                        .delete()
+                        .eq('company_name', companyName);
 
-            if (totalAccounts === 0) {
-                 hasError = false;
-                 successCount = 0;
-            } else if (supabaseClient) {
-                for (const mprn of accountsToDelete) {
-                    try {
-                        const response = await supabaseClient
-                            .from('energy_accounts')
-                            .delete()
-                            .eq('mprn_number', mprn);
-
-                        if (response.error) {
-                            console.error('Error deleting from Supabase:', response.error);
-                            window.alert(response.error.message);
-                            hasError = true;
-                        } else if (response.status === 204) {
-                            successCount++;
-                        } else {
-                            hasError = true;
-                        }
-                    } catch (err) {
-                        console.error('Exception during Supabase delete:', err);
-                        window.alert(err.message);
+                    if (response.error) {
+                        console.error('Error deleting from Supabase:', response.error);
+                        window.alert(response.error.message);
                         hasError = true;
+                    } else {
+                        success = true;
                     }
+                } catch (err) {
+                    console.error('Exception during Supabase delete:', err);
+                    window.alert(err.message);
+                    hasError = true;
                 }
+            } else {
+                 hasError = false;
+                 success = true; // Assume success if no client
             }
 
-            if (!hasError && successCount === totalAccounts) {
+            if (!hasError && success) {
                 companies.splice(companyIndex, 1);
                 saveCompanies();
 
@@ -1390,16 +1374,8 @@ async function fetchDataFromSupabase() {
         if (!energyAccountsSubscription) {
             energyAccountsSubscription = supabaseClient
                 .channel('schema-db-changes')
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'energy_accounts' }, payload => {
-                    console.log('Realtime UPDATE received!', payload);
-                    fetchDataFromSupabase();
-                })
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'energy_accounts' }, payload => {
-                    console.log('Realtime INSERT received!', payload);
-                    fetchDataFromSupabase();
-                })
-                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'energy_accounts' }, payload => {
-                    console.log('Realtime DELETE received!', payload);
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'energy_accounts' }, payload => {
+                    console.log('Realtime change received!', payload);
                     fetchDataFromSupabase();
                 })
                 .subscribe();
@@ -2031,6 +2007,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.setItem('auth_user_id', username);
                 logAudit(`Logged in as Super-Admin`);
                 checkAuth();
+                fetchDataFromSupabase();
             } else if (username.endsWith('_Admin')) {
                 const companyName = username.split('_')[0].toLowerCase();
                 const validCompany = companies.find(c => c.id === companyName);
@@ -2040,6 +2017,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     sessionStorage.setItem('auth_user_id', username);
                     logAudit(`Logged in as Company-Admin for ${companyName}`);
                     checkAuth();
+                    fetchDataFromSupabase();
                 } else {
                     alert('Company not found in registry.');
                 }

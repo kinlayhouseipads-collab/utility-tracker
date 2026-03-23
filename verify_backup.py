@@ -7,8 +7,8 @@ async def verify_backup():
         browser = await p.chromium.launch()
         page = await browser.new_page()
 
-        print("Navigating to http://localhost:3000")
-        await page.goto("http://localhost:3000")
+        print("Navigating to http://localhost:8000")
+        await page.goto("http://localhost:8000")
 
         # Login
         print("Logging in as Super_Admin")
