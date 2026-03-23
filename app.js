@@ -171,44 +171,9 @@ async function loadBuildings() {
                 }
             }
 
-            const response = await fetch('buildings.json');
-            const rawBuildings = await response.json();
-            allBuildings = rawBuildings.map(building => {
-                // Relational Data Upgrade (Multi-Account)
-                const accounts = [];
-                if (building.mprn) {
-                    accounts.push({
-                        type: 'Electricity',
-                        id_number: building.mprn,
-                        provider: 'Utility Co',
-                        contractEndDate: building.contractEndDate
-                    });
-                }
-                if (building.gprn) {
-                    accounts.push({
-                        type: 'Gas',
-                        id_number: building.gprn,
-                        provider: 'Utility Co',
-                        contractEndDate: building.contractEndDate
-                    });
-                }
-
-                // Delete old flat fields and add accounts array
-                delete building.mprn;
-                delete building.gprn;
-                building.accounts = accounts;
-
-                // Set default area if missing
-                if (!building.area) {
-                    building.area = 1000;
-                }
-
-                return building;
-            });
-
-            setTimeout(() => {
-                renderBuildings(allBuildings);
-            }, 500);
+            // Force fetch from cloud if no local backup
+            fetchDataFromSupabase();
+            return;
         }
     } catch (error) {
         console.error('Error loading buildings:', error);
@@ -1488,8 +1453,10 @@ async function fetchDataFromSupabase() {
                 updateFilters(); // call render functions
 
                 const energyGrid = document.getElementById('energy-list-grid');
-                if (energyGrid && energyData) {
+                if (energyGrid) {
                     energyGrid.innerHTML = '';
+                }
+                if (energyGrid && energyData && energyData.length > 0) {
                     energyData.forEach(account => {
                         const card = document.createElement('div');
                         card.className = 'card';
