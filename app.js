@@ -383,26 +383,28 @@ function renderBuildings(buildings) {
             building.billHistory.forEach(bill => {
                 if (new Date(bill.date) < new Date('2026-01-01')) return;
 
-                if (parseFloat(bill.usage_kwh) > 0) {
+                if (bill.utility_type === 'Gas' || parseFloat(bill.usage_m3) > 0) {
+                    const usage = bill.utility_type === 'Gas' ? (parseFloat(bill.usage_kwh) || parseFloat(bill.usage_m3) || 0) : (parseFloat(bill.usage_m3) || 0);
+                    if (usage > 0) {
+                        allBills.push({
+                            date: bill.date,
+                            account_address: building.accounts?.find(a => a.type === 'Gas')?.account_address || building.address,
+                            type: 'Gas',
+                            reading: `${usage.toFixed(2)} kWh`,
+                            cost: parseFloat(bill.cost),
+                            id: bill.id,
+                            mprn_number: building.accounts?.find(a => a.type === 'Gas')?.id_number || 'N/A'
+                        });
+                    }
+                } else if (parseFloat(bill.usage_kwh) > 0) {
                     allBills.push({
                         date: bill.date,
                         account_address: building.accounts?.find(a => a.type === 'Electricity')?.account_address || building.address,
                         type: 'Electricity',
                         reading: `${parseFloat(bill.usage_kwh).toFixed(2)} kWh`,
-                        cost: parseFloat(bill.cost) / (parseFloat(bill.usage_m3) > 0 ? 2 : 1),
+                        cost: parseFloat(bill.cost),
                         id: bill.id,
                         mprn_number: building.accounts?.find(a => a.type === 'Electricity')?.id_number || 'N/A'
-                    });
-                }
-                if (parseFloat(bill.usage_m3) > 0) {
-                    allBills.push({
-                        date: bill.date,
-                        account_address: building.accounts?.find(a => a.type === 'Gas')?.account_address || building.address,
-                        type: 'Gas',
-                        reading: `${parseFloat(bill.usage_m3).toFixed(2)} m³`,
-                        cost: parseFloat(bill.cost) / (parseFloat(bill.usage_kwh) > 0 ? 2 : 1),
-                        id: bill.id,
-                        mprn_number: building.accounts?.find(a => a.type === 'Gas')?.id_number || 'N/A'
                     });
                 }
             });
@@ -567,11 +569,11 @@ window.syncNow = async function() {
                 if (building.billHistory && building.billHistory.length > 0) {
                     for (const bill of building.billHistory) {
                         if (new Date(bill.date) < new Date('2026-01-01')) continue;
-                        if (acc.type === 'Electricity' && parseFloat(bill.usage_kwh) > 0) {
+                        if (acc.type === 'Electricity' && bill.utility_type !== 'Gas' && parseFloat(bill.usage_kwh) > 0) {
                             kwhValue += parseFloat(bill.usage_kwh);
                             costValue += parseFloat(bill.cost) || 0;
-                        } else if (acc.type === 'Gas' && parseFloat(bill.usage_m3) > 0) {
-                            kwhValue += parseFloat(bill.usage_m3);
+                        } else if (acc.type === 'Gas' && (bill.utility_type === 'Gas' || parseFloat(bill.usage_m3) > 0)) {
+                            kwhValue += bill.utility_type === 'Gas' ? (parseFloat(bill.usage_kwh) || parseFloat(bill.usage_m3) || 0) : (parseFloat(bill.usage_m3) || 0);
                             costValue += parseFloat(bill.cost) || 0;
                         }
                     }
@@ -595,7 +597,8 @@ window.syncNow = async function() {
                         usage_kwh: Number(kwhValue),
                         total_cost: Number(costValue),
                         company_name: companyName,
-                        property_name: building.name
+                        property_name: building.name,
+                        utility_type: acc.type
                     };
 
                     console.log('Attempting Supabase Save...', payload);
@@ -840,8 +843,11 @@ function updateDashboard() {
                 }
 
                 if (withinDateRange) {
-                    totalElectricity += parseFloat(bill.usage_kwh) || 0;
-                    totalGas += parseFloat(bill.usage_m3) || 0;
+                    if (bill.utility_type === 'Gas' || parseFloat(bill.usage_m3) > 0) {
+                        totalGas += bill.utility_type === 'Gas' ? (parseFloat(bill.usage_kwh) || parseFloat(bill.usage_m3) || 0) : (parseFloat(bill.usage_m3) || 0);
+                    } else {
+                        totalElectricity += parseFloat(bill.usage_kwh) || 0;
+                    }
                     totalCost += parseFloat(bill.cost) || 0;
                 }
             });
@@ -993,27 +999,11 @@ function renderChart() {
                 }
                 if (withinDateRange) {
                     const billCost = parseFloat(bill.cost) || 0;
-                    const eUsage = parseFloat(bill.usage_kwh) || 0;
-                    const gUsage = parseFloat(bill.usage_m3) || 0;
 
-                    // Approximate split if bill contains both usages
-                    let eCost = 0;
-                    let gCost = 0;
-
-                    if (eUsage > 0 && gUsage > 0) {
-                        eCost = billCost / 2;
-                        gCost = billCost / 2;
-                    } else if (eUsage > 0) {
-                        eCost = billCost;
-                    } else if (gUsage > 0) {
-                        gCost = billCost;
-                    }
-
-                    if (eCost > 0) {
-                        electricReadings.push({ date: bill.date, cost: eCost });
-                    }
-                    if (gCost > 0) {
-                        gasReadings.push({ date: bill.date, cost: gCost });
+                    if (bill.utility_type === 'Gas' || parseFloat(bill.usage_m3) > 0) {
+                        gasReadings.push({ date: bill.date, cost: billCost });
+                    } else {
+                        electricReadings.push({ date: bill.date, cost: billCost });
                     }
                 }
             });
@@ -1288,9 +1278,9 @@ function checkAlerts() {
                 // check billHistory for this account's usage
                 if (building.billHistory && building.billHistory.length > 0) {
                     building.billHistory.forEach(b => {
-                        if (acc.type === 'Electricity' && parseFloat(b.usage_kwh) > 0) {
+                        if (acc.type === 'Electricity' && b.utility_type !== 'Gas' && parseFloat(b.usage_kwh) > 0) {
                             maxDate = Math.max(maxDate, new Date(b.date).getTime());
-                        } else if (acc.type === 'Gas' && parseFloat(b.usage_m3) > 0) {
+                        } else if (acc.type === 'Gas' && (b.utility_type === 'Gas' || parseFloat(b.usage_m3) > 0)) {
                             maxDate = Math.max(maxDate, new Date(b.date).getTime());
                         }
                     });
@@ -1433,7 +1423,7 @@ async function fetchDataFromSupabase() {
 
                     if (ed.mprn_number) {
                         groupedBuildings[propName].accounts.push({
-                            type: 'Electricity',
+                            type: ed.utility_type === 'Gas' ? 'Gas' : 'Electricity',
                             id_number: ed.mprn_number,
                             provider: 'Utility Co',
                             contractEndDate: '2026-12-31'
@@ -1444,6 +1434,7 @@ async function fetchDataFromSupabase() {
                         date: ed.last_updated || new Date().toISOString(),
                         usage_kwh: ed.usage_kwh || ed.current_kwh || 0,
                         cost: ed.total_cost || 0,
+                        utility_type: ed.utility_type || (ed.usage_m3 > 0 ? 'Gas' : 'Electricity')
                     });
 
                 });
@@ -2295,6 +2286,13 @@ if (addEntryBtn) {
         wStep1.style.display = 'block';
         wStep2.style.display = 'none';
         wStep3.style.display = 'none';
+
+        // 2026 Default Date Picker Check
+        const readingDateInput = document.getElementById('reading-date');
+        if (readingDateInput) {
+            const dateStr = '2026-03-12'; // The explicit reference today date used elsewhere in the codebase
+            readingDateInput.value = dateStr;
+        }
 
         // Auto-select company if company admin
         if (currentUserRole === 'Company-Admin') {
