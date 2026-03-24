@@ -3,13 +3,6 @@ const supabaseClient = typeof window !== 'undefined' && window.supabase ? window
 let utilityChartInstance = null;
 let activeBuildingId = null;
 
-function getReadings() {
-    if (sessionStorage.getItem('auth_role')) {
-        return window.cloudReadings || [];
-    }
-    return JSON.parse(localStorage.getItem('utility_readings')) || [];
-}
-
 let allBuildings = [];
 let sortEndDateAscending = true; // Track sorting state globally
 let currentUserRole = null;
@@ -264,34 +257,6 @@ function renderBuildings(buildings) {
             }, 0);
         }
 
-        let localReadings = getReadings();
-        localReadings = localReadings.filter(r => r.building_id === building.id);
-        if (localReadings.length > 0) {
-            buildingTotalCost += localReadings.reduce((sum, r) => {
-                let withinDateRange = true;
-                if (startDateFilter && endDateFilter) {
-                    const rDate = new Date(r.date);
-                    const sDate = new Date(startDateFilter);
-                    const eDate = new Date(endDateFilter);
-                    if (rDate < sDate || rDate > eDate) {
-                        withinDateRange = false;
-                    }
-                }
-                return sum + (withinDateRange ? (parseFloat(r.cost) || 0) : 0);
-            }, 0);
-            const localMax = Math.max(...localReadings.map(r => new Date(r.date).getTime()));
-            if (building.billHistory && building.billHistory.length > 0) {
-                const maxDate = new Date(Math.max(...building.billHistory.map(b => new Date(b.date).getTime())));
-                if (localMax > maxDate.getTime()) {
-                    diffStaleDays = Math.ceil((today - new Date(localMax)) / (1000 * 60 * 60 * 24));
-                    lastUpdatedText = `${diffStaleDays} days`;
-                }
-            } else {
-                diffStaleDays = Math.ceil((today - new Date(localMax)) / (1000 * 60 * 60 * 24));
-                lastUpdatedText = `${diffStaleDays} days`;
-            }
-        }
-
         row.innerHTML = `
             <td style="padding: 20px 15px;">
                 <div style="font-weight: 500; font-size: 1.05em; color: #f8fafc;">${building.name}</div>
@@ -393,21 +358,6 @@ function renderBuildings(buildings) {
                 }
             });
         }
-        if (localReadings.length > 0) {
-            localReadings.forEach(r => {
-                const acc = building.accounts?.find(a => a.id_number === r.account_number);
-                allBills.push({
-                    date: r.date,
-                    account_address: (acc && acc.account_address) ? acc.account_address : building.address,
-                    type: r.type.charAt(0).toUpperCase() + r.type.slice(1),
-                    reading: `${parseFloat(r.value).toFixed(2)} ${r.type === 'electricity' ? 'kWh' : 'm³'}`,
-                    cost: parseFloat(r.cost),
-                    id: r.id,
-                    mprn_number: r.account_number || 'N/A'
-                });
-            });
-        }
-
         allBills.sort((a, b) => new Date(b.date) - new Date(a.date));
 
         if (allBills.length > 0) {
@@ -509,9 +459,6 @@ window.requestDeleteBill = async function(billId) {
                     console.log('Remaining Bills for this MPRN:', 0);
                 }
 
-                if (window.cloudReadings) {
-                    window.cloudReadings = window.cloudReadings.filter(r => r.id !== billId);
-                }
 
                 allBuildings.forEach(building => {
                     if (building.billHistory) {
@@ -564,80 +511,15 @@ document.getElementById('confirm-cancel')?.addEventListener('click', () => {
 });
 
 window.syncNow = async function() {
-    console.log('Starting syncNow process...');
-
-    let syncCount = 0;
-
-    // Iterate through allBuildings
-    for (const building of allBuildings) {
-        if (building.accounts) {
-            for (const acc of building.accounts) {
-                // Find associated readings for this account to get the kWh value
-                let kwhValue = 0;
-                let costValue = 0;
-
-                // Search billHistory for usages
-                if (building.billHistory && building.billHistory.length > 0) {
-                    for (const bill of building.billHistory) {
-                        if (new Date(bill.date) < new Date('2026-01-01')) continue;
-                        if (acc.type === 'Electricity' && bill.utility_type !== 'Gas' && parseFloat(bill.usage_kwh) > 0) {
-                            kwhValue += parseFloat(bill.usage_kwh);
-                            costValue += parseFloat(bill.cost) || 0;
-                        } else if (acc.type === 'Gas' && (bill.utility_type === 'Gas' || parseFloat(bill.usage_m3) > 0)) {
-                            kwhValue += bill.utility_type === 'Gas' ? (parseFloat(bill.usage_kwh) || parseFloat(bill.usage_m3) || 0) : (parseFloat(bill.usage_m3) || 0);
-                            costValue += parseFloat(bill.cost) || 0;
-                        }
-                    }
-                }
-
-                // Add any localReadings
-                let readings = getReadings();
-                const localReadings = readings.filter(r => r.account_number === acc.id_number && new Date(r.date) >= new Date('2026-01-01'));
-                for (const reading of localReadings) {
-                    kwhValue += parseFloat(reading.value) || 0;
-                    costValue += parseFloat(reading.cost) || 0;
-                }
-
-                if (kwhValue > 0) {
-                    const companyObj = companies.find(c => c.id === building.companyId);
-                    const companyName = companyObj ? companyObj.name : 'Unknown';
-
-                    const payload = {
-                        id: crypto.randomUUID(),
-                        mprn_number: acc.id_number,
-                        usage_kwh: Number(kwhValue),
-                        total_cost: Number(costValue),
-                        company_name: companyName,
-                        property_name: building.name,
-                        utility_type: acc.type,
-                        bill_date: new Date().toISOString()
-                    };
-
-                    console.log('Attempting Supabase Save...', payload);
-
-                    if (supabaseClient) {
-                        try {
-                            const response = await supabaseClient.from('energy_accounts').insert(payload);
-                            console.log('Supabase Save Response:', response);
-                            if (!response.error) {
-                                showToast('Cloud Synced', 'success');
-                                syncCount++;
-                            } else {
-                                console.error('Error saving to Supabase', response.error);
-                                showToast(response.error.message, 'error');
-                                window.alert(response.error.message);
-                            }
-                        } catch (err) {
-                            console.error('Exception during Supabase save:', err);
-                            showToast(err.message, 'error');
-                            window.alert(err.message);
-                        }
-                    }
-                }
-            }
-        }
+    console.log('Starting syncNow process (fetch only)...');
+    try {
+        await fetchDataFromSupabase();
+        showToast('Cloud Data Synced', 'success');
+        console.log('syncNow process finished.');
+    } catch (err) {
+        console.error('Exception during syncNow:', err);
+        showToast(err.message, 'error');
     }
-    console.log(`syncNow process finished. Synced ${syncCount} records.`);
 };
 
 document.getElementById('confirm-yes')?.addEventListener('click', async () => {
@@ -790,7 +672,6 @@ function selectBuilding(building) {
 }
 
 function updateDashboard() {
-    let readings = getReadings();
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
 
@@ -854,39 +735,6 @@ function updateDashboard() {
         }
     });
 
-    readings.forEach(reading => {
-        const building = allBuildings.find(b => b.id === reading.building_id);
-        if (!building) return;
-
-        if (activeBuildingId && reading.building_id !== activeBuildingId) return;
-        if (!activeBuildingId && companyFilter && building.companyId !== companyFilter) return;
-
-        const readingDate = new Date(reading.date);
-        if (readingDate < new Date('2026-01-01') || readingDate > new Date('2026-12-31T23:59:59')) return;
-
-        let withinDateRange = false;
-
-        if (startDateFilter && endDateFilter) {
-            const start = new Date(startDateFilter);
-            const end = new Date(endDateFilter);
-            withinDateRange = readingDate >= start && readingDate <= end;
-        } else {
-            withinDateRange = true;
-        }
-
-        if (withinDateRange) {
-            const val = parseFloat(reading.value) || 0;
-            const cost = parseFloat(reading.cost) || 0;
-
-            if (reading.type === 'electricity') {
-                totalElectricity += val;
-            } else if (reading.type === 'gas') {
-                totalGas += val;
-            }
-
-            totalCost += cost;
-        }
-    });
 
     document.getElementById('stat-electricity').textContent = totalElectricity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh';
     if (document.getElementById('stat-gas')) {
@@ -917,36 +765,6 @@ function updateDashboard() {
         totalArea += Number(building.area) || 1000;
     });
 
-    readings.forEach(reading => {
-        const building = allBuildings.find(b => b.id === reading.building_id);
-        if (!building) return;
-
-        if (activeBuildingId && reading.building_id !== activeBuildingId) return;
-        if (!activeBuildingId && companyFilter && building.companyId !== companyFilter) return;
-        if (searchBar) {
-            const searchTerm = searchBar.toLowerCase();
-            if (!building.name.toLowerCase().includes(searchTerm) && !building.address.toLowerCase().includes(searchTerm)) {
-                return;
-            }
-        }
-
-        const readingDate = new Date(reading.date);
-        if (readingDate < new Date('2026-01-01') || readingDate > new Date('2026-12-31T23:59:59')) return;
-
-        let withinDateRange = false;
-
-        if (startDateFilter && endDateFilter) {
-            const start = new Date(startDateFilter);
-            const end = new Date(endDateFilter);
-            withinDateRange = readingDate >= start && readingDate <= end;
-        } else {
-            withinDateRange = true;
-        }
-
-        if (withinDateRange) {
-            grandTotal += parseFloat(reading.cost) || 0;
-        }
-    });
 
     const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
     document.getElementById('stat-cost').textContent = formatCurrency.format(grandTotal);
@@ -976,12 +794,6 @@ function renderChart() {
             );
         }
     }
-
-    let localReadings = getReadings();
-
-    // Explicitly filter localReadings to ONLY include readings for target buildings
-    const targetBuildingIds = targetBuildings.map(b => b.id);
-    localReadings = localReadings.filter(r => targetBuildingIds.includes(r.building_id));
 
     const startDateFilter = document.getElementById('start-date-filter')?.value;
     const endDateFilter = document.getElementById('end-date-filter')?.value;
@@ -1015,24 +827,6 @@ function renderChart() {
             });
         }
 
-        let buildingReadings = localReadings.filter(r => r.building_id === b.id);
-        buildingReadings.forEach(r => {
-            if (new Date(r.date) < new Date('2026-01-01')) return;
-            let withinDateRange = true;
-            if (startDateFilter && endDateFilter) {
-                const rDate = new Date(r.date);
-                const start = new Date(startDateFilter);
-                const end = new Date(endDateFilter);
-                if (rDate < start || rDate > end) withinDateRange = false;
-            }
-            if (withinDateRange) {
-                if (r.type === 'electricity') {
-                    electricReadings.push({ date: r.date, cost: parseFloat(r.cost) || 0 });
-                } else if (r.type === 'gas') {
-                    gasReadings.push({ date: r.date, cost: parseFloat(r.cost) || 0 });
-                }
-            }
-        });
     });
 
     // Group costs by month
@@ -1274,8 +1068,6 @@ function checkAlerts() {
         }
 
         // Stale Readings per Account
-        let readings = getReadings();
-        const localReadings = readings.filter(r => r.building_id === building.id);
 
         if (building.accounts && building.accounts.length > 0) {
             building.accounts.forEach(acc => {
@@ -1292,12 +1084,7 @@ function checkAlerts() {
                     });
                 }
 
-                // check localReadings for this account number
-                const accReadings = localReadings.filter(r => r.account_number === acc.id_number);
-                if (accReadings.length > 0) {
-                    const localMax = Math.max(...accReadings.map(r => new Date(r.date).getTime()));
-                    maxDate = Math.max(maxDate, localMax);
-                }
+
 
                 if (maxDate > 0) {
                     const diffStaleDays = Math.ceil((today - maxDate) / (1000 * 60 * 60 * 24));
@@ -1366,7 +1153,6 @@ function checkAlerts() {
 }
 
 async function fetchDataFromSupabase() {
-    window.cloudReadings = [];
 
     console.log('Fetching data from Supabase for Grids...');
     const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
@@ -1377,7 +1163,26 @@ async function fetchDataFromSupabase() {
                 .channel('schema-db-changes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'energy_accounts' }, payload => {
                     console.log('Realtime change received!', payload);
-                    fetchDataFromSupabase();
+
+                    if (payload.eventType === 'INSERT') {
+                        // Prevent "Echo" effect: don't fetch if we already have it locally
+                        const newId = payload.new.id;
+                        let existsLocally = false;
+                        for (const b of allBuildings) {
+                            if (b.billHistory && b.billHistory.find(bill => bill.id === newId)) {
+                                existsLocally = true;
+                                break;
+                            }
+                        }
+                        if (!existsLocally) {
+                            fetchDataFromSupabase();
+                        } else {
+                            console.log('Realtime INSERT ignored: already exists locally');
+                        }
+                    } else {
+                        // UPDATE or DELETE
+                        fetchDataFromSupabase();
+                    }
                 })
                 .subscribe();
         }
@@ -1466,29 +1271,6 @@ async function fetchDataFromSupabase() {
                 populateCompanyDropdowns();
                 renderClientManager();
 
-                window.cloudReadings = energyData.map(ed => {
-                    let bId = null;
-                    let type = 'electricity';
-                    for(const b of allBuildings) {
-                        if (b.accounts) {
-                            const acc = b.accounts.find(a => a.id_number === ed.mprn_number);
-                            if (acc) {
-                                bId = b.id;
-                                type = acc.type.toLowerCase();
-                                break;
-                            }
-                        }
-                    }
-                    return {
-                        id: ed.id,
-                        building_id: bId,
-                        type: type,
-                        account_number: ed.mprn_number,
-                        value: ed.usage_kwh || ed.current_kwh || 0,
-                        cost: ed.total_cost || 0,
-                        date: ed.bill_date || ed.last_updated || new Date().toISOString()
-                    };
-                });
 
                 updateFilters(); // call render functions
 
@@ -1668,12 +1450,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (validBills.length > 0) {
                         maxDate = Math.max(...validBills.map(b => new Date(b.date).getTime()));
                     }
-                }
-                let readings = getReadings();
-                const localReadings = readings.filter(r => r.building_id === building.id && new Date(r.date) >= new Date('2026-01-01'));
-                if (localReadings.length > 0) {
-                    const localMax = Math.max(...localReadings.map(r => new Date(r.date).getTime()));
-                    maxDate = Math.max(maxDate, localMax);
                 }
                 if (maxDate > 0) {
                     const diffStaleDays = Math.ceil((today - maxDate) / (1000 * 60 * 60 * 24));
