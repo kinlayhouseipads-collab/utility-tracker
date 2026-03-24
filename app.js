@@ -381,6 +381,8 @@ function renderBuildings(buildings) {
         let allBills = [];
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
+                if (new Date(bill.date) < new Date('2026-01-01')) return;
+
                 if (parseFloat(bill.usage_kwh) > 0) {
                     allBills.push({
                         date: bill.date,
@@ -395,12 +397,12 @@ function renderBuildings(buildings) {
                 if (parseFloat(bill.usage_m3) > 0) {
                     allBills.push({
                         date: bill.date,
-                        account_address: building.accounts?.find(a => a.type === 'Gas' || a.type === 'Water')?.account_address || building.address,
-                        type: 'Water/Gas',
+                        account_address: building.accounts?.find(a => a.type === 'Gas')?.account_address || building.address,
+                        type: 'Gas',
                         reading: `${parseFloat(bill.usage_m3).toFixed(2)} m³`,
                         cost: parseFloat(bill.cost) / (parseFloat(bill.usage_kwh) > 0 ? 2 : 1),
                         id: bill.id,
-                        mprn_number: building.accounts?.find(a => a.type === 'Gas' || a.type === 'Water')?.id_number || 'N/A'
+                        mprn_number: building.accounts?.find(a => a.type === 'Gas')?.id_number || 'N/A'
                     });
                 }
             });
@@ -412,7 +414,7 @@ function renderBuildings(buildings) {
                     date: r.date,
                     account_address: acc ? acc.account_address : building.address,
                     type: r.type.charAt(0).toUpperCase() + r.type.slice(1),
-                    reading: `${parseFloat(r.value).toFixed(2)} ${r.type === 'electricity' ? 'kWh' : (r.type === 'water' ? 'm³' : 'units')}`,
+                    reading: `${parseFloat(r.value).toFixed(2)} ${r.type === 'electricity' ? 'kWh' : 'm³'}`,
                     cost: parseFloat(r.cost),
                     id: r.id,
                     mprn_number: r.account_number || 'N/A'
@@ -564,10 +566,11 @@ window.syncNow = async function() {
                 // Search billHistory for usages
                 if (building.billHistory && building.billHistory.length > 0) {
                     for (const bill of building.billHistory) {
+                        if (new Date(bill.date) < new Date('2026-01-01')) continue;
                         if (acc.type === 'Electricity' && parseFloat(bill.usage_kwh) > 0) {
                             kwhValue += parseFloat(bill.usage_kwh);
                             costValue += parseFloat(bill.cost) || 0;
-                        } else if ((acc.type === 'Gas' || acc.type === 'Water') && parseFloat(bill.usage_m3) > 0) {
+                        } else if (acc.type === 'Gas' && parseFloat(bill.usage_m3) > 0) {
                             kwhValue += parseFloat(bill.usage_m3);
                             costValue += parseFloat(bill.cost) || 0;
                         }
@@ -576,7 +579,7 @@ window.syncNow = async function() {
 
                 // Add any localReadings
                 let readings = getReadings();
-                const localReadings = readings.filter(r => r.account_number === acc.id_number);
+                const localReadings = readings.filter(r => r.account_number === acc.id_number && new Date(r.date) >= new Date('2026-01-01'));
                 for (const reading of localReadings) {
                     kwhValue += parseFloat(reading.value) || 0;
                     costValue += parseFloat(reading.cost) || 0;
@@ -801,7 +804,6 @@ function updateDashboard() {
     const endDateFilter = document.getElementById('end-date-filter')?.value;
 
     let totalElectricity = 0;
-    let totalWater = 0;
     let totalGas = 0;
     let totalCost = 0;
 
@@ -825,6 +827,8 @@ function updateDashboard() {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
                 const billDate = new Date(bill.date);
+                if (billDate < new Date('2026-01-01')) return;
+
                 let withinDateRange = false;
 
                 if (startDateFilter && endDateFilter) {
@@ -837,7 +841,7 @@ function updateDashboard() {
 
                 if (withinDateRange) {
                     totalElectricity += parseFloat(bill.usage_kwh) || 0;
-                    totalWater += parseFloat(bill.usage_m3) || 0;
+                    totalGas += parseFloat(bill.usage_m3) || 0;
                     totalCost += parseFloat(bill.cost) || 0;
                 }
             });
@@ -852,6 +856,8 @@ function updateDashboard() {
         if (!activeBuildingId && companyFilter && building.companyId !== companyFilter) return;
 
         const readingDate = new Date(reading.date);
+        if (readingDate < new Date('2026-01-01')) return;
+
         let withinDateRange = false;
 
         if (startDateFilter && endDateFilter) {
@@ -868,8 +874,6 @@ function updateDashboard() {
 
             if (reading.type === 'electricity') {
                 totalElectricity += val;
-            } else if (reading.type === 'water') {
-                totalWater += val;
             } else if (reading.type === 'gas') {
                 totalGas += val;
             }
@@ -878,12 +882,9 @@ function updateDashboard() {
         }
     });
 
-    const totalEnergy = totalElectricity + totalGas;
-    const co2 = totalEnergy * 0.233;
-
-    document.getElementById('stat-electricity').textContent = totalEnergy.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh';
-    if (document.getElementById('stat-co2')) {
-        document.getElementById('stat-co2').textContent = co2.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kg CO₂';
+    document.getElementById('stat-electricity').textContent = totalElectricity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh';
+    if (document.getElementById('stat-gas')) {
+        document.getElementById('stat-gas').textContent = totalGas.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh';
     }
 
     // Total for entire filtered view based on Date Filter
@@ -893,6 +894,8 @@ function updateDashboard() {
         if (building.billHistory) {
             grandTotal += building.billHistory.reduce((s, bill) => {
                 const billDate = new Date(bill.date);
+                if (billDate < new Date('2026-01-01')) return s;
+
                 let withinDateRange = false;
 
                 if (startDateFilter && endDateFilter) {
@@ -922,6 +925,8 @@ function updateDashboard() {
         }
 
         const readingDate = new Date(reading.date);
+        if (readingDate < new Date('2026-01-01')) return;
+
         let withinDateRange = false;
 
         if (startDateFilter && endDateFilter) {
@@ -942,7 +947,8 @@ function updateDashboard() {
 }
 
 function renderChart() {
-    let readings = [];
+    let electricReadings = [];
+    let gasReadings = [];
 
     // Gather all historical bills and normalize them for charting
     let targetBuildings = allBuildings;
@@ -977,6 +983,7 @@ function renderChart() {
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
+                if (new Date(bill.date) < new Date('2026-01-01')) return;
                 let withinDateRange = true;
                 if (startDateFilter && endDateFilter) {
                     const billDate = new Date(bill.date);
@@ -985,16 +992,36 @@ function renderChart() {
                     if (billDate < start || billDate > end) withinDateRange = false;
                 }
                 if (withinDateRange) {
-                    readings.push({
-                        date: bill.date,
-                        cost: parseFloat(bill.cost) || 0
-                    });
+                    const billCost = parseFloat(bill.cost) || 0;
+                    const eUsage = parseFloat(bill.usage_kwh) || 0;
+                    const gUsage = parseFloat(bill.usage_m3) || 0;
+
+                    // Approximate split if bill contains both usages
+                    let eCost = 0;
+                    let gCost = 0;
+
+                    if (eUsage > 0 && gUsage > 0) {
+                        eCost = billCost / 2;
+                        gCost = billCost / 2;
+                    } else if (eUsage > 0) {
+                        eCost = billCost;
+                    } else if (gUsage > 0) {
+                        gCost = billCost;
+                    }
+
+                    if (eCost > 0) {
+                        electricReadings.push({ date: bill.date, cost: eCost });
+                    }
+                    if (gCost > 0) {
+                        gasReadings.push({ date: bill.date, cost: gCost });
+                    }
                 }
             });
         }
 
         let buildingReadings = localReadings.filter(r => r.building_id === b.id);
         buildingReadings.forEach(r => {
+            if (new Date(r.date) < new Date('2026-01-01')) return;
             let withinDateRange = true;
             if (startDateFilter && endDateFilter) {
                 const rDate = new Date(r.date);
@@ -1003,41 +1030,30 @@ function renderChart() {
                 if (rDate < start || rDate > end) withinDateRange = false;
             }
             if (withinDateRange) {
-                readings.push({
-                    date: r.date,
-                    cost: parseFloat(r.cost) || 0
-                });
+                if (r.type === 'electricity') {
+                    electricReadings.push({ date: r.date, cost: parseFloat(r.cost) || 0 });
+                } else if (r.type === 'gas') {
+                    gasReadings.push({ date: r.date, cost: parseFloat(r.cost) || 0 });
+                }
             }
         });
     });
 
-    // Group costs by month-year
-    const monthlyCosts = {};
-    readings.forEach(r => {
+    // Group costs by month
+    const electricMonthlyCosts = Array(12).fill(0);
+    const gasMonthlyCosts = Array(12).fill(0);
+
+    electricReadings.forEach(r => {
         const d = new Date(r.date);
-        const y = d.getFullYear();
         const m = d.getMonth(); // 0-11
-        if (!monthlyCosts[y]) monthlyCosts[y] = Array(12).fill(0);
-        monthlyCosts[y][m] += r.cost;
+        electricMonthlyCosts[m] += r.cost;
     });
 
-    const currentYear = new Date().getFullYear();
-    const lastYear = currentYear - 1;
-
-    const currentYearData = monthlyCosts[currentYear] || Array(12).fill(0);
-    const lastYearData = monthlyCosts[lastYear] || Array(12).fill(0);
-
-    // Calculate simple forecast (e.g. 5% inflation/increase on last year for future months if current year has no data)
-    const forecastData = Array(12).fill(0);
-    const currentMonth = new Date().getMonth();
-    for (let i = 0; i < 12; i++) {
-        if (i <= currentMonth && currentYearData[i] > 0) {
-            forecastData[i] = currentYearData[i];
-        } else {
-            // Future months based on last year * 1.05
-            forecastData[i] = lastYearData[i] > 0 ? lastYearData[i] * 1.05 : 0;
-        }
-    }
+    gasReadings.forEach(r => {
+        const d = new Date(r.date);
+        const m = d.getMonth(); // 0-11
+        gasMonthlyCosts[m] += r.cost;
+    });
 
     const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -1047,23 +1063,23 @@ function renderChart() {
         utilityChartInstance.destroy();
     }
 
-    let chartTitle = 'Total Portfolio Cost: Current vs Previous Year';
+    let chartTitle = 'Total Portfolio Cost by Utility';
     if (activeBuildingId) {
         const activeBuilding = allBuildings.find(b => b.id === activeBuildingId);
         if (activeBuilding) {
-            chartTitle = `${activeBuilding.name} Cost: Current vs Previous Year`;
+            chartTitle = `${activeBuilding.name} Cost by Utility`;
         }
     } else {
         const companyFilter = document.getElementById('company-filter')?.value;
         if (companyFilter) {
             const comp = companies.find(c => c.id === companyFilter);
             if (comp) {
-                chartTitle = `${comp.name} Portfolio Cost: Current vs Previous Year`;
+                chartTitle = `${comp.name} Portfolio Cost by Utility`;
             }
         }
     }
 
-    if (readings.length === 0) {
+    if (electricReadings.length === 0 && gasReadings.length === 0) {
         chartTitle = 'Ready for Data';
     }
 
@@ -1073,28 +1089,18 @@ function renderChart() {
             labels: labels,
             datasets: [
                 {
-                    label: `Total Cost ${currentYear} (€)`,
-                    data: currentYearData,
-                    borderColor: '#00E5E5',
-                    backgroundColor: '#00E5E5',
+                    label: `Electric Cost (€)`,
+                    data: electricMonthlyCosts,
+                    borderColor: '#635BFF',
+                    backgroundColor: '#635BFF',
                     tension: 0.4,
                     fill: false
                 },
                 {
-                    label: `Forecasted Cost (€)`,
-                    data: forecastData,
-                    borderColor: '#10b981',
-                    backgroundColor: 'transparent',
-                    borderDash: [2, 2],
-                    tension: 0.4,
-                    fill: false
-                },
-                {
-                    label: `Total Cost ${lastYear} (€)`,
-                    data: lastYearData,
-                    borderColor: '#94a3b8',
-                    backgroundColor: 'transparent',
-                    borderDash: [5, 5], // Dashed line for comparative chart
+                    label: `Gas Cost (€)`,
+                    data: gasMonthlyCosts,
+                    borderColor: '#f97316',
+                    backgroundColor: '#f97316',
                     tension: 0.4,
                     fill: false
                 }
@@ -1284,7 +1290,7 @@ function checkAlerts() {
                     building.billHistory.forEach(b => {
                         if (acc.type === 'Electricity' && parseFloat(b.usage_kwh) > 0) {
                             maxDate = Math.max(maxDate, new Date(b.date).getTime());
-                        } else if ((acc.type === 'Gas' || acc.type === 'Water') && parseFloat(b.usage_m3) > 0) {
+                        } else if (acc.type === 'Gas' && parseFloat(b.usage_m3) > 0) {
                             maxDate = Math.max(maxDate, new Date(b.date).getTime());
                         }
                     });
@@ -1617,7 +1623,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!building.billHistory || building.billHistory.length === 0) return false;
                     return building.billHistory.some(bill => {
                         const billDate = new Date(bill.date);
-                        return billDate >= start && billDate <= end;
+                        return billDate >= start && billDate <= end && billDate >= new Date('2026-01-01');
                     });
                 });
             }
@@ -1645,10 +1651,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 let status = 'Active';
                 let maxDate = 0;
                 if (building.billHistory && building.billHistory.length > 0) {
-                    maxDate = Math.max(...building.billHistory.map(b => new Date(b.date).getTime()));
+                    const validBills = building.billHistory.filter(b => new Date(b.date) >= new Date('2026-01-01'));
+                    if (validBills.length > 0) {
+                        maxDate = Math.max(...validBills.map(b => new Date(b.date).getTime()));
+                    }
                 }
                 let readings = getReadings();
-                const localReadings = readings.filter(r => r.building_id === building.id);
+                const localReadings = readings.filter(r => r.building_id === building.id && new Date(r.date) >= new Date('2026-01-01'));
                 if (localReadings.length > 0) {
                     const localMax = Math.max(...localReadings.map(r => new Date(r.date).getTime()));
                     maxDate = Math.max(maxDate, localMax);
@@ -1845,7 +1854,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (supabaseClient) {
                 try {
-                    const { data, error } = await supabaseClient.from('energy_accounts').select('*');
+                    let { data, error } = await supabaseClient.from('energy_accounts').select('*');
 
                     if (error) {
                         listContainer.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error: ${error.message}</div>`;
@@ -1853,6 +1862,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     console.log('History Data:', data);
+
+                    if (data) {
+                        data = data.filter(bill => new Date(bill.last_updated || bill.date) >= new Date('2026-01-01'));
+                    }
 
                     listContainer.innerHTML = '';
 
