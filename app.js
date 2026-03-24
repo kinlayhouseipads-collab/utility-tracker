@@ -490,7 +490,7 @@ window.requestDeleteBuilding = function(id) {
 };
 
 window.requestDeleteBill = async function(billId) {
-    if (!confirm('Are you sure you want to delete this bill? This will remove all cloud data for this MPRN.')) {
+    if (!confirm("Are you sure you want to delete this bill? This will remove this specific bill's data.")) {
         return;
     }
 
@@ -598,7 +598,8 @@ window.syncNow = async function() {
                         total_cost: Number(costValue),
                         company_name: companyName,
                         property_name: building.name,
-                        utility_type: acc.type
+                        utility_type: acc.type,
+                        bill_date: new Date().toISOString()
                     };
 
                     console.log('Attempting Supabase Save...', payload);
@@ -830,7 +831,7 @@ function updateDashboard() {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
                 const billDate = new Date(bill.date);
-                if (billDate < new Date('2026-01-01')) return;
+                if (billDate < new Date('2026-01-01') || billDate > new Date('2026-12-31T23:59:59')) return;
 
                 let withinDateRange = false;
 
@@ -862,7 +863,7 @@ function updateDashboard() {
         if (!activeBuildingId && companyFilter && building.companyId !== companyFilter) return;
 
         const readingDate = new Date(reading.date);
-        if (readingDate < new Date('2026-01-01')) return;
+        if (readingDate < new Date('2026-01-01') || readingDate > new Date('2026-12-31T23:59:59')) return;
 
         let withinDateRange = false;
 
@@ -900,7 +901,7 @@ function updateDashboard() {
         if (building.billHistory) {
             grandTotal += building.billHistory.reduce((s, bill) => {
                 const billDate = new Date(bill.date);
-                if (billDate < new Date('2026-01-01')) return s;
+                if (billDate < new Date('2026-01-01') || billDate > new Date('2026-12-31T23:59:59')) return s;
 
                 let withinDateRange = false;
 
@@ -931,7 +932,7 @@ function updateDashboard() {
         }
 
         const readingDate = new Date(reading.date);
-        if (readingDate < new Date('2026-01-01')) return;
+        if (readingDate < new Date('2026-01-01') || readingDate > new Date('2026-12-31T23:59:59')) return;
 
         let withinDateRange = false;
 
@@ -1431,7 +1432,7 @@ async function fetchDataFromSupabase() {
                     }
                     groupedBuildings[propName].billHistory.push({
                         id: ed.id,
-                        date: ed.last_updated || new Date().toISOString(),
+                        date: ed.bill_date || ed.last_updated || new Date().toISOString(),
                         usage_kwh: ed.usage_kwh || ed.current_kwh || 0,
                         cost: ed.total_cost || 0,
                         utility_type: ed.utility_type || (ed.usage_m3 > 0 ? 'Gas' : 'Electricity')
@@ -1464,7 +1465,7 @@ async function fetchDataFromSupabase() {
                         account_number: ed.mprn_number,
                         value: ed.usage_kwh || ed.current_kwh || 0,
                         cost: ed.total_cost || 0,
-                        date: ed.last_updated || new Date().toISOString()
+                        date: ed.bill_date || ed.last_updated || new Date().toISOString()
                     };
                 });
 
@@ -2478,7 +2479,8 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
         usage_kwh: Number(usageVal),
         total_cost: Number(costVal),
         company_name: companyName,
-        property_name: buildingName
+        property_name: buildingName,
+        bill_date: document.getElementById('reading-date').value
     };
 
     console.log('Attempting Supabase Save...', payload);
