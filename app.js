@@ -494,6 +494,8 @@ window.requestDeleteBill = async function(billId) {
         return;
     }
 
+    console.log('Deleting ID:', billId);
+
     if (supabaseClient) {
         try {
             const response = await supabaseClient
@@ -507,7 +509,33 @@ window.requestDeleteBill = async function(billId) {
             } else {
                 showToast('Bill Deleted', 'success');
                 logAudit(`Deleted bill associated with ID ${billId}`);
-                // Relying on realtime subscription
+
+                // Update local state instead of wiping/rebuilding entire list immediately
+                if (window.cloudEnergyData) {
+                    const billData = window.cloudEnergyData.find(ed => ed.id === billId);
+                    if (billData) {
+                        const mprn = billData.mprn_number;
+                        const remaining = window.cloudEnergyData.filter(ed => ed.mprn_number === mprn && ed.id !== billId);
+                        console.log('Remaining Bills for this MPRN:', remaining.length);
+                    } else {
+                        console.log('Remaining Bills for this MPRN:', 0); // fallback if not found
+                    }
+                    window.cloudEnergyData = window.cloudEnergyData.filter(ed => ed.id !== billId);
+                } else {
+                    console.log('Remaining Bills for this MPRN:', 0);
+                }
+
+                if (window.cloudReadings) {
+                    window.cloudReadings = window.cloudReadings.filter(r => r.id !== billId);
+                }
+
+                allBuildings.forEach(building => {
+                    if (building.billHistory) {
+                        building.billHistory = building.billHistory.filter(b => b.id !== billId);
+                    }
+                });
+
+                updateFilters();
             }
         } catch (err) {
             console.error('Exception during Supabase bill delete:', err);
@@ -1384,27 +1412,39 @@ async function fetchDataFromSupabase() {
                 // State Management: Update the global state and call render functions
                 window.cloudEnergyData = energyData;
 
-                // Rebuild allBuildings strictly from cloud data to enforce 'Cloud-Only' state
+                // Do not wipe `allBuildings` and `companies` to prevent zero-bill properties from vanishing.
+                // Clear the `buildings-list` inner HTML as it will be re-rendered via `updateFilters`.
                 document.getElementById('buildings-list').innerHTML = '';
-                allBuildings = [];
-                companies = []; // Reset companies array for strict cloud-only dynamic build
 
-                const groupedBuildings = {};
-                let bCount = 1;
+                // Keep existing companies, only add new ones from data
+                // Keep existing properties, only add new ones from data
+
+                // Clear billHistory from all existing buildings so we can repopulate from cloud
+                allBuildings.forEach(b => {
+                    b.billHistory = [];
+                    // Keep accounts intact if possible, but they are tied to properties.
+                    // To handle dynamically built accounts properly without wiping existing manual entries:
+                    // we'll leave b.accounts alone, but ensure they aren't duplicated.
+                });
+
+                let bCount = allBuildings.length + 1;
 
                 energyData.forEach(ed => {
                     const propName = ed.property_name || 'Unknown Property';
                     const compName = ed.company_name || 'Unknown Company';
                     const compId = compName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-                    // Dynamically build companies array without hard-coded fallbacks
+                    // Add company if not present
                     if (!companies.find(c => c.id === compId)) {
                         companies.push({ id: compId, name: compName, industry: 'Unknown' });
                     }
 
-                    if (!groupedBuildings[propName]) {
+                    // Find existing building or create new
+                    let existingBuilding = allBuildings.find(b => b.name === propName && b.companyId === compId);
+
+                    if (!existingBuilding) {
                         const newId = 'B' + String(bCount++).padStart(3, '0');
-                        groupedBuildings[propName] = {
+                        existingBuilding = {
                             id: newId,
                             name: propName,
                             address: propName + ' Address',
@@ -1413,27 +1453,31 @@ async function fetchDataFromSupabase() {
                             accounts: [],
                             billHistory: []
                         };
+                        allBuildings.push(existingBuilding);
                     }
 
+                    // Add account if not present in this building
                     if (ed.mprn_number) {
-                        groupedBuildings[propName].accounts.push({
-                            type: ed.utility_type === 'Gas' ? 'Gas' : 'Electricity',
-                            id_number: ed.mprn_number,
-                            provider: 'Utility Co',
-                            contractEndDate: '2026-12-31'
-                        });
+                        if (!existingBuilding.accounts) existingBuilding.accounts = [];
+                        if (!existingBuilding.accounts.find(a => a.id_number === ed.mprn_number)) {
+                            existingBuilding.accounts.push({
+                                type: ed.utility_type === 'Gas' ? 'Gas' : 'Electricity',
+                                id_number: ed.mprn_number,
+                                provider: 'Utility Co',
+                                contractEndDate: '2026-12-31'
+                            });
+                        }
                     }
-                    groupedBuildings[propName].billHistory.push({
+
+                    // Always add the bill
+                    existingBuilding.billHistory.push({
                         id: ed.id,
                         date: ed.bill_date || ed.last_updated || new Date().toISOString(),
                         usage_kwh: ed.usage_kwh || ed.current_kwh || 0,
                         cost: ed.total_cost || 0,
                         utility_type: ed.utility_type || (ed.usage_m3 > 0 ? 'Gas' : 'Electricity')
                     });
-
                 });
-
-                allBuildings = Object.values(groupedBuildings);
 
                 populateCompanyDropdowns();
                 renderClientManager();

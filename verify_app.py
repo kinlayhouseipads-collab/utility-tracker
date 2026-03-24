@@ -1,6 +1,6 @@
 from playwright.sync_api import sync_playwright
 
-def verify_grids():
+def verify_deletion_and_login():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1280, "height": 1024})
@@ -18,62 +18,60 @@ def verify_grids():
                         select: async function(query) {
                             if (table === 'energy_accounts') {
                                 return { data: [
-                                    { property_name: 'Oracle - Block A', mprn_number: '10123456789', current_kwh: 5400, total_cost: 1620 },
-                                    { property_name: 'Google HQ', mprn_number: '9876543210', current_kwh: 12000, total_cost: 3500 }
+                                    { id: '1', property_name: 'Oracle - Block A', mprn_number: '10123456789', usage_kwh: 5400, total_cost: 1620, company_name: 'Oracle', bill_date: '2026-03-01' },
+                                    { id: '2', property_name: 'Oracle - Block A', mprn_number: '10123456789', usage_kwh: 6000, total_cost: 1800, company_name: 'Oracle', bill_date: '2026-04-01' },
+                                    { id: '3', property_name: 'Google HQ', mprn_number: '9876543210', usage_kwh: 12000, total_cost: 3500, company_name: 'Google', bill_date: '2026-03-15' }
                                 ], error: null };
                             } else if (table === 'insurance_vault') {
-                                return { data: [
-                                    { broker_name: 'Allianz', policy_number: 'POL-99123', renewal_date: '2027-01-15', premium_cost: 4500 },
-                                    { provider: 'Zurich', policy_type: 'Public Liability', renewal_date: '2026-11-20', premium_cost: 1200 }
-                                ], error: null };
+                                return { data: [], error: null };
                             }
                             return { data: [], error: null };
                         },
-                        upsert: async function(data) {
-                            return { data: data, error: null };
+                        delete: function() {
+                            return {
+                                eq: async function(field, value) {
+                                    console.log('Mock Deleted:', field, value);
+                                    return { data: [], error: null, status: 204 };
+                                }
+                            };
                         }
                     };
                 }
             };
         """)
 
-        # Perform login as dobutilities to trigger fetchEnergyData
-        page.fill('#login-username', 'dobutilities')
+        # Perform login
+        page.fill('#login-username', 'Super_Admin')
         page.click('button[type="submit"]')
         page.wait_for_timeout(2000)
 
-        # Scroll down to ensure grids are visible
-        page.evaluate("window.scrollBy(0, 500)")
+        page.screenshot(path='screenshot_before_delete.png')
+
+        # Scroll down and open accordion
+        page.evaluate("window.scrollBy(0, 300)")
         page.wait_for_timeout(500)
 
-        page.screenshot(path='grids_energy_view_verified.png')
-        print("Energy grids view screenshot saved as grids_energy_view_verified.png")
+        # Click the first row to expand accordion
+        rows = page.locator('#buildings-list tbody tr')
+        if rows.count() > 0:
+            rows.nth(0).click()
+            page.wait_for_timeout(1000)
+            page.screenshot(path='accordion_before_delete.png')
 
-        page.evaluate("document.getElementById('entry-modal').style.display='block'")
-        page.wait_for_timeout(1000)
+            page.on("dialog", lambda dialog: dialog.accept())
 
-        # Step 1
-        page.evaluate("document.getElementById('wizard-company').value='oracle'")
-        page.evaluate("document.getElementById('wizard-next-1').click()")
-        page.wait_for_timeout(500)
+            # Find the trash button and click it
+            page.evaluate("""
+                const trashButtons = document.querySelectorAll('button[title="Delete Bill"]');
+                if (trashButtons.length > 0) {
+                    trashButtons[0].click();
+                }
+            """)
+            page.wait_for_timeout(1000)
 
-        # Step 2
-        page.evaluate("document.getElementById('wizard-building').selectedIndex=1")
-        page.evaluate("document.getElementById('wizard-next-2').click()")
-        page.wait_for_timeout(500)
-
-        # Step 3
-        page.evaluate("document.getElementById('wizard-account').selectedIndex=1")
-
-        # Fill in new reading info to test save function
-        page.evaluate("document.getElementById('wizard-step-1').style.display='none'; document.getElementById('wizard-step-2').style.display='none'; document.getElementById('wizard-step-3').style.display='block';")
-        page.wait_for_timeout(500)
-        page.evaluate("document.getElementById('reading-value').value='500'")
-        page.evaluate("document.getElementById('reading-cost').value='100'")
-        page.screenshot(path='wizard_modal_open_verified.png')
-        print("Wizard modal screenshot saved as wizard_modal_open_verified.png")
+            page.screenshot(path='after_delete_bill.png')
 
         browser.close()
 
 if __name__ == '__main__':
-    verify_grids()
+    verify_deletion_and_login()
