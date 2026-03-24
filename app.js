@@ -398,7 +398,7 @@ function renderBuildings(buildings) {
                 const acc = building.accounts?.find(a => a.id_number === r.account_number);
                 allBills.push({
                     date: r.date,
-                    account_address: acc ? acc.account_address : building.address,
+                    account_address: (acc && acc.account_address) ? acc.account_address : building.address,
                     type: r.type.charAt(0).toUpperCase() + r.type.slice(1),
                     reading: `${parseFloat(r.value).toFixed(2)} ${r.type === 'electricity' ? 'kWh' : 'm³'}`,
                     cost: parseFloat(r.cost),
@@ -2531,16 +2531,11 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
 
     // Also save directly to building.billHistory to persist properly if logic expects it there, but utility_readings array is primary mechanism to keep track across reloads.
     // Wait, let's explicitly invoke saveToLocalStorage() to ensure buildings are saved if they were modified (e.g. account edits).
-    saveToLocalStorage();
-
     logAudit(`New bill added to ${buildingName} history.`);
-
     alert('Reading Saved!');
-        this.reset();
-        entryModal.style.display = 'none';
+    this.reset();
+    entryModal.style.display = 'none';
 
-        updateDashboard();
-        renderChart();
     } finally {
         if (submitBtn) submitBtn.disabled = false;
     }
