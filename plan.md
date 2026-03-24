@@ -1,0 +1,1 @@
+1. **Chronological Plotting:** Update `app.js` in `renderChart()` to ensure that we parse `bill.bill_date` instead of just `bill.date` if `bill_date` exists in Supabase. Wait, the user mentions "bill_date (not entry date)", let me check how dates are populated from Supabase.
