@@ -388,6 +388,7 @@ function renderBuildings(buildings) {
                         type: 'Electricity',
                         reading: `${parseFloat(bill.usage_kwh).toFixed(2)} kWh`,
                         cost: parseFloat(bill.cost) / (parseFloat(bill.usage_m3) > 0 ? 2 : 1),
+                        id: bill.id,
                         mprn_number: building.accounts?.find(a => a.type === 'Electricity')?.id_number || 'N/A'
                     });
                 }
@@ -398,6 +399,7 @@ function renderBuildings(buildings) {
                         type: 'Water/Gas',
                         reading: `${parseFloat(bill.usage_m3).toFixed(2)} m³`,
                         cost: parseFloat(bill.cost) / (parseFloat(bill.usage_kwh) > 0 ? 2 : 1),
+                        id: bill.id,
                         mprn_number: building.accounts?.find(a => a.type === 'Gas' || a.type === 'Water')?.id_number || 'N/A'
                     });
                 }
@@ -412,6 +414,7 @@ function renderBuildings(buildings) {
                     type: r.type.charAt(0).toUpperCase() + r.type.slice(1),
                     reading: `${parseFloat(r.value).toFixed(2)} ${r.type === 'electricity' ? 'kWh' : (r.type === 'water' ? 'm³' : 'units')}`,
                     cost: parseFloat(r.cost),
+                    id: r.id,
                     mprn_number: r.account_number || 'N/A'
                 });
             });
@@ -428,7 +431,7 @@ function renderBuildings(buildings) {
                     <td style="padding: 8px; color: #cbd5e1;">${bill.reading}</td>
                     <td style="padding: 8px; font-weight: bold; color: var(--primary);" class="monospace">${formatCurrency.format(bill.cost)}</td>
                     <td style="padding: 8px; text-align: center;">
-                        <button onclick="requestDeleteBill('${bill.mprn_number}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Bill">
+                        <button onclick="requestDeleteBill('${bill.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Bill">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -482,7 +485,7 @@ window.requestDeleteBuilding = function(id) {
     document.getElementById('confirm-modal').style.display = 'block';
 };
 
-window.requestDeleteBill = async function(billMprn) {
+window.requestDeleteBill = async function(billId) {
     if (!confirm('Are you sure you want to delete this bill? This will remove all cloud data for this MPRN.')) {
         return;
     }
@@ -492,14 +495,14 @@ window.requestDeleteBill = async function(billMprn) {
             const response = await supabaseClient
                 .from('energy_accounts')
                 .delete()
-                .eq('mprn_number', String(billMprn).trim());
+                .eq('id', String(billId).trim());
 
             if (response.error) {
                 console.error('Error deleting bill from Supabase:', response.error);
                 window.alert(response.error.message);
             } else {
-                showToast('Bill deleted successfully.', 'success');
-                logAudit(`Deleted bill associated with MPRN ${billMprn}`);
+                showToast('Bill Deleted', 'success');
+                logAudit(`Deleted bill associated with ID ${billId}`);
                 // Realtime Auto-Recalculate: re-fetch from cloud, rebuilds arrays and updates dashboard automatically
                 fetchDataFromSupabase();
             }
@@ -584,6 +587,7 @@ window.syncNow = async function() {
                     const companyName = companyObj ? companyObj.name : 'Unknown';
 
                     const payload = {
+                        id: crypto.randomUUID(),
                         mprn_number: acc.id_number,
                         usage_kwh: Number(kwhValue),
                         total_cost: Number(costValue),
@@ -595,7 +599,7 @@ window.syncNow = async function() {
 
                     if (supabaseClient) {
                         try {
-                            const response = await supabaseClient.from('energy_accounts').upsert(payload, { onConflict: 'mprn_number' });
+                            const response = await supabaseClient.from('energy_accounts').insert(payload);
                             console.log('Supabase Save Response:', response);
                             if (!response.error) {
                                 showToast('Cloud Synced', 'success');
@@ -1059,6 +1063,10 @@ function renderChart() {
         }
     }
 
+    if (readings.length === 0) {
+        chartTitle = 'Ready for Data';
+    }
+
     utilityChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1425,6 +1433,13 @@ async function fetchDataFromSupabase() {
                             contractEndDate: '2026-12-31'
                         });
                     }
+                    groupedBuildings[propName].billHistory.push({
+                        id: ed.id,
+                        date: ed.last_updated || new Date().toISOString(),
+                        usage_kwh: ed.usage_kwh || ed.current_kwh || 0,
+                        cost: ed.total_cost || 0,
+                    });
+
                 });
 
                 allBuildings = Object.values(groupedBuildings);
@@ -1446,6 +1461,7 @@ async function fetchDataFromSupabase() {
                         }
                     }
                     return {
+                        id: ed.id,
                         building_id: bId,
                         type: type,
                         account_number: ed.mprn_number,
@@ -1841,7 +1857,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     listContainer.innerHTML = '';
 
                     if (data && data.length > 0) {
-                        data.sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
+                        data.sort((a, b) => new Date(b.date || b.last_updated) - new Date(a.date || a.last_updated));
 
                         data.forEach(bill => {
                             const item = document.createElement('div');
@@ -2446,6 +2462,7 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     const companyName = companyObj ? companyObj.name : 'Unknown';
 
     const payload = {
+        id: crypto.randomUUID(),
         mprn_number: newAccNum,
         usage_kwh: Number(usageVal),
         total_cost: Number(costVal),
@@ -2458,7 +2475,7 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     // Fallback if supabase object exists (assuming it is imported elsewhere or handled)
     if (supabaseClient) {
         try {
-            const response = await supabaseClient.from('energy_accounts').upsert(payload, { onConflict: 'mprn_number' });
+            const response = await supabaseClient.from('energy_accounts').insert(payload);
             console.log('Supabase Save Response:', response);
             if (!response.error) {
                 showToast('Cloud Synced', 'success');
