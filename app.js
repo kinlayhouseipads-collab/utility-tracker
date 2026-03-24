@@ -247,12 +247,7 @@ function renderBuildings(buildings) {
             const maxDate = new Date(Math.max(...building.billHistory.map(b => new Date(b.date).getTime())));
             diffStaleDays = Math.ceil((today - maxDate) / (1000 * 60 * 60 * 24));
 
-            if (diffStaleDays > 60) {
-                lastUpdatedText = `<span style="color: #ef4444; font-weight: bold;">STALE</span> (${diffStaleDays} days)`;
-                row.style.backgroundColor = '#fee2e2'; // Highlight red if stale
-            } else {
-                lastUpdatedText = `${diffStaleDays} days`;
-            }
+            lastUpdatedText = `${diffStaleDays} days`;
 
             // Building Level Aggregation
             buildingTotalCost = building.billHistory.reduce((sum, bill) => {
@@ -289,22 +284,11 @@ function renderBuildings(buildings) {
                 const maxDate = new Date(Math.max(...building.billHistory.map(b => new Date(b.date).getTime())));
                 if (localMax > maxDate.getTime()) {
                     diffStaleDays = Math.ceil((today - new Date(localMax)) / (1000 * 60 * 60 * 24));
-                    if (diffStaleDays > 60) {
-                        lastUpdatedText = `<span style="color: #ef4444; font-weight: bold;">STALE</span> (${diffStaleDays} days)`;
-                        row.style.backgroundColor = '#450a0a';
-                    } else {
-                        lastUpdatedText = `${diffStaleDays} days`;
-                        row.style.backgroundColor = 'transparent';
-                    }
+                    lastUpdatedText = `${diffStaleDays} days`;
                 }
             } else {
                 diffStaleDays = Math.ceil((today - new Date(localMax)) / (1000 * 60 * 60 * 24));
-                if (diffStaleDays > 60) {
-                    lastUpdatedText = `<span style="color: #ef4444; font-weight: bold;">STALE</span> (${diffStaleDays} days)`;
-                    row.style.backgroundColor = '#fee2e2';
-                } else {
-                    lastUpdatedText = `${diffStaleDays} days`;
-                }
+                lastUpdatedText = `${diffStaleDays} days`;
             }
         }
 
@@ -2456,11 +2440,14 @@ if (rUnitRateInput) rUnitRateInput.addEventListener('input', calculateTotalCost)
 
 document.getElementById('tracker-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
+    const submitBtn = this.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
     
-    if (!wBuilding.value || !wAccount.value) {
-        alert('Please complete the wizard properly.');
-        return;
-    }
+    try {
+        if (!wBuilding.value || !wAccount.value) {
+            alert('Please complete the wizard properly.');
+            return;
+        }
 
     // Handle potential inline edits
     const bId = wBuilding.value;
@@ -2549,9 +2536,12 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     logAudit(`New bill added to ${buildingName} history.`);
 
     alert('Reading Saved!');
-    this.reset();
-    entryModal.style.display = 'none';
+        this.reset();
+        entryModal.style.display = 'none';
 
-    updateDashboard();
-    renderChart();
+        updateDashboard();
+        renderChart();
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+    }
 });
