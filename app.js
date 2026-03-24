@@ -507,8 +507,7 @@ window.requestDeleteBill = async function(billId) {
             } else {
                 showToast('Bill Deleted', 'success');
                 logAudit(`Deleted bill associated with ID ${billId}`);
-                // Realtime Auto-Recalculate: re-fetch from cloud, rebuilds arrays and updates dashboard automatically
-                fetchDataFromSupabase();
+                // Relying on realtime subscription
             }
         } catch (err) {
             console.error('Exception during Supabase bill delete:', err);
@@ -647,30 +646,23 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             const building = allBuildings[buildingIndex];
             const buildingName = building.name;
 
-            // Delete all associated accounts from Supabase
+            // Delete all associated rows using unique id
             let hasError = false;
-            let successCount = 0;
-            let totalAccounts = building.accounts ? building.accounts.length : 0;
+            const companyObj = companies.find(c => c.id === building.companyId);
+            const companyName = companyObj ? companyObj.name : '';
+            let toDelete = window.cloudEnergyData.filter(ed => ed.property_name === buildingName && ed.company_name === companyName);
 
-            if (totalAccounts === 0) {
-                // If there are no accounts, we assume cloud deletion is complete
-                hasError = false;
-                successCount = 0;
-            } else if (supabaseClient && building.accounts) {
-                for (const acc of building.accounts) {
+            if (supabaseClient && toDelete.length > 0) {
+                for (const row of toDelete) {
                     try {
                         const response = await supabaseClient
                             .from('energy_accounts')
                             .delete()
-                            .eq('mprn_number', String(acc.id_number).trim());
+                            .eq('id', String(row.id).trim());
 
                         if (response.error) {
                             console.error('Error deleting from Supabase:', response.error);
                             window.alert(response.error.message);
-                            hasError = true;
-                        } else if (response.status === 204) {
-                            successCount++;
-                        } else {
                             hasError = true;
                         }
                     } catch (err) {
@@ -681,11 +673,10 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
                 }
             }
 
-            if (!hasError && successCount === totalAccounts) {
-                allBuildings.splice(buildingIndex, 1);
+            if (!hasError) {
+                showToast('Property Deleted', 'success');
                 logAudit(`Deleted property: ${buildingName}`);
-                saveToLocalStorage();
-                fetchDataFromSupabase();
+                // Relying on realtime subscription
             }
         }
     } else if (deleteTarget.type === 'account') {
@@ -694,31 +685,35 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             const accountIndex = building.accounts.findIndex(a => a.id_number === deleteTarget.accountId);
             if (accountIndex !== -1) {
                 let hasError = false;
-                let success = false;
-                if (supabaseClient) {
-                    try {
-                        const response = await supabaseClient.from('energy_accounts').delete().eq('mprn_number', String(deleteTarget.accountId).trim());
-                        if (response.error) {
-                            console.error('Error deleting from Supabase:', response.error);
-                            window.alert(response.error.message);
-                            hasError = true;
-                        } else if (response.status === 204) {
-                            success = true;
-                        } else {
+                const companyObj = companies.find(c => c.id === building.companyId);
+                const companyName = companyObj ? companyObj.name : '';
+                let toDelete = window.cloudEnergyData.filter(ed => ed.mprn_number === deleteTarget.accountId && ed.property_name === building.name && ed.company_name === companyName);
+
+                if (supabaseClient && toDelete.length > 0) {
+                    for (const row of toDelete) {
+                        try {
+                            const response = await supabaseClient
+                                .from('energy_accounts')
+                                .delete()
+                                .eq('id', String(row.id).trim());
+
+                            if (response.error) {
+                                console.error('Error deleting from Supabase:', response.error);
+                                window.alert(response.error.message);
+                                hasError = true;
+                            }
+                        } catch (err) {
+                            console.error('Exception during Supabase delete:', err);
+                            window.alert(err.message);
                             hasError = true;
                         }
-                    } catch (err) {
-                        console.error('Exception during Supabase delete:', err);
-                        window.alert(err.message);
-                        hasError = true;
                     }
                 }
 
-                if (!hasError && success) {
-                    building.accounts.splice(accountIndex, 1);
+                if (!hasError) {
+                    showToast('Account Deleted', 'success');
                     logAudit(`Deleted account ${deleteTarget.accountId} from building ${building.name}`);
-                    saveToLocalStorage();
-                    fetchDataFromSupabase();
+                    // Relying on realtime subscription
                 }
             }
         }
@@ -727,50 +722,35 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
         if (companyIndex !== -1) {
             const companyName = companies[companyIndex].name;
 
-            // Delete Company in Supabase explicitly using company_name
+            // Delete Company using unique ids
             let hasError = false;
-            let success = false;
+            let toDelete = window.cloudEnergyData.filter(ed => ed.company_name === companyName);
 
-            if (supabaseClient) {
-                try {
-                    const response = await supabaseClient
-                        .from('energy_accounts')
-                        .delete()
-                        .eq('company_name', companyName);
+            if (supabaseClient && toDelete.length > 0) {
+                for (const row of toDelete) {
+                    try {
+                        const response = await supabaseClient
+                            .from('energy_accounts')
+                            .delete()
+                            .eq('id', String(row.id).trim());
 
-                    if (response.error) {
-                        console.error('Error deleting from Supabase:', response.error);
-                        window.alert(response.error.message);
+                        if (response.error) {
+                            console.error('Error deleting from Supabase:', response.error);
+                            window.alert(response.error.message);
+                            hasError = true;
+                        }
+                    } catch (err) {
+                        console.error('Exception during Supabase delete:', err);
+                        window.alert(err.message);
                         hasError = true;
-                    } else {
-                        success = true;
                     }
-                } catch (err) {
-                    console.error('Exception during Supabase delete:', err);
-                    window.alert(err.message);
-                    hasError = true;
                 }
-            } else {
-                 hasError = false;
-                 success = true; // Assume success if no client
             }
 
-            if (!hasError && success) {
-                companies.splice(companyIndex, 1);
-                saveCompanies();
-
-                // Do not use .filter(), manually loop and splice to clean up UI array
-                for (let i = allBuildings.length - 1; i >= 0; i--) {
-                    if (allBuildings[i].companyId === deleteTarget.companyId) {
-                        allBuildings.splice(i, 1);
-                    }
-                }
-
+            if (!hasError) {
+                showToast('Company Deleted', 'success');
                 logAudit(`Deleted company: ${companyName} and associated properties.`);
-                saveToLocalStorage();
-                renderClientManager();
-                populateCompanyDropdowns();
-                fetchDataFromSupabase();
+                // Relying on realtime subscription
             }
         }
     }
@@ -844,10 +824,17 @@ function updateDashboard() {
                 }
 
                 if (withinDateRange) {
-                    if (bill.utility_type === 'Gas' || parseFloat(bill.usage_m3) > 0) {
-                        totalGas += bill.utility_type === 'Gas' ? (parseFloat(bill.usage_kwh) || parseFloat(bill.usage_m3) || 0) : (parseFloat(bill.usage_m3) || 0);
-                    } else {
+                    if (bill.utility_type === 'Gas') {
+                        totalGas += parseFloat(bill.usage_kwh) || parseFloat(bill.usage_m3) || 0;
+                    } else if (bill.utility_type === 'Electricity') {
                         totalElectricity += parseFloat(bill.usage_kwh) || 0;
+                    } else {
+                        // Fallback logic
+                        if (parseFloat(bill.usage_m3) > 0) {
+                            totalGas += parseFloat(bill.usage_m3) || 0;
+                        } else {
+                            totalElectricity += parseFloat(bill.usage_kwh) || 0;
+                        }
                     }
                     totalCost += parseFloat(bill.cost) || 0;
                 }
@@ -1001,10 +988,16 @@ function renderChart() {
                 if (withinDateRange) {
                     const billCost = parseFloat(bill.cost) || 0;
 
-                    if (bill.utility_type === 'Gas' || parseFloat(bill.usage_m3) > 0) {
+                    if (bill.utility_type === 'Gas') {
                         gasReadings.push({ date: bill.date, cost: billCost });
-                    } else {
+                    } else if (bill.utility_type === 'Electricity') {
                         electricReadings.push({ date: bill.date, cost: billCost });
+                    } else {
+                        if (parseFloat(bill.usage_m3) > 0) {
+                            gasReadings.push({ date: bill.date, cost: billCost });
+                        } else {
+                            electricReadings.push({ date: bill.date, cost: billCost });
+                        }
                     }
                 }
             });
@@ -1856,20 +1849,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log('History Data:', data);
 
                     if (data) {
-                        data = data.filter(bill => new Date(bill.last_updated || bill.date) >= new Date('2026-01-01'));
+                        data = data.filter(bill => new Date(bill.bill_date || bill.last_updated || bill.date) >= new Date('2026-01-01'));
                     }
 
                     listContainer.innerHTML = '';
 
                     if (data && data.length > 0) {
-                        data.sort((a, b) => new Date(b.date || b.last_updated) - new Date(a.date || a.last_updated));
+                        data.sort((a, b) => new Date(b.bill_date || b.date || b.last_updated) - new Date(a.bill_date || a.date || a.last_updated));
 
                         data.forEach(bill => {
                             const item = document.createElement('div');
                             item.style.padding = '10px';
                             item.style.borderBottom = '1px solid #e2e8f0';
 
-                            const formattedDate = formatDate(bill.last_updated);
+                            const formattedDate = formatDate(bill.bill_date || bill.last_updated || bill.date);
                             const kwh = Number(bill.usage_kwh || bill.current_kwh || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
                             const cost = Number(bill.total_cost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
@@ -2480,7 +2473,8 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
         total_cost: Number(costVal),
         company_name: companyName,
         property_name: buildingName,
-        bill_date: document.getElementById('reading-date').value
+        bill_date: document.getElementById('reading-date').value,
+        utility_type: accType.charAt(0).toUpperCase() + accType.slice(1)
     };
 
     console.log('Attempting Supabase Save...', payload);
