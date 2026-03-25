@@ -2196,23 +2196,7 @@ if (wAccount) {
 }
 
 const rValueInput = document.getElementById('reading-value');
-const rUnitRateInput = document.getElementById('reading-unit-rate');
 const rCostInput = document.getElementById('reading-cost');
-
-function calculateTotalCost() {
-    if (rValueInput && rUnitRateInput && rCostInput) {
-        const usage = Number(rValueInput.value) || 0;
-        const rate = Number(rUnitRateInput.value) || 0;
-        if (usage > 0 && rate > 0) {
-            rCostInput.value = (usage * rate).toFixed(2);
-        } else {
-            rCostInput.value = '';
-        }
-    }
-}
-
-if (rValueInput) rValueInput.addEventListener('input', calculateTotalCost);
-if (rUnitRateInput) rUnitRateInput.addEventListener('input', calculateTotalCost);
 
 document.getElementById('tracker-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -2268,7 +2252,6 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
 
     const usageVal = Number(document.getElementById('reading-value').value);
     const costVal = Number(document.getElementById('reading-cost').value);
-    const unitRateVal = Number(document.getElementById('reading-unit-rate').value);
 
     const companyObj = companies.find(c => c.id === buildingCompanyId);
     const companyName = companyObj ? companyObj.name : 'Unknown';
@@ -2283,6 +2266,19 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
         bill_date: document.getElementById('reading-date').value,
         utility_type: accType.charAt(0).toUpperCase() + accType.slice(1)
     };
+
+    if (window.cloudEnergyData) {
+        const isDuplicate = window.cloudEnergyData.some(ed =>
+            ed.property_name === payload.property_name &&
+            ed.bill_date === payload.bill_date &&
+            Number(ed.usage_kwh) === payload.usage_kwh &&
+            Number(ed.total_cost) === payload.total_cost
+        );
+        if (isDuplicate) {
+            alert('Duplicate Entry Detected: An exact match for Address, Date, Usage, and Cost already exists.');
+            return;
+        }
+    }
 
     console.log('Attempting Supabase Save...', payload);
 
