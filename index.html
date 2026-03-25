@@ -29,6 +29,10 @@
                 <h1 style="margin: 0;">DOB <span>Accounts</span></h1>
             </div>
             <nav style="display: flex; gap: 10px; align-items: center;">
+                <div style="display: flex; gap: 5px; margin-right: 10px; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 10px;">
+                    <button id="nav-energy" class="btn-primary" style="background: #635BFF;">Energy Vault</button>
+                    <button id="nav-insurance" class="btn-primary" style="background: transparent; border: 1px solid #635BFF; color: #635BFF;">Insurance Command</button>
+                </div>
                 <div id="filter-controls" style="display: flex; gap: 10px; align-items: center;">
                     <select id="company-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
                         <option value="" style="background: #0f172a; color: #f8fafc;">All Companies</option>
@@ -108,16 +112,6 @@
             <!-- Energy cards rendered here -->
         </section>
 
-        <!-- Insurance Vault Bento Grid -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
-            <h2 style="margin: 0;">Insurance Vault</h2>
-            <button id="add-insurance-btn" class="btn-primary" style="background: #10b981; margin-right: 10px; display: none;">+ Add Insurance</button>
-            <button id="toggle-insurance-btn" class="btn-primary" style="background: #eab308; color: #0f172a; font-weight: bold;">Show Insurance</button>
-        </div>
-        <section id="insurance-vault-grid" class="bento-list-grid" style="display: none; margin-top: 20px;">
-            <!-- Insurance cards rendered here -->
-        </section>
-
         <!-- Contract Dates Section -->
         <section id="contract-dates-section" style="display: none; margin-top: 40px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); backdrop-filter: blur(10px);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -161,6 +155,47 @@
             </table>
         </section>
 
+        <!-- Insurance Dashboard Section -->
+        <section id="insurance-dashboard" style="display: none; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
+                <h2 style="margin: 0;">Insurance Command</h2>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="card a">
+                    <h3>Total Portfolio Premium</h3>
+                    <p class="stat monospace" id="stat-total-premium">€0.00</p>
+                </div>
+                <div class="card b">
+                    <h3>Upcoming Renewals</h3>
+                    <p class="stat" id="stat-upcoming-renewals">0</p>
+                </div>
+                <div class="card c">
+                    <h3>Highest Premium</h3>
+                    <p class="stat monospace" id="stat-highest-premium" style="font-size: 1.2rem;">N/A</p>
+                </div>
+            </div>
+
+            <!-- Insurance Vault Bento Grid -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
+                <h2 style="margin: 0;">Insurance Vault</h2>
+                <button id="add-insurance-btn" class="btn-primary" style="background: #10b981; margin-right: 10px; display: none;">+ Add Insurance</button>
+            </div>
+            <div id="ins-filters" style="display: flex; gap: 10px; margin-top: 20px; align-items: center;">
+                <input type="text" id="ins-search-address" placeholder="Filter by Address/Location" style="padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid rgba(255,255,255,0.2); flex: 1;">
+                <select id="ins-filter-provider" style="padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid rgba(255,255,255,0.2);">
+                    <option value="" style="background: #0f172a;">All Providers</option>
+                </select>
+                <select id="ins-sort-renewal" style="padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid rgba(255,255,255,0.2);">
+                    <option value="asc" style="background: #0f172a;">Soonest First</option>
+                    <option value="desc" style="background: #0f172a;">Latest First</option>
+                </select>
+            </div>
+            <section id="insurance-vault-grid" class="bento-list-grid" style="display: grid; margin-top: 20px;">
+                <!-- Insurance cards rendered here -->
+            </section>
+        </section>
+
 
         <section id="add-insurance-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
             <div class="modal-content" style="background: #0f172a; margin: 10% auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; width: 80%; max-width: 500px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
@@ -181,6 +216,7 @@
                     </select>
                     <input type="number" id="ins-coverage" placeholder="Coverage Amount (€)" step="any" required>
                     <input type="number" id="ins-premium" placeholder="Premium Cost (€)" step="any" required>
+                    <input type="number" id="ins-last-year-premium" placeholder="Last Year Premium (€)" step="any" required>
                     <label style="font-size:0.9rem; margin-bottom:-10px; display: block;">Renewal Date</label>
                     <input type="date" id="ins-renewal-date" required style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
                     <button type="submit" class="btn-primary" style="width: 100%;">Save Insurance</button>
