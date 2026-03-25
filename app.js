@@ -1377,6 +1377,9 @@ async function fetchDataFromSupabase() {
                 .channel('schema-db-changes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'energy_accounts' }, payload => {
                     console.log('Realtime change received!', payload);
+                    if (payload.eventType === 'INSERT' && payload.new && payload.new.id) {
+                        if (allBuildings.some(b => b.id === payload.new.id)) return;
+                    }
                     fetchDataFromSupabase();
                 })
                 .subscribe();
@@ -2438,8 +2441,17 @@ function calculateTotalCost() {
 if (rValueInput) rValueInput.addEventListener('input', calculateTotalCost);
 if (rUnitRateInput) rUnitRateInput.addEventListener('input', calculateTotalCost);
 
+let trackerFormLastSubmitTime = 0;
 document.getElementById('tracker-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
+
+    const now = Date.now();
+    if (now - trackerFormLastSubmitTime < 3000) {
+        console.log('Debounced: Ignored double click.');
+        return;
+    }
+    trackerFormLastSubmitTime = now;
+
     const submitBtn = this.querySelector('button[type="submit"]');
     if (submitBtn) submitBtn.disabled = true;
     
@@ -2517,6 +2529,9 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
             console.log('Supabase Save Response:', response);
             if (!response.error) {
                 showToast('Cloud Synced', 'success');
+                // The 'Success' Reset: clear form fields immediately
+                const form = document.getElementById('tracker-form');
+                if (form) form.reset();
             } else {
                 console.error('Error saving to Supabase', response.error);
                 showToast(response.error.message, 'error');
