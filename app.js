@@ -423,6 +423,33 @@ window.requestDeleteBuilding = function(id) {
     document.getElementById('confirm-modal').style.display = 'block';
 };
 
+window.requestDeleteInsurance = async function(insuranceId) {
+    if (!confirm("Are you sure you want to delete this insurance policy?")) {
+        return;
+    }
+
+    if (supabaseClient) {
+        try {
+            const response = await supabaseClient
+                .from('insurance_vault')
+                .delete()
+                .eq('id', String(insuranceId).trim());
+
+            if (response.error) {
+                console.error('Error deleting insurance from Supabase:', response.error);
+                window.alert(response.error.message);
+            } else {
+                showToast('Insurance Deleted', 'success');
+                logAudit(`Deleted insurance policy associated with ID ${insuranceId}`);
+                fetchDataFromSupabase();
+            }
+        } catch (err) {
+            console.error('Exception during Supabase insurance delete:', err);
+            window.alert(err.message);
+        }
+    }
+};
+
 window.requestDeleteBill = async function(billId) {
     if (!confirm("Are you sure you want to delete this bill? This will remove this specific bill's data.")) {
         return;
@@ -568,9 +595,16 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             }
 
             if (!hasError) {
+                if (supabaseClient) {
+                    try {
+                        await supabaseClient.from('insurance_vault').delete().eq('account_address', building.address);
+                    } catch (e) {
+                        console.error('Error deleting related insurance', e);
+                    }
+                }
                 showToast('Property Deleted', 'success');
                 logAudit(`Deleted property: ${buildingName}`);
-                // Relying on realtime subscription
+                fetchDataFromSupabase(); // Relying on realtime subscription but insurance vault needs explicit fetch
             }
         }
     } else if (deleteTarget.type === 'account') {
@@ -642,9 +676,21 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             }
 
             if (!hasError) {
+                // Also clean up insurance policies for buildings owned by this company
+                const companyBuildings = allBuildings.filter(b => b.companyId === deleteTarget.companyId);
+                if (supabaseClient && companyBuildings.length > 0) {
+                    for (const cb of companyBuildings) {
+                        try {
+                            await supabaseClient.from('insurance_vault').delete().eq('account_address', cb.address);
+                        } catch (e) {
+                            console.error('Error deleting related insurance for company building', e);
+                        }
+                    }
+                }
+
                 showToast('Company Deleted', 'success');
                 logAudit(`Deleted company: ${companyName} and associated properties.`);
-                // Relying on realtime subscription
+                fetchDataFromSupabase();
             }
         }
     }
@@ -1322,14 +1368,25 @@ async function fetchDataFromSupabase() {
                 const insuranceGrid = document.getElementById('insurance-vault-grid');
                 if (insuranceGrid && insuranceData) {
                     insuranceGrid.innerHTML = '';
-                    insuranceData.forEach(policy => {
+                    // Sort by renewal_date descending
+                    const sortedInsurance = [...insuranceData].sort((a, b) => new Date(b.renewal_date) - new Date(a.renewal_date));
+
+                    sortedInsurance.forEach(policy => {
                         const card = document.createElement('div');
                         card.className = 'card';
                         card.style.textAlign = 'left';
 
                         card.innerHTML = `
-                            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${policy.broker_name || policy.provider || 'Unknown Provider'}</h3>
-                            <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">${policy.policy_type || policy.policy_number || 'N/A'}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div>
+                                    <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${policy.broker_name || policy.provider_name || 'Unknown Provider'}</h3>
+                                    <div style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 5px;">${policy.account_address || 'Unknown Property'}</div>
+                                    <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">${policy.policy_type || policy.insurance_type || 'N/A'} - ${policy.policy_number || 'N/A'}</div>
+                                </div>
+                                <button onclick="requestDeleteInsurance('${policy.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Insurance">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
                                 <div>
                                     <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Renewal Date</div>
@@ -1563,17 +1620,106 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Toggle Insurance Vault
     const toggleInsuranceBtn = document.getElementById('toggle-insurance-btn');
+    const addInsuranceBtn = document.getElementById('add-insurance-btn');
     if (toggleInsuranceBtn && insuranceVaultGridSec) {
         toggleInsuranceBtn.addEventListener('click', () => {
             if (insuranceVaultGridSec.style.display === 'none') {
                 insuranceVaultGridSec.style.display = 'grid';
                 toggleInsuranceBtn.textContent = 'Hide Insurance';
+                if (addInsuranceBtn) addInsuranceBtn.style.display = 'block';
             } else {
                 insuranceVaultGridSec.style.display = 'none';
                 toggleInsuranceBtn.textContent = 'Show Insurance';
+                if (addInsuranceBtn) addInsuranceBtn.style.display = 'none';
             }
         });
     }
+
+    // Add Insurance Modal Logic
+    const addInsuranceModal = document.getElementById('add-insurance-modal');
+    const addInsuranceBtnElement = document.getElementById('add-insurance-btn');
+    const closeAddInsuranceModal = document.getElementById('close-add-insurance-modal');
+
+    if (addInsuranceBtnElement) {
+        addInsuranceBtnElement.addEventListener('click', () => {
+            // Populate property dropdown
+            const insBuildingSelect = document.getElementById('ins-building');
+            if (insBuildingSelect) {
+                insBuildingSelect.innerHTML = '<option value="" disabled selected>Select Property</option>';
+
+                let targetBuildings = allBuildings;
+                if (currentUserRole === 'Company-Admin') {
+                    const authCompany = sessionStorage.getItem('auth_company');
+                    targetBuildings = allBuildings.filter(b => b.companyId === authCompany);
+                }
+
+                targetBuildings.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b.address; // store address as value
+                    opt.textContent = b.name;
+                    insBuildingSelect.appendChild(opt);
+                });
+            }
+            document.getElementById('add-insurance-form').reset();
+            document.getElementById('ins-renewal-date').value = '2026-03-12';
+            addInsuranceModal.style.display = 'block';
+        });
+    }
+
+    if (closeAddInsuranceModal) {
+        closeAddInsuranceModal.addEventListener('click', () => {
+            addInsuranceModal.style.display = 'none';
+        });
+    }
+
+    // Close modal if clicking outside
+    window.addEventListener('click', (event) => {
+        if (event.target == addInsuranceModal) {
+            addInsuranceModal.style.display = 'none';
+        }
+    });
+
+
+    document.getElementById('add-insurance-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.querySelector('#add-insurance-form button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+
+        try {
+            const payload = {
+                id: crypto.randomUUID(),
+                account_address: document.getElementById('ins-building').value,
+                policy_number: document.getElementById('ins-policy-number').value,
+                provider_name: document.getElementById('ins-provider').value,
+                insurance_type: document.getElementById('ins-type').value,
+                coverage_amount: Number(document.getElementById('ins-coverage').value),
+                premium_cost: Number(document.getElementById('ins-premium').value),
+                renewal_date: document.getElementById('ins-renewal-date').value
+            };
+
+            if (supabaseClient) {
+                const response = await supabaseClient.from('insurance_vault').insert(payload);
+                if (response.error) {
+                    console.error('Error saving insurance to Supabase:', response.error);
+                    showToast(response.error.message, 'error');
+                    window.alert(response.error.message);
+                } else {
+                    showToast('Insurance Added', 'success');
+                    logAudit(`Added ${payload.insurance_type} insurance for ${payload.account_address}`);
+                    document.getElementById('add-insurance-modal').style.display = 'none';
+                    document.getElementById('add-insurance-form').reset();
+                    fetchDataFromSupabase();
+                }
+            } else {
+                alert('Supabase client not initialized');
+            }
+        } catch (err) {
+            console.error('Exception during insurance save:', err);
+            window.alert(err.message);
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    });
 
     // Company Modal logic
     const companyModal = document.getElementById('company-modal');

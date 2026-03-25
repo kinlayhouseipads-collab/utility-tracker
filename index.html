@@ -111,6 +111,7 @@
         <!-- Insurance Vault Bento Grid -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
             <h2 style="margin: 0;">Insurance Vault</h2>
+            <button id="add-insurance-btn" class="btn-primary" style="background: #10b981; margin-right: 10px; display: none;">+ Add Insurance</button>
             <button id="toggle-insurance-btn" class="btn-primary" style="background: #eab308; color: #0f172a; font-weight: bold;">Show Insurance</button>
         </div>
         <section id="insurance-vault-grid" class="bento-list-grid" style="display: none; margin-top: 20px;">
@@ -158,6 +159,33 @@
                     <!-- Companies will be rendered here -->
                 </tbody>
             </table>
+        </section>
+
+
+        <section id="add-insurance-modal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4);">
+            <div class="modal-content" style="background: #0f172a; margin: 10% auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; width: 80%; max-width: 500px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                <span id="close-add-insurance-modal" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                <h2 id="add-insurance-modal-title">Add Insurance Policy</h2>
+                <form id="add-insurance-form">
+                    <select id="ins-building" required style="width: 100%; margin-bottom: 15px;">
+                        <option value="" disabled selected>Select Property</option>
+                    </select>
+                    <input type="text" id="ins-policy-number" placeholder="Policy Number" required>
+                    <input type="text" id="ins-provider" placeholder="Provider Name" required>
+                    <select id="ins-type" required style="width: 100%; margin-bottom: 15px;">
+                        <option value="" disabled selected>Select Insurance Type</option>
+                        <option value="Building">Building</option>
+                        <option value="Liability">Liability</option>
+                        <option value="Content">Content</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <input type="number" id="ins-coverage" placeholder="Coverage Amount (€)" step="any" required>
+                    <input type="number" id="ins-premium" placeholder="Premium Cost (€)" step="any" required>
+                    <label style="font-size:0.9rem; margin-bottom:-10px; display: block;">Renewal Date</label>
+                    <input type="date" id="ins-renewal-date" required style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+                    <button type="submit" class="btn-primary" style="width: 100%;">Save Insurance</button>
+                </form>
+            </div>
         </section>
 
         <!-- Add/Edit Company Modal -->
