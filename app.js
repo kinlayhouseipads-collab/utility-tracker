@@ -3,7 +3,8 @@ const supabaseClient = typeof window !== 'undefined' && window.supabase ? window
 let utilityChartInstance = null;
 let activeBuildingId = null;
 
-let allBuildings = [];
+let energyBuildings = [];
+let insuranceBuildings = [];
 let sortEndDateAscending = true; // Track sorting state globally
 let currentUserRole = null;
 let currentUserId = null;
@@ -74,7 +75,7 @@ function saveToLocalStorage() {
 
     showToast('Saving...', 'info');
     const data = {
-        buildings: allBuildings,
+        buildings: energyBuildings,
         companies: companies
     };
     localStorage.setItem('VestaLogic_Storage', JSON.stringify(data));
@@ -135,7 +136,7 @@ async function loadBuildings() {
         }
 
         // Force fetch from cloud to ensure True Cloud-Only state
-        allBuildings = [];
+        energyBuildings = [];
         companies = [];
         localStorage.removeItem('VestaLogic_Storage');
         fetchDataFromSupabase();
@@ -411,7 +412,7 @@ function renderBuildings(buildings) {
 let deleteTarget = null; // { type: 'building' | 'account', buildingId, accountId }
 
 window.requestDeleteBuilding = function(id) {
-    const building = allBuildings.find(b => b.id === id);
+    const building = energyBuildings.find(b => b.id === id);
     if (!building) return;
     deleteTarget = { type: 'building', buildingId: id };
     document.getElementById('confirm-title').innerText = 'Delete Property';
@@ -487,7 +488,7 @@ window.requestDeleteBill = async function(billId) {
                 }
 
 
-                allBuildings.forEach(building => {
+                energyBuildings.forEach(building => {
                     if (building.billHistory) {
                         building.billHistory = building.billHistory.filter(b => b.id !== billId);
                     }
@@ -503,7 +504,7 @@ window.requestDeleteBill = async function(billId) {
 };
 
 window.requestDeleteAccount = function(buildingId, accountId) {
-    const building = allBuildings.find(b => b.id === buildingId);
+    const building = energyBuildings.find(b => b.id === buildingId);
     if (!building) return;
     const account = building.accounts.find(a => a.id_number === accountId);
     if (!account) return;
@@ -562,9 +563,9 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
     }
 
     if (deleteTarget.type === 'building') {
-        const buildingIndex = allBuildings.findIndex(b => b.id === deleteTarget.buildingId);
+        const buildingIndex = energyBuildings.findIndex(b => b.id === deleteTarget.buildingId);
         if (buildingIndex !== -1) {
-            const building = allBuildings[buildingIndex];
+            const building = energyBuildings[buildingIndex];
             const buildingName = building.name;
 
             // Delete all associated rows using unique id
@@ -608,7 +609,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             }
         }
     } else if (deleteTarget.type === 'account') {
-        const building = allBuildings.find(b => b.id === deleteTarget.buildingId);
+        const building = energyBuildings.find(b => b.id === deleteTarget.buildingId);
         if (building) {
             const accountIndex = building.accounts.findIndex(a => a.id_number === deleteTarget.accountId);
             if (accountIndex !== -1) {
@@ -677,7 +678,7 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
 
             if (!hasError) {
                 // Also clean up insurance policies for buildings owned by this company
-                const companyBuildings = allBuildings.filter(b => b.companyId === deleteTarget.companyId);
+                const companyBuildings = energyBuildings.filter(b => b.companyId === deleteTarget.companyId);
                 if (supabaseClient && companyBuildings.length > 0) {
                     for (const cb of companyBuildings) {
                         try {
@@ -730,7 +731,7 @@ function updateDashboard() {
     let totalGas = 0;
     let totalCost = 0;
 
-    let targetBuildings = allBuildings;
+    let targetBuildings = energyBuildings;
     if (activeBuildingId) {
         targetBuildings = targetBuildings.filter(b => b.id === activeBuildingId);
     } else {
@@ -821,7 +822,7 @@ function renderChart() {
     let gasReadings = [];
 
     // Gather all historical bills and normalize them for charting
-    let targetBuildings = allBuildings;
+    let targetBuildings = energyBuildings;
     if (activeBuildingId) {
         targetBuildings = targetBuildings.filter(b => b.id === activeBuildingId);
     } else {
@@ -901,7 +902,7 @@ function renderChart() {
 
     let chartTitle = 'Total Portfolio Cost by Utility';
     if (activeBuildingId) {
-        const activeBuilding = allBuildings.find(b => b.id === activeBuildingId);
+        const activeBuilding = energyBuildings.find(b => b.id === activeBuildingId);
         if (activeBuilding) {
             chartTitle = `${activeBuilding.name} Cost by Utility`;
         }
@@ -989,7 +990,7 @@ function updateFilters() {
     const startDateFilter = document.getElementById('start-date-filter');
     const endDateFilter = document.getElementById('end-date-filter');
 
-    let filteredBuildings = allBuildings;
+    let filteredBuildings = energyBuildings;
 
     if (searchBar && searchBar.value) {
         const searchTerm = searchBar.value.toLowerCase();
@@ -1081,10 +1082,10 @@ function checkAlerts() {
     const today = new Date('2026-03-12T00:00:00'); // Static today per context
 
     // Only check buildings visible to user
-    let targetBuildings = allBuildings;
+    let targetBuildings = energyBuildings;
     if (currentUserRole === 'Company-Admin') {
         const authCompany = sessionStorage.getItem('auth_company');
-        targetBuildings = allBuildings.filter(b => b.companyId === authCompany);
+        targetBuildings = energyBuildings.filter(b => b.companyId === authCompany);
     }
 
     targetBuildings.forEach(building => {
@@ -1182,7 +1183,7 @@ function checkAlerts() {
                 el.addEventListener('click', () => {
                     document.getElementById('notification-dropdown').style.display = 'none';
                     // Navigation logic
-                    const building = allBuildings.find(b => b.id === n.buildingId);
+                    const building = energyBuildings.find(b => b.id === n.buildingId);
                     if (building) {
                         selectBuilding(building);
                         // Optional: if it's an account, you could auto-expand the accordion here
@@ -1214,7 +1215,7 @@ async function fetchDataFromSupabase() {
                         // Prevent "Echo" effect: don't fetch if we already have it locally
                         const newId = payload.new.id;
                         let existsLocally = false;
-                        for (const b of allBuildings) {
+                        for (const b of energyBuildings) {
                             if (b.billHistory && b.billHistory.find(bill => bill.id === newId)) {
                                 existsLocally = true;
                                 break;
@@ -1247,7 +1248,24 @@ async function fetchDataFromSupabase() {
                 // State Management: Update the global state and call render functions
                 window.cloudEnergyData = energyData;
 
-                // Do not wipe `allBuildings` and `companies` to prevent zero-bill properties from vanishing.
+                // Isolate State for Insurance
+                insuranceBuildings = [];
+                energyData.forEach(ed => {
+                    const propName = ed.property_name || 'Unknown Property';
+                    const compName = ed.company_name || 'Unknown Company';
+                    const compId = compName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+                    if (!insuranceBuildings.find(b => b.name === propName && b.companyId === compId)) {
+                        insuranceBuildings.push({
+                            id: crypto.randomUUID(), // unique ID
+                            name: propName,
+                            address: propName + ' Address',
+                            companyId: compId
+                        });
+                    }
+                });
+
+                // Do not wipe `energyBuildings` and `companies` to prevent zero-bill properties from vanishing.
                 // Clear the `buildings-list` inner HTML as it will be re-rendered via `updateFilters`.
                 document.getElementById('buildings-list').innerHTML = '';
 
@@ -1255,14 +1273,14 @@ async function fetchDataFromSupabase() {
                 // Keep existing properties, only add new ones from data
 
                 // Clear billHistory from all existing buildings so we can repopulate from cloud
-                allBuildings.forEach(b => {
+                energyBuildings.forEach(b => {
                     b.billHistory = [];
                     // Keep accounts intact if possible, but they are tied to properties.
                     // To handle dynamically built accounts properly without wiping existing manual entries:
                     // we'll leave b.accounts alone, but ensure they aren't duplicated.
                 });
 
-                let bCount = allBuildings.length + 1;
+                let bCount = energyBuildings.length + 1;
 
                 energyData.forEach(ed => {
                     const propName = ed.property_name || 'Unknown Property';
@@ -1275,7 +1293,7 @@ async function fetchDataFromSupabase() {
                     }
 
                     // Find existing building or create new
-                    let existingBuilding = allBuildings.find(b => b.name === propName && b.companyId === compId);
+                    let existingBuilding = energyBuildings.find(b => b.name === propName && b.companyId === compId);
 
                     if (!existingBuilding) {
                         const newId = 'B' + String(bCount++).padStart(3, '0');
@@ -1288,7 +1306,7 @@ async function fetchDataFromSupabase() {
                             accounts: [],
                             billHistory: []
                         };
-                        allBuildings.push(existingBuilding);
+                        energyBuildings.push(existingBuilding);
                     }
 
                     // Add account if not present in this building
@@ -1553,6 +1571,19 @@ document.addEventListener('DOMContentLoaded', () => {
     populateCompanyDropdowns();
     checkAuth();
     loadBuildings();
+
+    // Fix Cache on Swap
+    document.getElementById('nav-energy')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('VestaLogic_Storage');
+        window.location.href = 'index.html';
+    });
+
+    document.getElementById('nav-insurance')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('VestaLogic_Storage');
+        window.location.href = 'insurance.html';
+    });
     updateDashboard();
     renderChart();
     renderClientManager();
@@ -1589,7 +1620,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const startDateFilter = document.getElementById('start-date-filter');
             const endDateFilter = document.getElementById('end-date-filter');
 
-            let filteredBuildings = allBuildings;
+            let filteredBuildings = energyBuildings;
 
             // Apply Auth filters
             if (currentUserRole === 'Company-Admin') {
@@ -1789,10 +1820,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (insBuildingSelect) {
                 insBuildingSelect.innerHTML = '<option value="" disabled selected>Select Property</option>';
 
-                let targetBuildings = allBuildings;
+                let targetBuildings = insuranceBuildings;
                 if (currentUserRole === 'Company-Admin') {
                     const authCompany = sessionStorage.getItem('auth_company');
-                    targetBuildings = allBuildings.filter(b => b.companyId === authCompany);
+                    targetBuildings = insuranceBuildings.filter(b => b.companyId === authCompany);
                 }
 
                 targetBuildings.forEach(b => {
@@ -2019,7 +2050,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
 
         // Generate pseudo ID (e.g. B051)
-        const idNum = allBuildings.length + 1;
+        const idNum = energyBuildings.length + 1;
         const newId = 'B' + String(idNum).padStart(3, '0');
 
         const newBuilding = {
@@ -2033,7 +2064,14 @@ document.addEventListener('DOMContentLoaded', () => {
             billHistory: []
         };
 
-        allBuildings.push(newBuilding);
+        energyBuildings.push(newBuilding);
+        // Sync to Insurance Buildings so it's available in the dropdown immediately
+        insuranceBuildings.push({
+            id: newId,
+            name: newBuilding.name,
+            address: newBuilding.address,
+            companyId: newBuilding.companyId
+        });
         logAudit(`Created property: ${newBuilding.name}`);
         addBuildingModal.style.display = 'none';
         document.getElementById('add-building-form').reset();
@@ -2057,7 +2095,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
 
         const id = document.getElementById('edit-b-id').value;
-        const buildingIndex = allBuildings.findIndex(b => b.id === id);
+        const buildingIndex = energyBuildings.findIndex(b => b.id === id);
 
         if (buildingIndex !== -1) {
             const updatedFields = {
@@ -2066,7 +2104,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 companyId: document.getElementById('edit-b-company').value,
                 area: Number(document.getElementById('edit-b-area').value) || 1000
             };
-            allBuildings = allBuildings.map(b => b.id === id ? Object.assign({}, b, updatedFields) : b);
+            energyBuildings = energyBuildings.map(b => b.id === id ? Object.assign({}, b, updatedFields) : b);
 
             logAudit(`Edited property: ${updatedFields.name}`);
         }
@@ -2083,7 +2121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('add-account-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const bId = document.getElementById('add-acc-building-id').value;
-        const building = allBuildings.find(b => b.id === bId);
+        const building = energyBuildings.find(b => b.id === bId);
         if (building) {
             const newAcc = {
                 type: document.getElementById('add-acc-type').value,
@@ -2108,7 +2146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const bId = document.getElementById('edit-acc-building-id').value;
         const origId = document.getElementById('edit-acc-original-id').value;
-        const building = allBuildings.find(b => b.id === bId);
+        const building = energyBuildings.find(b => b.id === bId);
         if (building && building.accounts) {
             const accIndex = building.accounts.findIndex(a => a.id_number === origId);
             if (accIndex !== -1) {
@@ -2119,7 +2157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     contractEndDate: document.getElementById('edit-acc-enddate').value
                 };
 
-                allBuildings = allBuildings.map(b => b.id === bId ? Object.assign({}, b, {
+                energyBuildings = energyBuildings.map(b => b.id === bId ? Object.assign({}, b, {
                     accounts: b.accounts.map(a => a.id_number === origId ? Object.assign({}, a, updatedAcc) : a)
                 }) : b);
 
@@ -2197,7 +2235,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.openEditModal = function(id) {
-    const building = allBuildings.find(b => b.id === id);
+    const building = energyBuildings.find(b => b.id === id);
     if (building) {
         document.getElementById('edit-b-id').value = building.id;
         document.getElementById('edit-b-name').value = building.name || '';
@@ -2216,7 +2254,7 @@ window.openAddAccountModal = function(buildingId) {
 };
 
 window.openEditAccountModal = function(buildingId, accountId) {
-    const building = allBuildings.find(b => b.id === buildingId);
+    const building = energyBuildings.find(b => b.id === buildingId);
     if (building && building.accounts) {
         const account = building.accounts.find(a => a.id_number === accountId);
         if (account) {
@@ -2240,7 +2278,7 @@ function renderContractDates() {
     let allContracts = [];
     const today = new Date();
 
-    allBuildings.forEach(b => {
+    energyBuildings.forEach(b => {
         if (!b.accounts) return;
         b.accounts.forEach(acc => {
             if (acc.contractEndDate) {
@@ -2425,7 +2463,7 @@ if (wNext1) {
 
         // Populate buildings
         wBuilding.innerHTML = '<option value="" disabled selected>Select Property</option>';
-        const filtered = allBuildings.filter(b => b.companyId === wCompany.value);
+        const filtered = energyBuildings.filter(b => b.companyId === wCompany.value);
         filtered.forEach(b => {
             const opt = document.createElement('option');
             opt.value = b.id;
@@ -2454,7 +2492,7 @@ if (wNext2) {
             return;
         }
 
-        const b = allBuildings.find(x => x.id === wBuilding.value);
+        const b = energyBuildings.find(x => x.id === wBuilding.value);
         if (!b) return;
 
         // Populate accounts
@@ -2526,7 +2564,7 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     const selectedOpt = wAccount.options[wAccount.selectedIndex];
     const accType = selectedOpt.dataset.type;
 
-    const building = allBuildings.find(b => b.id === bId);
+    const building = energyBuildings.find(b => b.id === bId);
     if (building && building.accounts) {
         const accIndex = building.accounts.findIndex(a => a.id_number === oldAccNum);
         if (accIndex !== -1) {
@@ -2534,7 +2572,7 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
             if (building.accounts[accIndex].id_number !== newAccNum || building.accounts[accIndex].contractEndDate !== newEndDate) {
                 edited = true;
 
-                allBuildings = allBuildings.map(b => b.id === bId ? Object.assign({}, b, {
+                energyBuildings = energyBuildings.map(b => b.id === bId ? Object.assign({}, b, {
                     accounts: b.accounts.map(a => a.id_number === oldAccNum ? Object.assign({}, a, { id_number: newAccNum, contractEndDate: newEndDate }) : a)
                 }) : b);
             }
