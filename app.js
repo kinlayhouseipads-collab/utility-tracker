@@ -1,4 +1,4 @@
-const supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient(((typeof process !== 'undefined' && process.env && process.env.SUPABASE_URL) ? process.env.SUPABASE_URL : 'https://jzzbbttgvkdqwkjynuxi.supabase.co'), ((typeof process !== 'undefined' && process.env && process.env.SUPABASE_ANON_KEY) ? process.env.SUPABASE_ANON_KEY : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY')) : null;
+const supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient('https://jzzbbttgvkdqwkjynuxi.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY') : null;
 
 let utilityChartInstance = null;
 let activeBuildingId = null;
@@ -1822,10 +1822,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 
+    let isSavingInsurance = false;
     document.getElementById('add-insurance-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const submitBtn = document.querySelector('#add-insurance-form button[type="submit"]');
+
+        if (isSavingInsurance) return;
+        isSavingInsurance = true;
+
+        const submitBtn = document.getElementById('btn-save-insurance');
         if (submitBtn) submitBtn.disabled = true;
+
+        // 3-second Hard-Lock Debounce
+        setTimeout(() => {
+            isSavingInsurance = false;
+        }, 3000);
 
         try {
             const payload = {
@@ -1836,7 +1846,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 insurance_type: document.getElementById('ins-type').value,
                 coverage_amount: Number(document.getElementById('ins-coverage').value),
                 premium_cost: Number(document.getElementById('ins-premium').value),
-                last_year_premium: Number(document.getElementById('ins-last-year-premium').value || 0),
                 renewal_date: document.getElementById('ins-renewal-date').value
             };
 
@@ -2487,11 +2496,21 @@ if (wAccount) {
 const rValueInput = document.getElementById('reading-value');
 const rCostInput = document.getElementById('reading-cost');
 
+let isSavingEnergy = false;
 document.getElementById('tracker-form')?.addEventListener('submit', async function(e) {
     e.preventDefault();
-    const submitBtn = this.querySelector('button[type="submit"]');
+
+    if (isSavingEnergy) return;
+    isSavingEnergy = true;
+
+    const submitBtn = document.getElementById('btn-save-energy');
     if (submitBtn) submitBtn.disabled = true;
     
+    // 3-second Hard-Lock Debounce
+    setTimeout(() => {
+        isSavingEnergy = false;
+    }, 3000);
+
     try {
         if (!wBuilding.value || !wAccount.value) {
             alert('Please complete the wizard properly.');

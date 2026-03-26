@@ -7,26 +7,20 @@ def test_insurance_dashboard():
         context = browser.new_context(viewport={"width": 1280, "height": 800})
         page = context.new_page()
 
-        # Navigate to local server
         page.goto("http://localhost:8000")
         page.wait_for_selector("#login-username")
 
-        # Login
         page.fill("#login-username", "dobutilities")
         page.click("button[type='submit']")
 
-        # Wait for dashboard
         page.wait_for_selector("#main-dashboard", state="visible")
 
-        # Click on Insurance Command nav button
         page.click("#nav-insurance")
         page.wait_for_selector("#insurance-dashboard", state="visible")
 
-        # Take a screenshot
         page.screenshot(path="screenshot_insurance_dashboard.png")
         print("Screenshot of Insurance Dashboard taken.")
 
-        # Verify elements
         assert page.is_visible("#stat-total-premium")
         assert page.is_visible("#stat-upcoming-renewals")
         assert page.is_visible("#stat-highest-premium")
