@@ -30,8 +30,8 @@
             </div>
             <nav style="display: flex; gap: 10px; align-items: center;">
                 <div style="display: flex; gap: 5px; margin-right: 10px; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 10px;">
-                    <a href="index.html" id="nav-energy" class="btn-primary" style="background: #635BFF; text-decoration: none; display: inline-block; text-align: center;">Energy Vault</a>
-                    <a href="insurance.html" id="nav-insurance" class="btn-primary" style="background: transparent; border: 1px solid #635BFF; color: #635BFF; text-decoration: none; display: inline-block; text-align: center;">Insurance Command</a>
+                    <a href="index.html" id="nav-energy" class="btn-primary" style="background: transparent; border: 1px solid #635BFF; color: #635BFF; text-decoration: none; display: inline-block; text-align: center;">Energy Vault</a>
+                    <a href="insurance.html" id="nav-insurance" class="btn-primary" style="background: #635BFF; text-decoration: none; display: inline-block; text-align: center;">Insurance Command</a>
                 </div>
                 <div id="filter-controls" style="display: flex; gap: 10px; align-items: center;">
                     <select id="company-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
@@ -76,16 +76,16 @@
             </div>
         </div>
 
-        <section id="buildings-list" style="margin-top: 20px; max-height: 400px; overflow-y: auto; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); backdrop-filter: blur(10px);">
+        <section id="buildings-list" style="display: none; margin-top: 20px; max-height: 400px; overflow-y: auto; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); backdrop-filter: blur(10px);">
             <!-- Properties will be rendered here -->
         </section>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
+        <div style="display: none; justify-content: space-between; align-items: center; margin-top: 40px;">
             <h2 id="selected-building-name" style="margin: 0;">All Properties Dashboard</h2>
             <button id="view-bill-history" class="btn-primary" style="display: block;">View Bill History</button>
         </div>
 
-        <section class="dashboard-grid">
+        <section class="dashboard-grid" style="display: none;">
             <div class="card a">
                 <h3>Total Portfolio Cost</h3>
                 <p class="stat monospace" id="stat-cost">€0.00</p>
@@ -100,15 +100,15 @@
             </div>
         </section>
 
-        <section class="chart-section" style="margin-top: 40px; background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        <section class="chart-section" style="display: none; margin-top: 40px; background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
             <canvas id="utilityChart"></canvas>
         </section>
 
         <!-- Energy Accounts Bento Grid -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
+        <div style="display: none; justify-content: space-between; align-items: center; margin-top: 40px;">
             <h2 style="margin: 0;">Energy Accounts</h2>
         </div>
-        <section id="energy-list-grid" class="bento-list-grid" style="margin-top: 20px;">
+        <section id="energy-list-grid" class="bento-list-grid" style="display: none; margin-top: 20px;">
             <!-- Energy cards rendered here -->
         </section>
 
@@ -156,7 +156,7 @@
         </section>
 
         <!-- Insurance Dashboard Section -->
-        <section id="insurance-dashboard" style="display: none; width: 100%;">
+        <section id="insurance-dashboard" style="display: block; width: 100%;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
                 <h2 style="margin: 0;">Insurance Command</h2>
             </div>

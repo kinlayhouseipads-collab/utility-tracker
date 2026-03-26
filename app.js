@@ -1454,43 +1454,92 @@ window.renderInsuranceVault = function(insuranceData) {
             card.style.textAlign = 'left';
 
             let staleStyle = '';
+            let diffDaysText = 'N/A';
+            let diffDaysColor = '#cbd5e1';
+
             if (policy.renewal_date) {
                 const rDate = new Date(policy.renewal_date);
                 const diffTime = rDate - now;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays <= 7) {
+
+                if (diffDays < 0) {
+                    diffDaysText = `${Math.abs(diffDays)} Days Overdue`;
+                    diffDaysColor = '#ef4444';
                     staleStyle = 'border: 2px solid #ef4444 !important;';
+                } else if (diffDays === 0) {
+                    diffDaysText = 'Due Today';
+                    diffDaysColor = '#ef4444';
+                    staleStyle = 'border: 2px solid #ef4444 !important;';
+                } else {
+                    diffDaysText = `${diffDays} Days`;
+                    if (diffDays <= 7) {
+                        diffDaysColor = '#ef4444';
+                        staleStyle = 'border: 2px solid #ef4444 !important;';
+                    } else if (diffDays <= 30) {
+                        diffDaysColor = '#eab308';
+                    } else {
+                        diffDaysColor = '#10b981';
+                    }
                 }
             }
             if (staleStyle) {
                 card.style.cssText += staleStyle;
             }
 
+            const currentPremium = Number(policy.premium_cost || 0);
+            const lastYearPremium = Number(policy.last_year_premium || 0);
+            const premiumDiff = currentPremium - lastYearPremium;
+
+            let diffText = '';
+            let diffColor = '#cbd5e1';
+
+            if (lastYearPremium > 0) {
+                if (premiumDiff > 0) {
+                    diffText = `+${fmtCurrency.format(premiumDiff)}`;
+                    diffColor = '#ef4444'; // Red for increase
+                } else if (premiumDiff < 0) {
+                    diffText = `${fmtCurrency.format(premiumDiff)}`;
+                    diffColor = '#10b981'; // Green for decrease
+                } else {
+                    diffText = 'No Change';
+                    diffColor = '#94a3b8';
+                }
+            } else {
+                diffText = 'N/A';
+            }
+
             card.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div>
-                        <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${policy.provider_name || 'Unknown Provider'}</h3>
+                    <div style="display: flex; flex-direction: column; width: 100%;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${policy.provider_name || 'Unknown Provider'}</h3>
+                            <div style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; color: ${diffDaysColor}; border: 1px solid ${diffDaysColor};">${diffDaysText}</div>
+                        </div>
                         <div style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 5px;">${policy.account_address || 'Unknown Property'}</div>
                         <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">${policy.insurance_type || 'N/A'} - ${policy.policy_number || 'N/A'}</div>
                     </div>
-                    <button onclick="requestDeleteInsurance('${policy.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Insurance">
-                        <i class="fas fa-trash"></i>
-                    </button>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
                     <div>
                         <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Renewal Date</div>
                         <div style="font-weight: 600; color: #f8fafc;">${policy.renewal_date ? formatDate(policy.renewal_date) : 'N/A'}</div>
                     </div>
-                    <div style="display: flex; gap: 15px; text-align: right;">
+                    <div style="display: flex; gap: 15px; text-align: right; align-items: flex-end;">
+                        <div>
+                            <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Diff</div>
+                            <div class="monospace" style="font-weight: bold; font-size: 0.9em; color: ${diffColor};">${diffText}</div>
+                        </div>
                         <div>
                             <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Last Year</div>
-                            <div class="monospace" style="color: #cbd5e1;">${fmtCurrency.format(Number(policy.last_year_premium || 0))}</div>
+                            <div class="monospace" style="color: #cbd5e1; text-decoration: line-through; font-size: 0.9em;">${fmtCurrency.format(lastYearPremium)}</div>
                         </div>
                         <div>
                             <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Premium</div>
-                            <div class="monospace" style="font-weight: bold; color: #eab308;">${fmtCurrency.format(Number(policy.premium_cost || 0))}</div>
+                            <div class="monospace" style="font-weight: bold; font-size: 1.1em; color: #eab308;">${fmtCurrency.format(currentPremium)}</div>
                         </div>
+                        <button onclick="requestDeleteInsurance('${policy.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444; margin-left: 10px; padding-bottom: 4px;" title="Delete Insurance">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
                 </div>
             `;
@@ -1651,67 +1700,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const energyGridHeader = energyListGridSec ? energyListGridSec.previousElementSibling : null;
     const insuranceVaultGridSec = document.getElementById('insurance-vault-grid');
     const insuranceGridHeader = insuranceVaultGridSec ? insuranceVaultGridSec.previousElementSibling : null;
-    const navEnergyBtn = document.getElementById('nav-energy');
-    const navInsuranceBtn = document.getElementById('nav-insurance');
     const insuranceDashboardSec = document.getElementById('insurance-dashboard');
-
-    if (navEnergyBtn && navInsuranceBtn) {
-        navEnergyBtn.addEventListener('click', () => {
-            navEnergyBtn.style.background = '#635BFF';
-            navEnergyBtn.style.color = 'white';
-            navEnergyBtn.style.border = 'none';
-            navInsuranceBtn.style.background = 'transparent';
-            navInsuranceBtn.style.color = '#635BFF';
-            navInsuranceBtn.style.border = '1px solid #635BFF';
-
-            if (insuranceDashboardSec) insuranceDashboardSec.style.display = 'none';
-            if (contractDatesSection) contractDatesSection.style.display = 'none';
-            if (clientManagerSection) clientManagerSection.style.display = 'none';
-
-            buildingsListSec.style.display = 'block';
-            if (dashboardGridSec) dashboardGridSec.style.display = 'grid';
-            if (chartSectionSec) chartSectionSec.style.display = 'block';
-            if (searchSectionSec) searchSectionSec.style.display = 'block';
-            if (energyListGridSec) { energyListGridSec.style.display = 'grid'; if (energyGridHeader) energyGridHeader.style.display = 'flex'; }
-
-            const selectedBuildingName = document.getElementById('selected-building-name');
-            if (selectedBuildingName) selectedBuildingName.parentElement.style.display = 'flex';
-
-            if (viewContractsBtn) viewContractsBtn.textContent = 'Contract Dates';
-            if (clientManagerBtn) clientManagerBtn.textContent = 'Client Manager';
-            updateDashboard(); // Refresh energy dashboard metrics
-        });
-
-        navInsuranceBtn.addEventListener('click', () => {
-            navInsuranceBtn.style.background = '#635BFF';
-            navInsuranceBtn.style.color = 'white';
-            navInsuranceBtn.style.border = 'none';
-            navEnergyBtn.style.background = 'transparent';
-            navEnergyBtn.style.color = '#635BFF';
-            navEnergyBtn.style.border = '1px solid #635BFF';
-
-            buildingsListSec.style.display = 'none';
-            if (dashboardGridSec) dashboardGridSec.style.display = 'none';
-            if (chartSectionSec) chartSectionSec.style.display = 'none';
-            if (searchSectionSec) searchSectionSec.style.display = 'none';
-            if (contractDatesSection) contractDatesSection.style.display = 'none';
-            if (clientManagerSection) clientManagerSection.style.display = 'none';
-            if (energyListGridSec) { energyListGridSec.style.display = 'none'; if (energyGridHeader) energyGridHeader.style.display = 'none'; }
-
-            if (insuranceDashboardSec) insuranceDashboardSec.style.display = 'block';
-
-            const selectedBuildingName = document.getElementById('selected-building-name');
-            const viewBillHistory = document.getElementById('view-bill-history');
-            if (selectedBuildingName) selectedBuildingName.parentElement.style.display = 'none';
-
-            if (viewContractsBtn) viewContractsBtn.textContent = 'Contract Dates';
-            if (clientManagerBtn) clientManagerBtn.textContent = 'Client Manager';
-            if (window.renderInsuranceVault && window.cloudInsuranceData) {
-                window.renderInsuranceVault(window.cloudInsuranceData);
-            }
-        });
-    }
-
 
     if (viewContractsBtn) {
         viewContractsBtn.addEventListener('click', () => {
