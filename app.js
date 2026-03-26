@@ -1,4 +1,4 @@
-const supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient('https://jzzbbttgvkdqwkjynuxi.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY') : null;
+window.supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient('https://jzzbbttgvkdqwkjynuxi.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY') : null;
 
 let utilityChartInstance = null;
 let activeBuildingId = null;
@@ -138,7 +138,7 @@ async function loadBuildings() {
         // Force fetch from cloud to ensure True Cloud-Only state
         energyBuildings = [];
         companies = [];
-        localStorage.removeItem('VestaLogic_Storage');
+
         fetchDataFromSupabase();
     } catch (error) {
         console.error('Error loading buildings:', error);
@@ -429,9 +429,9 @@ window.requestDeleteInsurance = async function(insuranceId) {
         return;
     }
 
-    if (supabaseClient) {
+    if (window.supabaseClient) {
         try {
-            const response = await supabaseClient
+            const response = await window.supabaseClient
                 .from('insurance_vault')
                 .delete()
                 .eq('id', String(insuranceId).trim());
@@ -458,9 +458,9 @@ window.requestDeleteBill = async function(billId) {
 
     console.log('Deleting ID:', billId);
 
-    if (supabaseClient) {
+    if (window.supabaseClient) {
         try {
-            const response = await supabaseClient
+            const response = await window.supabaseClient
                 .from('energy_accounts')
                 .delete()
                 .eq('id', String(billId).trim());
@@ -574,10 +574,10 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             const companyName = companyObj ? companyObj.name : '';
             let toDelete = window.cloudEnergyData.filter(ed => ed.property_name === buildingName && ed.company_name === companyName);
 
-            if (supabaseClient && toDelete.length > 0) {
+            if (window.supabaseClient && toDelete.length > 0) {
                 for (const row of toDelete) {
                     try {
-                        const response = await supabaseClient
+                        const response = await window.supabaseClient
                             .from('energy_accounts')
                             .delete()
                             .eq('id', String(row.id).trim());
@@ -596,9 +596,9 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             }
 
             if (!hasError) {
-                if (supabaseClient) {
+                if (window.supabaseClient) {
                     try {
-                        await supabaseClient.from('insurance_vault').delete().eq('account_address', building.address);
+                        await window.supabaseClient.from('insurance_vault').delete().eq('account_address', building.address);
                     } catch (e) {
                         console.error('Error deleting related insurance', e);
                     }
@@ -618,10 +618,10 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
                 const companyName = companyObj ? companyObj.name : '';
                 let toDelete = window.cloudEnergyData.filter(ed => ed.mprn_number === deleteTarget.accountId && ed.property_name === building.name && ed.company_name === companyName);
 
-                if (supabaseClient && toDelete.length > 0) {
+                if (window.supabaseClient && toDelete.length > 0) {
                     for (const row of toDelete) {
                         try {
-                            const response = await supabaseClient
+                            const response = await window.supabaseClient
                                 .from('energy_accounts')
                                 .delete()
                                 .eq('id', String(row.id).trim());
@@ -655,10 +655,10 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             let hasError = false;
             let toDelete = window.cloudEnergyData.filter(ed => ed.company_name === companyName);
 
-            if (supabaseClient && toDelete.length > 0) {
+            if (window.supabaseClient && toDelete.length > 0) {
                 for (const row of toDelete) {
                     try {
-                        const response = await supabaseClient
+                        const response = await window.supabaseClient
                             .from('energy_accounts')
                             .delete()
                             .eq('id', String(row.id).trim());
@@ -679,10 +679,10 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             if (!hasError) {
                 // Also clean up insurance policies for buildings owned by this company
                 const companyBuildings = energyBuildings.filter(b => b.companyId === deleteTarget.companyId);
-                if (supabaseClient && companyBuildings.length > 0) {
+                if (window.supabaseClient && companyBuildings.length > 0) {
                     for (const cb of companyBuildings) {
                         try {
-                            await supabaseClient.from('insurance_vault').delete().eq('account_address', cb.address);
+                            await window.supabaseClient.from('insurance_vault').delete().eq('account_address', cb.address);
                         } catch (e) {
                             console.error('Error deleting related insurance for company building', e);
                         }
@@ -1204,9 +1204,9 @@ async function fetchDataFromSupabase() {
     console.log('Fetching data from Supabase for Grids...');
     const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
 
-    if (supabaseClient) {
+    if (window.supabaseClient) {
         if (!energyAccountsSubscription) {
-            energyAccountsSubscription = supabaseClient
+            energyAccountsSubscription = window.supabaseClient
                 .channel('schema-db-changes')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'energy_accounts' }, payload => {
                     console.log('Realtime change received!', payload);
@@ -1236,7 +1236,7 @@ async function fetchDataFromSupabase() {
 
         try {
             // Fetch Energy Accounts
-            const { data: energyData, error: energyError } = await supabaseClient.from('energy_accounts').select('*');
+            const { data: energyData, error: energyError } = await window.supabaseClient.from('energy_accounts').select('*');
             if (energyError) {
                 console.error('Error fetching energy_accounts from Supabase', energyError);
                 const energyGrid = document.getElementById('energy-list-grid');
@@ -1375,7 +1375,7 @@ async function fetchDataFromSupabase() {
             }
 
             // Fetch Insurance Vault
-            const { data: insuranceData, error: insuranceError } = await supabaseClient.from('insurance_vault').select('*');
+            const { data: insuranceData, error: insuranceError } = await window.supabaseClient.from('insurance_vault').select('*');
             if (insuranceError) {
                 console.error('Error fetching insurance_vault from Supabase', insuranceError);
                 const insuranceGrid = document.getElementById('insurance-vault-grid');
@@ -1575,13 +1575,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fix Cache on Swap
     document.getElementById('nav-energy')?.addEventListener('click', (e) => {
         e.preventDefault();
-        localStorage.removeItem('VestaLogic_Storage');
+
         window.location.href = 'index.html';
     });
 
     document.getElementById('nav-insurance')?.addEventListener('click', (e) => {
         e.preventDefault();
-        localStorage.removeItem('VestaLogic_Storage');
+
         window.location.href = 'insurance.html';
     });
     updateDashboard();
@@ -1880,8 +1880,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 renewal_date: document.getElementById('ins-renewal-date').value
             };
 
-            if (supabaseClient) {
-                const response = await supabaseClient.from('insurance_vault').insert(payload);
+            if (window.supabaseClient) {
+                const response = await window.supabaseClient.from('insurance_vault').insert(payload);
                 if (response.error) {
                     console.error('Error saving insurance to Supabase:', response.error);
                     showToast(response.error.message, 'error');
@@ -1918,7 +1918,7 @@ document.addEventListener('DOMContentLoaded', () => {
         companyModal.style.display = 'none';
     });
 
-    document.getElementById('company-form')?.addEventListener('submit', (e) => {
+    document.getElementById('company-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const editId = document.getElementById('company-edit-id').value;
         const idInput = document.getElementById('company-id-input').value.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1933,15 +1933,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 companies[companyIndex].industry = indInput;
                 logAudit(`Edited company: ${nameInput}`);
             }
-                saveToLocalStorage();
+            saveToLocalStorage();
         } else {
             // Add new
             if (companies.find(c => c.id === idInput)) {
                 alert('A company with this ID already exists!');
                 return;
             }
+
+            if (window.supabaseClient) {
+                try {
+                    const payload = {
+                        id: crypto.randomUUID(),
+                        company_name: nameInput,
+                        mprn_number: 'Pending',
+                        usage_kwh: 0,
+                        total_cost: 0,
+                        utility_type: 'Electricity',
+                        bill_date: new Date().toISOString()
+                    };
+                    const response = await window.supabaseClient.from('energy_accounts').insert(payload);
+                    if (response.error) {
+                        console.error('Error saving company to Supabase:', response.error);
+                        window.alert(response.error.message);
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Exception during company save:', err);
+                    window.alert(err.message);
+                    return;
+                }
+            }
+
             companies.push({ id: idInput, name: nameInput, industry: indInput });
             logAudit(`Added new company: ${nameInput}`);
+            fetchDataFromSupabase(); // refresh globally
         }
         saveToLocalStorage();
 
@@ -1970,9 +1996,9 @@ document.addEventListener('DOMContentLoaded', () => {
             listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #cbd5e1;">Loading history...</div>';
             billHistoryModal.style.display = 'block';
 
-            if (supabaseClient) {
+            if (window.supabaseClient) {
                 try {
-                    let { data, error } = await supabaseClient.from('energy_accounts').select('*');
+                    let { data, error } = await window.supabaseClient.from('energy_accounts').select('*');
 
                     if (error) {
                         listContainer.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error: ${error.message}</div>`;
@@ -2046,7 +2072,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    document.getElementById('add-building-form')?.addEventListener('submit', (e) => {
+    document.getElementById('add-building-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         // Generate pseudo ID (e.g. B051)
@@ -2064,6 +2090,34 @@ document.addEventListener('DOMContentLoaded', () => {
             billHistory: []
         };
 
+        const companyObj = companies.find(c => c.id === newBuilding.companyId);
+        const companyName = companyObj ? companyObj.name : 'Unknown';
+
+        if (window.supabaseClient) {
+            try {
+                const payload = {
+                    id: crypto.randomUUID(),
+                    property_name: newBuilding.name,
+                    company_name: companyName,
+                    mprn_number: 'Pending',
+                    usage_kwh: 0,
+                    total_cost: 0,
+                    utility_type: 'Electricity',
+                    bill_date: new Date().toISOString()
+                };
+                const response = await window.supabaseClient.from('energy_accounts').insert(payload);
+                if (response.error) {
+                    console.error('Error saving property to Supabase:', response.error);
+                    window.alert(response.error.message);
+                    return;
+                }
+            } catch (err) {
+                console.error('Exception during property save:', err);
+                window.alert(err.message);
+                return;
+            }
+        }
+
         energyBuildings.push(newBuilding);
         // Sync to Insurance Buildings so it's available in the dropdown immediately
         insuranceBuildings.push({
@@ -2073,8 +2127,14 @@ document.addEventListener('DOMContentLoaded', () => {
             companyId: newBuilding.companyId
         });
         logAudit(`Created property: ${newBuilding.name}`);
-        addBuildingModal.style.display = 'none';
-        document.getElementById('add-building-form').reset();
+
+        fetchDataFromSupabase(); // refresh globally
+
+        const addBuildingModal = document.getElementById('add-building-modal');
+        if (addBuildingModal) addBuildingModal.style.display = 'none';
+
+        const addBuildingForm = document.getElementById('add-building-form');
+        if (addBuildingForm) addBuildingForm.reset();
 
         saveToLocalStorage();
 
@@ -2384,7 +2444,7 @@ function checkAuth() {
         setTimeout(() => {
             if (authRole) {
                 // Delete Local Fallback: Completely disable the logic that loads data from VestaLogic_Storage
-                localStorage.removeItem('VestaLogic_Storage');
+
                 // Will fetch data in loadBuildings once it finishes
             }
             updateFilters();
@@ -2629,9 +2689,9 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     console.log('Attempting Supabase Save...', payload);
 
     // Fallback if supabase object exists (assuming it is imported elsewhere or handled)
-    if (supabaseClient) {
+    if (window.supabaseClient) {
         try {
-            const response = await supabaseClient.from('energy_accounts').insert(payload);
+            const response = await window.supabaseClient.from('energy_accounts').insert(payload);
             console.log('Supabase Save Response:', response);
             if (!response.error) {
                 showToast('Cloud Synced', 'success');
