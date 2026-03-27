@@ -424,6 +424,58 @@ window.requestDeleteBuilding = function(id) {
     document.getElementById('confirm-modal').style.display = 'block';
 };
 
+window.toggleInsuranceStatus = async function(insuranceId, currentStatus) {
+    const newStatus = !currentStatus;
+
+    // Optimistically update UI
+    if (window.cloudInsuranceData) {
+        const policyIndex = window.cloudInsuranceData.findIndex(p => p.id === insuranceId);
+        if (policyIndex !== -1) {
+            window.cloudInsuranceData[policyIndex].is_paid = newStatus;
+            window.renderInsuranceVault(window.cloudInsuranceData);
+        }
+    }
+    showToast('Saving...', 'info');
+
+    if (window.supabaseClient) {
+        try {
+            const response = await window.supabaseClient
+                .from('insurance_vault')
+                .update({ is_paid: newStatus })
+                .eq('id', String(insuranceId).trim());
+
+            if (response.error) {
+                console.error('Error updating insurance status:', response.error);
+                window.alert(response.error.message);
+
+                // Revert on error
+                if (window.cloudInsuranceData) {
+                    const policyIndex = window.cloudInsuranceData.findIndex(p => p.id === insuranceId);
+                    if (policyIndex !== -1) {
+                        window.cloudInsuranceData[policyIndex].is_paid = currentStatus;
+                        window.renderInsuranceVault(window.cloudInsuranceData);
+                    }
+                }
+            } else {
+                showToast('Status Updated', 'success');
+                logAudit(`Updated payment status for insurance policy ID ${insuranceId} to ${newStatus ? 'Paid' : 'Unpaid'}`);
+            }
+        } catch (err) {
+            console.error('Exception during Supabase insurance update:', err);
+            window.alert(err.message);
+
+            // Revert on error
+            if (window.cloudInsuranceData) {
+                const policyIndex = window.cloudInsuranceData.findIndex(p => p.id === insuranceId);
+                if (policyIndex !== -1) {
+                    window.cloudInsuranceData[policyIndex].is_paid = currentStatus;
+                    window.renderInsuranceVault(window.cloudInsuranceData);
+                }
+            }
+        }
+    }
+};
+
 window.requestDeleteInsurance = async function(insuranceId) {
     if (!confirm("Are you sure you want to delete this insurance policy?")) {
         return;
@@ -1551,7 +1603,7 @@ window.renderInsuranceVault = function(insuranceData) {
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${policy.provider_name || 'Unknown Provider'}</h3>
                             <div style="display: flex; gap: 10px; align-items: center;">
-                                <div style="font-size: 1.2rem;" title="${policy.is_paid ? 'Paid' : 'Unpaid'}">${statusIcon}</div>
+                                <div id="status-icon-${policy.id}" style="font-size: 1.2rem; cursor: pointer;" title="${policy.is_paid ? 'Paid' : 'Unpaid'}" onclick="toggleInsuranceStatus('${policy.id}', ${!!policy.is_paid})">${statusIcon}</div>
                                 <div style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; color: ${diffDaysColor}; border: 1px solid ${diffDaysColor};">${diffDaysText}</div>
                             </div>
                         </div>
