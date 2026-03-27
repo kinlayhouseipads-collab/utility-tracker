@@ -1498,15 +1498,30 @@ window.renderInsuranceVault = function(insuranceData) {
     });
     providerSelect.value = currentProvider;
 
+    // Extract unique properties and update dropdown
+    const propertySelect = document.getElementById('ins-search-address');
+    const currentProperty = propertySelect.value;
+    propertySelect.innerHTML = '<option value="" style="background: #0f172a;">All Properties</option>';
+
+    const uniqueProperties = [...new Set(insuranceData.map(p => p.account_address).filter(Boolean))].sort();
+    uniqueProperties.forEach(prop => {
+        const opt = document.createElement('option');
+        opt.value = prop;
+        opt.textContent = prop;
+        opt.style.background = '#0f172a';
+        propertySelect.appendChild(opt);
+    });
+    propertySelect.value = currentProperty;
+
     // Apply Filters
-    const searchAddress = document.getElementById('ins-search-address').value.toLowerCase();
+    const searchAddress = document.getElementById('ins-search-address').value;
     const filterProvider = document.getElementById('ins-filter-provider').value;
     const filterBroker = document.getElementById('ins-filter-broker').value.toLowerCase();
     const filterStatus = document.getElementById('ins-filter-status').value;
     const sortRenewal = document.getElementById('ins-sort-renewal').value;
 
     let filteredData = insuranceData.filter(policy => {
-        const matchesAddress = (policy.account_address || '').toLowerCase().includes(searchAddress);
+        const matchesAddress = searchAddress ? (policy.account_address === searchAddress) : true;
         const matchesProvider = filterProvider ? (policy.provider_name === filterProvider) : true;
         const matchesBroker = filterBroker ? (policy.broker_name || '').toLowerCase().includes(filterBroker) : true;
         let matchesStatus = true;
@@ -1881,7 +1896,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Insurance Filter Logic
-    document.getElementById('ins-search-address')?.addEventListener('input', () => {
+    document.getElementById('ins-search-address')?.addEventListener('change', () => {
         if (window.cloudInsuranceData) window.renderInsuranceVault(window.cloudInsuranceData);
     });
     document.getElementById('ins-filter-provider')?.addEventListener('change', () => {
@@ -2828,78 +2843,69 @@ window.renderInsuranceChart = function(filteredData) {
         return lastYear > 0;
     });
 
-    // We need to group by account_address, and then separate by "Van / Motor" vs "Building" (or everything else)
+    // Group by account_address, and dynamically by insurance_type
     const propertyMap = {};
+    const typesFound = new Set();
 
     chartData.forEach(p => {
         const address = p.account_address || 'Unknown Property';
+        const type = p.insurance_type || 'Other';
+        typesFound.add(type);
+
         if (!propertyMap[address]) {
-            propertyMap[address] = {
-                buildingCurrent: 0,
-                buildingLastYear: 0,
-                vanCurrent: 0,
-                vanLastYear: 0
+            propertyMap[address] = {};
+        }
+
+        if (!propertyMap[address][type]) {
+            propertyMap[address][type] = {
+                current: 0,
+                lastYear: 0
             };
         }
 
-        const isVan = p.insurance_type === 'Van / Motor';
-        const current = Number(p.premium_cost || 0);
-        const lastYear = Number(p.last_year_premium || 0);
-
-        if (isVan) {
-            propertyMap[address].vanCurrent += current;
-            propertyMap[address].vanLastYear += lastYear;
-        } else {
-            propertyMap[address].buildingCurrent += current;
-            propertyMap[address].buildingLastYear += lastYear;
-        }
+        propertyMap[address][type].current += Number(p.premium_cost || 0);
+        propertyMap[address][type].lastYear += Number(p.last_year_premium || 0);
     });
 
     const labels = Object.keys(propertyMap);
 
-    // Dataset arrays
-    const buildingCurrentData = labels.map(label => propertyMap[label].buildingCurrent);
-    const buildingLastYearData = labels.map(label => propertyMap[label].buildingLastYear);
-    const vanCurrentData = labels.map(label => propertyMap[label].vanCurrent);
-    const vanLastYearData = labels.map(label => propertyMap[label].vanLastYear);
+    const typeColors = {
+        'Building': { current: '#1E40AF', lastYear: 'rgba(30, 64, 175, 0.4)' }, // Navy
+        'Van / Motor': { current: '#2DD4BF', lastYear: 'rgba(45, 212, 191, 0.4)' }, // Teal
+        'Liability': { current: '#F59E0B', lastYear: 'rgba(245, 158, 11, 0.4)' }, // Amber
+        'Default': { current: '#635BFF', lastYear: 'rgba(99, 91, 255, 0.4)' } // Blue
+    };
 
-    // High Contrast Palette
-    // Current (This Year): Bright Teal #2DD4BF
-    // Last Year: Solid Navy #1E293B
+    const datasets = [];
+
+    Array.from(typesFound).forEach(type => {
+        const currentData = labels.map(label => propertyMap[label][type] ? propertyMap[label][type].current : 0);
+        const lastYearData = labels.map(label => propertyMap[label][type] ? propertyMap[label][type].lastYear : 0);
+
+        const colorSet = typeColors[type] || typeColors['Default'];
+
+        datasets.push({
+            label: `${type} - Current Premium`,
+            data: currentData,
+            backgroundColor: colorSet.current,
+            borderColor: '#FFFFFF',
+            borderWidth: 1
+        });
+
+        datasets.push({
+            label: `${type} - Last Year Premium`,
+            data: lastYearData,
+            backgroundColor: colorSet.lastYear,
+            borderColor: '#FFFFFF',
+            borderWidth: 1
+        });
+    });
+
     insuranceChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [
-                {
-                    label: 'Building - Current Premium',
-                    data: buildingCurrentData,
-                    backgroundColor: '#2DD4BF',
-                    borderColor: '#FFFFFF',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Building - Last Year Premium',
-                    data: buildingLastYearData,
-                    backgroundColor: '#1E293B',
-                    borderColor: '#FFFFFF',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Van - Current Premium',
-                    data: vanCurrentData,
-                    backgroundColor: '#2DD4BF',
-                    borderColor: '#FFFFFF',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Van - Last Year Premium',
-                    data: vanLastYearData,
-                    backgroundColor: '#1E293B',
-                    borderColor: '#FFFFFF',
-                    borderWidth: 1
-                }
-            ]
+            datasets: datasets
         },
         options: {
             responsive: true,
