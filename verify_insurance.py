@@ -39,6 +39,7 @@ def main():
         page.select_option('#ins-type', 'Van / Motor')
         page.fill('#ins-coverage', '1000000')
         page.fill('#ins-premium', '1500')
+        page.fill('#ins-last-year-premium', '1200')
 
         # submit
         page.click('#btn-save-insurance')
@@ -49,6 +50,15 @@ def main():
         try:
             page.wait_for_selector('#insurance-vault-grid .card', state='visible', timeout=5000)
             page.screenshot(path='/tmp/screenshot_insurance_grid.png')
+
+            # Click the toggle button for the first policy
+            # We will use evaluate to find the first toggle and click it
+            page.evaluate("""() => {
+                const firstToggle = document.querySelector('[id^="status-icon-"]');
+                if (firstToggle) firstToggle.click();
+            }""")
+            time.sleep(2)
+            page.screenshot(path='/tmp/screenshot_insurance_toggle.png')
 
             # Fill filter inputs
             page.fill('#ins-filter-broker', 'xyz')

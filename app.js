@@ -1582,7 +1582,9 @@ window.renderInsuranceVault = function(insuranceData) {
             let diffText = '';
             let diffColor = '#cbd5e1';
 
-            if (lastYearPremium > 0) {
+            let lastYearDisplay = '';
+
+            if (lastYearPremium !== 0 && !isNaN(lastYearPremium)) {
                 if (premiumDiff > 0) {
                     diffText = `+${fmtCurrency.format(premiumDiff)}`;
                     diffColor = '#ef4444'; // Red for increase
@@ -1593,8 +1595,10 @@ window.renderInsuranceVault = function(insuranceData) {
                     diffText = 'No Change';
                     diffColor = '#94a3b8';
                 }
+                lastYearDisplay = fmtCurrency.format(lastYearPremium);
             } else {
                 diffText = 'N/A';
+                lastYearDisplay = 'N/A';
             }
 
             card.innerHTML = `
@@ -1625,7 +1629,7 @@ window.renderInsuranceVault = function(insuranceData) {
                         </div>
                         <div>
                             <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Last Year</div>
-                            <div class="monospace" style="color: #cbd5e1; text-decoration: line-through; font-size: 0.9em;">${fmtCurrency.format(lastYearPremium)}</div>
+                            <div class="monospace" style="color: #cbd5e1; text-decoration: line-through; font-size: 0.9em;">${lastYearDisplay}</div>
                         </div>
                         <div>
                             <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Premium</div>
@@ -1959,6 +1963,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 insurance_type: document.getElementById('ins-type').value,
                 coverage_amount: Number(document.getElementById('ins-coverage').value),
                 premium_cost: Number(document.getElementById('ins-premium').value),
+                last_year_premium: Number(document.getElementById('ins-last-year-premium').value) || 0,
                 renewal_date: document.getElementById('ins-renewal-date').value,
                 broker_name: document.getElementById('ins-broker').value || null,
                 is_paid: document.getElementById('ins-paid').checked
