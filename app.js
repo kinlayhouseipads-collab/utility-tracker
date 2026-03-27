@@ -1448,12 +1448,19 @@ window.renderInsuranceVault = function(insuranceData) {
     // Apply Filters
     const searchAddress = document.getElementById('ins-search-address').value.toLowerCase();
     const filterProvider = document.getElementById('ins-filter-provider').value;
+    const filterBroker = document.getElementById('ins-filter-broker').value.toLowerCase();
+    const filterStatus = document.getElementById('ins-filter-status').value;
     const sortRenewal = document.getElementById('ins-sort-renewal').value;
 
     let filteredData = insuranceData.filter(policy => {
         const matchesAddress = (policy.account_address || '').toLowerCase().includes(searchAddress);
         const matchesProvider = filterProvider ? (policy.provider_name === filterProvider) : true;
-        return matchesAddress && matchesProvider;
+        const matchesBroker = filterBroker ? (policy.broker_name || '').toLowerCase().includes(filterBroker) : true;
+        let matchesStatus = true;
+        if (filterStatus === 'paid') matchesStatus = policy.is_paid === true;
+        if (filterStatus === 'unpaid') matchesStatus = policy.is_paid === false || policy.is_paid == null;
+
+        return matchesAddress && matchesProvider && matchesBroker && matchesStatus;
     });
 
     // Apply Sorting
@@ -1475,10 +1482,13 @@ window.renderInsuranceVault = function(insuranceData) {
             let diffDaysText = 'N/A';
             let diffDaysColor = '#cbd5e1';
 
+            let diffDaysCalculated = null;
+
             if (policy.renewal_date) {
                 const rDate = new Date(policy.renewal_date);
                 const diffTime = rDate - now;
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                diffDaysCalculated = diffDays;
 
                 if (diffDays < 0) {
                     diffDaysText = `${Math.abs(diffDays)} Days Overdue`;
@@ -1500,9 +1510,18 @@ window.renderInsuranceVault = function(insuranceData) {
                     }
                 }
             }
+
+            const isUnpaid = policy.is_paid === false || policy.is_paid == null;
+            if (isUnpaid && diffDaysCalculated !== null && diffDaysCalculated < 0) {
+                staleStyle = 'background-color: #7f1d1d !important; border: 2px solid #ef4444 !important;';
+            }
+
             if (staleStyle) {
                 card.style.cssText += staleStyle;
             }
+
+            const statusIcon = policy.is_paid ? '✅' : '❌';
+            const brokerName = policy.broker_name || 'No Broker';
 
             const currentPremium = Number(policy.premium_cost || 0);
             const lastYearPremium = Number(policy.last_year_premium || 0);
@@ -1531,10 +1550,15 @@ window.renderInsuranceVault = function(insuranceData) {
                     <div style="display: flex; flex-direction: column; width: 100%;">
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${policy.provider_name || 'Unknown Provider'}</h3>
-                            <div style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; color: ${diffDaysColor}; border: 1px solid ${diffDaysColor};">${diffDaysText}</div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <div style="font-size: 1.2rem;" title="${policy.is_paid ? 'Paid' : 'Unpaid'}">${statusIcon}</div>
+                                <div style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; color: ${diffDaysColor}; border: 1px solid ${diffDaysColor};">${diffDaysText}</div>
+                            </div>
                         </div>
                         <div style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 5px;">${policy.account_address || 'Unknown Property'}</div>
-                        <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">${policy.insurance_type || 'N/A'} - ${policy.policy_number || 'N/A'}</div>
+                        <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">
+                            ${policy.insurance_type || 'N/A'} - ${policy.policy_number || 'N/A'} <span style="margin: 0 5px; color: rgba(255,255,255,0.2);">|</span> <i class="fas fa-user-tie"></i> ${brokerName}
+                        </div>
                     </div>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
@@ -1804,6 +1828,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('ins-sort-renewal')?.addEventListener('change', () => {
         if (window.cloudInsuranceData) window.renderInsuranceVault(window.cloudInsuranceData);
     });
+    document.getElementById('ins-filter-broker')?.addEventListener('input', () => {
+        if (window.cloudInsuranceData) window.renderInsuranceVault(window.cloudInsuranceData);
+    });
+    document.getElementById('ins-filter-status')?.addEventListener('change', () => {
+        if (window.cloudInsuranceData) window.renderInsuranceVault(window.cloudInsuranceData);
+    });
 
     // Add Insurance Modal Logic
     const addInsuranceModal = document.getElementById('add-insurance-modal');
@@ -1877,7 +1907,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 insurance_type: document.getElementById('ins-type').value,
                 coverage_amount: Number(document.getElementById('ins-coverage').value),
                 premium_cost: Number(document.getElementById('ins-premium').value),
-                renewal_date: document.getElementById('ins-renewal-date').value
+                renewal_date: document.getElementById('ins-renewal-date').value,
+                broker_name: document.getElementById('ins-broker').value || null,
+                is_paid: document.getElementById('ins-paid').checked
             };
 
             if (window.supabaseClient) {
