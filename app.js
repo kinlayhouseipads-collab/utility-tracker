@@ -2863,8 +2863,9 @@ window.renderInsuranceChart = function(filteredData) {
     const vanCurrentData = labels.map(label => propertyMap[label].vanCurrent);
     const vanLastYearData = labels.map(label => propertyMap[label].vanLastYear);
 
-    // Deep Slate: #0f172a (Current), #334155 (Last Year)
-    // Vibrant Teal: #00E5E5 (Current), #5eead4 (Last Year)
+    // High Contrast Palette
+    // Current (This Year): Bright Teal #2DD4BF
+    // Last Year: Solid Navy #1E293B
     insuranceChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -2873,29 +2874,29 @@ window.renderInsuranceChart = function(filteredData) {
                 {
                     label: 'Building - Current Premium',
                     data: buildingCurrentData,
-                    backgroundColor: '#0f172a',
-                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: '#2DD4BF',
+                    borderColor: '#FFFFFF',
                     borderWidth: 1
                 },
                 {
                     label: 'Building - Last Year Premium',
                     data: buildingLastYearData,
-                    backgroundColor: '#334155',
-                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: '#1E293B',
+                    borderColor: '#FFFFFF',
                     borderWidth: 1
                 },
                 {
                     label: 'Van - Current Premium',
                     data: vanCurrentData,
-                    backgroundColor: '#00E5E5',
-                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: '#2DD4BF',
+                    borderColor: '#FFFFFF',
                     borderWidth: 1
                 },
                 {
                     label: 'Van - Last Year Premium',
                     data: vanLastYearData,
-                    backgroundColor: '#5eead4',
-                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: '#1E293B',
+                    borderColor: '#FFFFFF',
                     borderWidth: 1
                 }
             ]
@@ -2910,6 +2911,7 @@ window.renderInsuranceChart = function(filteredData) {
                     font: { family: 'Inter', size: 16 }
                 },
                 legend: {
+                    position: 'bottom',
                     labels: { color: '#cbd5e1', font: { family: 'Inter' } }
                 }
             },
