@@ -55,6 +55,16 @@ body {
     gap: 20px;
 }
 
+#insurance-vault-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+}
+
+@media (max-width: 768px) {
+    #insurance-vault-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
 #energy-list-grid .card {
     border-top: 4px solid var(--primary) !important;
 }
@@ -76,6 +86,11 @@ body {
     padding: 20px;
     text-align: center;
     box-shadow: var(--glass-shadow);
+}
+
+.card {
+    padding: 24px !important;
+    margin-bottom: 16px !important;
 }
 
 .search-section input {
