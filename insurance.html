@@ -186,6 +186,12 @@
                 <select id="ins-filter-provider" style="padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid rgba(255,255,255,0.2);">
                     <option value="" style="background: #0f172a;">All Providers</option>
                 </select>
+                <input type="text" id="ins-filter-broker" placeholder="Filter by Broker" style="padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid rgba(255,255,255,0.2);">
+                <select id="ins-filter-status" style="padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid rgba(255,255,255,0.2);">
+                    <option value="" style="background: #0f172a;">All Statuses</option>
+                    <option value="paid" style="background: #0f172a;">Paid</option>
+                    <option value="unpaid" style="background: #0f172a;">Unpaid</option>
+                </select>
                 <select id="ins-sort-renewal" style="padding: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid rgba(255,255,255,0.2);">
                     <option value="asc" style="background: #0f172a;">Soonest First</option>
                     <option value="desc" style="background: #0f172a;">Latest First</option>
@@ -207,11 +213,16 @@
                     </select>
                     <input type="text" id="ins-policy-number" placeholder="Policy Number" required>
                     <input type="text" id="ins-provider" placeholder="Provider Name" required>
+                    <input type="text" id="ins-broker" placeholder="Broker / Agency" style="margin-bottom: 15px;">
+                    <label style="color: #f8fafc; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                        <input type="checkbox" id="ins-paid"> Premium Paid?
+                    </label>
                     <select id="ins-type" required style="width: 100%; margin-bottom: 15px;">
                         <option value="" disabled selected>Select Insurance Type</option>
                         <option value="Building">Building</option>
                         <option value="Liability">Liability</option>
                         <option value="Content">Content</option>
+                        <option value="Van / Motor">Van / Motor</option>
                         <option value="Other">Other</option>
                     </select>
                     <input type="number" id="ins-coverage" placeholder="Coverage Amount (€)" step="any" required>
