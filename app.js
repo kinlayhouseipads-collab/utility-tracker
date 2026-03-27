@@ -1,6 +1,7 @@
 window.supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient('https://jzzbbttgvkdqwkjynuxi.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY') : null;
 
 let utilityChartInstance = null;
+let insuranceChartInstance = null;
 let activeBuildingId = null;
 
 let energyBuildings = [];
@@ -1644,6 +1645,11 @@ window.renderInsuranceVault = function(insuranceData) {
             insuranceGrid.appendChild(card);
         });
     }
+
+    // Render the chart with the filtered data
+    if (window.renderInsuranceChart) {
+        window.renderInsuranceChart(filteredData);
+    }
 };
 
 
@@ -2807,3 +2813,117 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
         if (submitBtn) submitBtn.disabled = false;
     }
 });
+window.renderInsuranceChart = function(filteredData) {
+    const canvas = document.getElementById('insuranceChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    if (insuranceChartInstance) {
+        insuranceChartInstance.destroy();
+    }
+
+    // Filter out records where 'Last Year' is 0
+    const chartData = filteredData.filter(p => {
+        const lastYear = Number(p.last_year_premium || 0);
+        return lastYear > 0;
+    });
+
+    // We need to group by account_address, and then separate by "Van / Motor" vs "Building" (or everything else)
+    const propertyMap = {};
+
+    chartData.forEach(p => {
+        const address = p.account_address || 'Unknown Property';
+        if (!propertyMap[address]) {
+            propertyMap[address] = {
+                buildingCurrent: 0,
+                buildingLastYear: 0,
+                vanCurrent: 0,
+                vanLastYear: 0
+            };
+        }
+
+        const isVan = p.insurance_type === 'Van / Motor';
+        const current = Number(p.premium_cost || 0);
+        const lastYear = Number(p.last_year_premium || 0);
+
+        if (isVan) {
+            propertyMap[address].vanCurrent += current;
+            propertyMap[address].vanLastYear += lastYear;
+        } else {
+            propertyMap[address].buildingCurrent += current;
+            propertyMap[address].buildingLastYear += lastYear;
+        }
+    });
+
+    const labels = Object.keys(propertyMap);
+
+    // Dataset arrays
+    const buildingCurrentData = labels.map(label => propertyMap[label].buildingCurrent);
+    const buildingLastYearData = labels.map(label => propertyMap[label].buildingLastYear);
+    const vanCurrentData = labels.map(label => propertyMap[label].vanCurrent);
+    const vanLastYearData = labels.map(label => propertyMap[label].vanLastYear);
+
+    // Deep Slate: #0f172a (Current), #334155 (Last Year)
+    // Vibrant Teal: #00E5E5 (Current), #5eead4 (Last Year)
+    insuranceChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Building - Current Premium',
+                    data: buildingCurrentData,
+                    backgroundColor: '#0f172a',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Building - Last Year Premium',
+                    data: buildingLastYearData,
+                    backgroundColor: '#334155',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Van - Current Premium',
+                    data: vanCurrentData,
+                    backgroundColor: '#00E5E5',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Van - Last Year Premium',
+                    data: vanLastYearData,
+                    backgroundColor: '#5eead4',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'YoY Premium Comparison',
+                    color: '#f8fafc',
+                    font: { family: 'Inter', size: 16 }
+                },
+                legend: {
+                    labels: { color: '#cbd5e1', font: { family: 'Inter' } }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#94a3b8', font: { family: 'Inter' } },
+                    grid: { color: 'rgba(255,255,255,0.1)' }
+                },
+                x: {
+                    ticks: { color: '#94a3b8', font: { family: 'Inter' } },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+};
