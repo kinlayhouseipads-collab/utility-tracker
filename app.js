@@ -332,7 +332,14 @@ function renderBuildings(buildings) {
         let allBills = [];
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
-                if (new Date(bill.date) < new Date('2026-01-01')) return;
+                let withinDateRange = true;
+                if (startDateFilter && endDateFilter) {
+                    const billDate = new Date(bill.date);
+                    const start = new Date(startDateFilter);
+                    const end = new Date(endDateFilter);
+                    if (billDate < start || billDate > end) withinDateRange = false;
+                }
+                if (!withinDateRange) return;
 
                 if (bill.utility_type === 'Gas' || parseFloat(bill.usage_m3) > 0) {
                     const usage = bill.utility_type === 'Gas' ? (parseFloat(bill.usage_kwh) || parseFloat(bill.usage_m3) || 0) : (parseFloat(bill.usage_m3) || 0);
@@ -804,7 +811,6 @@ function updateDashboard() {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
                 const billDate = new Date(bill.date);
-                if (billDate < new Date('2026-01-01') || billDate > new Date('2026-12-31T23:59:59')) return;
 
                 let withinDateRange = false;
 
@@ -848,7 +854,6 @@ function updateDashboard() {
         if (building.billHistory) {
             grandTotal += building.billHistory.reduce((s, bill) => {
                 const billDate = new Date(bill.date);
-                if (billDate < new Date('2026-01-01') || billDate > new Date('2026-12-31T23:59:59')) return s;
 
                 let withinDateRange = false;
 
@@ -901,7 +906,6 @@ function renderChart() {
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
-                if (new Date(bill.date) < new Date('2026-01-01')) return;
                 let withinDateRange = true;
                 if (startDateFilter && endDateFilter) {
                     const billDate = new Date(bill.date);
@@ -929,23 +933,12 @@ function renderChart() {
 
     });
 
-    // Group costs by month
-    const electricMonthlyCosts = Array(12).fill(0);
-    const gasMonthlyCosts = Array(12).fill(0);
+    electricReadings.sort((a, b) => new Date(a.date) - new Date(b.date));
+    gasReadings.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    electricReadings.forEach(r => {
-        const d = new Date(r.date);
-        const m = d.getMonth(); // 0-11
-        electricMonthlyCosts[m] += r.cost;
-    });
-
-    gasReadings.forEach(r => {
-        const d = new Date(r.date);
-        const m = d.getMonth(); // 0-11
-        gasMonthlyCosts[m] += r.cost;
-    });
-
-    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    // Convert to Chart.js time scale format {x: date, y: cost}
+    const electricDataPoints = electricReadings.map(r => ({ x: r.date, y: r.cost }));
+    const gasDataPoints = gasReadings.map(r => ({ x: r.date, y: r.cost }));
 
     const ctx = document.getElementById('utilityChart').getContext('2d');
 
@@ -976,23 +969,24 @@ function renderChart() {
     utilityChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: labels,
             datasets: [
                 {
                     label: `Electric Cost (€)`,
-                    data: electricMonthlyCosts,
+                    data: electricDataPoints,
                     borderColor: '#635BFF',
                     backgroundColor: '#635BFF',
                     tension: 0.4,
-                    fill: false
+                    fill: false,
+                    spanGaps: true
                 },
                 {
                     label: `Gas Cost (€)`,
-                    data: gasMonthlyCosts,
+                    data: gasDataPoints,
                     borderColor: '#f97316',
                     backgroundColor: '#f97316',
                     tension: 0.4,
-                    fill: false
+                    fill: false,
+                    spanGaps: true
                 }
             ]
         },
@@ -1012,6 +1006,10 @@ function renderChart() {
             },
             scales: {
                 x: {
+                    type: 'time',
+                    time: {
+                        unit: 'month'
+                    },
                     ticks: {
                         color: '#f8fafc'
                     },
@@ -1669,6 +1667,16 @@ window.renderInsuranceVault = function(insuranceData) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Date Filter Defaults
+    const startDateFilterInput = document.getElementById('start-date-filter');
+    const endDateFilterInput = document.getElementById('end-date-filter');
+    if (startDateFilterInput && !startDateFilterInput.value) {
+        startDateFilterInput.value = '2025-01-01';
+    }
+    if (endDateFilterInput && !endDateFilterInput.value) {
+        endDateFilterInput.value = new Date().toISOString().split('T')[0];
+    }
+
     populateCompanyDropdowns();
     checkAuth();
     loadBuildings();
@@ -1747,7 +1755,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!building.billHistory || building.billHistory.length === 0) return false;
                     return building.billHistory.some(bill => {
                         const billDate = new Date(bill.date);
-                        return billDate >= start && billDate <= end && billDate >= new Date('2026-01-01');
+                        return billDate >= start && billDate <= end;
                     });
                 });
             }
@@ -1775,7 +1783,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 let status = 'Active';
                 let maxDate = 0;
                 if (building.billHistory && building.billHistory.length > 0) {
-                    const validBills = building.billHistory.filter(b => new Date(b.date) >= new Date('2026-01-01'));
+                    let validBills = building.billHistory;
+                    if (startDateFilter && endDateFilter && startDateFilter.value && endDateFilter.value) {
+                        const start = new Date(startDateFilter.value);
+                        const end = new Date(endDateFilter.value);
+                        validBills = building.billHistory.filter(b => {
+                            const bDate = new Date(b.date);
+                            return bDate >= start && bDate <= end;
+                        });
+                    }
                     if (validBills.length > 0) {
                         maxDate = Math.max(...validBills.map(b => new Date(b.date).getTime()));
                     }
@@ -2118,7 +2134,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log('History Data:', data);
 
                     if (data) {
-                        data = data.filter(bill => new Date(bill.bill_date || bill.last_updated || bill.date) >= new Date('2026-01-01'));
+                        const startFilter = document.getElementById('start-date-filter')?.value;
+                        const endFilter = document.getElementById('end-date-filter')?.value;
+                        if (startFilter && endFilter) {
+                            const start = new Date(startFilter);
+                            const end = new Date(endFilter);
+                            data = data.filter(bill => {
+                                const bDate = new Date(bill.bill_date || bill.last_updated || bill.date);
+                                return bDate >= start && bDate <= end;
+                            });
+                        }
                     }
 
                     listContainer.innerHTML = '';
