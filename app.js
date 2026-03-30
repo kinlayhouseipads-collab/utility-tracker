@@ -2788,7 +2788,7 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
         date: document.getElementById('reading-date').value
     };
 
-    const buildingName = building ? building.name : 'Unknown Property';
+    const buildingName = building ? building.address : 'Unknown Property';
     const buildingCompanyId = building ? building.companyId : wCompany.value;
 
     const usageVal = Number(document.getElementById('reading-value').value);
@@ -2829,13 +2829,20 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
             const response = await window.supabaseClient.from('energy_accounts').insert(payload);
             console.log('Supabase Save Response:', response);
             if (!response.error) {
+                isSavingEnergy = false;
                 showToast('Cloud Synced', 'success');
+                logAudit(`New bill added to ${buildingName} history.`);
+                alert('Reading Saved!');
+                this.reset();
+                entryModal.style.display = 'none';
             } else {
+                isSavingEnergy = false;
                 console.error('Error saving to Supabase', response.error);
                 showToast(response.error.message, 'error');
                 window.alert(response.error.message);
             }
         } catch(err) {
+            isSavingEnergy = false;
             console.error('Exception during Supabase save:', err);
             showToast(err.message, 'error');
             window.alert(err.message);
@@ -2844,10 +2851,6 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
 
     // Also save directly to building.billHistory to persist properly if logic expects it there, but utility_readings array is primary mechanism to keep track across reloads.
     // Wait, let's explicitly invoke saveToLocalStorage() to ensure buildings are saved if they were modified (e.g. account edits).
-    logAudit(`New bill added to ${buildingName} history.`);
-    alert('Reading Saved!');
-    this.reset();
-    entryModal.style.display = 'none';
 
     } finally {
         if (submitBtn) submitBtn.disabled = false;
