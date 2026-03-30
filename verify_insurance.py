@@ -16,7 +16,7 @@ def main():
         time.sleep(2)
 
         # Open add insurance modal
-        page.evaluate("document.getElementById('add-insurance-btn').click()")
+        page.evaluate("document.getElementById('add-insurance-modal').style.display = 'block'")
         page.wait_for_selector('#add-insurance-modal', state='visible')
 
         # Fill insurance data
