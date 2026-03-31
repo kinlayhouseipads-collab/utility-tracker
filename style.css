@@ -206,3 +206,35 @@ h1, h2, h3, h4, h5, h6 {
     font-family: 'Courier New', Courier, monospace;
 }
 select option { background-color: #0f172a; color: #f8fafc; }
+
+/* Responsive Sidebar */
+@media (max-width: 768px) {
+    #main-sidebar {
+        width: 100% !important;
+        height: 60px !important;
+        flex-direction: row !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        z-index: 2000 !important;
+        border-right: none !important;
+        border-top: 1px solid rgba(255,255,255,0.1) !important;
+        overflow-x: auto !important;
+        padding: 10px !important;
+        justify-content: flex-start !important;
+    }
+    body {
+        padding-bottom: 60px !important; /* Make room for bottom bar */
+    }
+    /* Adjust flex container that wraps sidebar and main */
+    div[style*="display: flex;"] > #main-sidebar {
+       position: fixed;
+    }
+    /* Hide dividers in horizontal mode */
+    #main-sidebar > div[style*="width: 100%"] {
+        display: none !important;
+    }
+    #main-sidebar button, #main-sidebar a, #main-sidebar select, #main-sidebar input {
+        flex: 0 0 auto !important; /* Don't shrink, allow scrolling */
+    }
+}

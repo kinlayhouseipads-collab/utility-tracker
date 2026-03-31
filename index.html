@@ -30,33 +30,13 @@
                 <h1 style="margin: 0;">DOB <span>Accounts</span></h1>
             </div>
             <nav style="display: flex; gap: 10px; align-items: center;">
-                <div style="display: flex; gap: 5px; margin-right: 10px; border-right: 1px solid rgba(255,255,255,0.2); padding-right: 10px;">
-                    <a href="index.html" id="nav-energy" class="btn-primary" style="background: #635BFF; text-decoration: none; display: inline-block; text-align: center;">Energy Vault</a>
-                    <a href="insurance.html" id="nav-insurance" class="btn-primary" style="background: transparent; border: 1px solid #635BFF; color: #635BFF; text-decoration: none; display: inline-block; text-align: center;">Insurance Command</a>
-                </div>
                 <div id="filter-controls" style="display: flex; gap: 10px; align-items: center;">
                     <select id="company-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
                         <option value="" style="background: #0f172a; color: #f8fafc;">All Companies</option>
                     </select>
-                    <label for="start-date-filter">Start Date</label>
-                    <input type="date" id="start-date-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc; color-scheme: dark;">
-                    <label for="end-date-filter">End Date</label>
-                    <input type="date" id="end-date-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc; color-scheme: dark;">
-                </div>
-                <button id="view-stats">Trends</button>
-                <button id="view-contracts" style="background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Contract Dates</button>
-                <button id="client-manager-btn" class="btn-primary" style="display: none; background: #6366f1;">Client Manager</button>
-                <button id="add-building" class="btn-primary" style="background: #22c55e;"><i class="fas fa-plus"></i> New Property</button>
-                <button id="add-entry" class="btn-primary" style="background: #22c55e;"><i class="fas fa-plus-circle"></i> New Entry</button>
-                <div class="search-section" style="display: inline-block;">
-                    <input type="text" id="search-bar" placeholder="Search properties..." style="padding: 10px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: rgba(255,255,255,0.05); color: #f8fafc; min-width: 200px;">
-                </div>
-                <button id="export-csv-btn" class="btn-primary" style="background: #10b981; padding: 10px 15px;" title="Export CSV"><i class="fas fa-file-csv"></i></button>
-                <button id="backup-data-btn" class="btn-primary" style="background: #eab308; padding: 10px 15px;" title="Backup Data"><i class="fas fa-download"></i></button>
-                <button id="sync-data-btn" class="btn-primary" style="background: #8b5cf6; padding: 10px 15px;" onclick="syncNow()" title="Push Local Data to Cloud"><i class="fas fa-cloud-upload-alt"></i></button>
-                <div id="notification-bell" style="position: relative; cursor: pointer; padding: 10px; font-size: 1.2rem; color: #f8fafc; display: flex; align-items: center; justify-content: center;">
-                    <i class="fas fa-bell"></i>
-                    <span id="notification-badge" style="display: none; position: absolute; top: 0px; right: 0; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; align-items: center; justify-content: center; font-weight: bold;">0</span>
+                    <select id="property-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
+                        <option value="" style="background: #0f172a; color: #f8fafc;">All Properties</option>
+                    </select>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 10px; margin-left: 5px;">
                     <span id="logged-in-user" style="color: #cbd5e1; font-weight: 500; font-size: 0.9em;"></span>
@@ -67,6 +47,25 @@
     </header>
 
     <div style="display: flex;">
+    <aside id="main-sidebar" style="width: 60px; background: #0f172a; padding: 20px 10px; border-right: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 15px; align-items: center;">
+        <a href="index.html" id="nav-energy" style="color: #635BFF; text-decoration: none; font-size: 1.2rem;" title="Energy Vault"><i class="fas fa-bolt"></i></a>
+        <a href="insurance.html" id="nav-insurance" style="color: #cbd5e1; text-decoration: none; font-size: 1.2rem;" title="Insurance Command"><i class="fas fa-shield-alt"></i></a>
+        <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
+        <button id="view-bill-history" style="background: transparent; border: none; color: #cbd5e1; cursor: pointer; font-size: 1.2rem;" title="View Bill History"><i class="fas fa-history"></i></button>
+        <button id="view-stats" style="background: transparent; border: none; color: #cbd5e1; cursor: pointer; font-size: 1.2rem;" title="Trends"><i class="fas fa-chart-line"></i></button>
+        <button id="view-contracts" style="background: transparent; border: none; color: #0284c7; cursor: pointer; font-size: 1.2rem;" title="Contract Dates"><i class="fas fa-calendar-alt"></i></button>
+        <button id="client-manager-btn" style="display: none; background: transparent; border: none; color: #6366f1; cursor: pointer; font-size: 1.2rem;" title="Client Manager"><i class="fas fa-users"></i></button>
+        <button id="add-building" style="background: transparent; border: none; color: #22c55e; cursor: pointer; font-size: 1.2rem;" title="New Property"><i class="fas fa-building"></i></button>
+        <button id="add-entry" style="background: transparent; border: none; color: #22c55e; cursor: pointer; font-size: 1.2rem;" title="New Entry"><i class="fas fa-plus-circle"></i></button>
+        <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
+        <button id="export-csv-btn" style="background: transparent; border: none; color: #10b981; cursor: pointer; font-size: 1.2rem;" title="Export CSV"><i class="fas fa-file-csv"></i></button>
+        <button id="backup-data-btn" style="background: transparent; border: none; color: #eab308; cursor: pointer; font-size: 1.2rem;" title="Backup Data"><i class="fas fa-download"></i></button>
+        <button id="sync-data-btn" style="background: transparent; border: none; color: #8b5cf6; cursor: pointer; font-size: 1.2rem;" onclick="syncNow()" title="Push Local Data to Cloud"><i class="fas fa-cloud-upload-alt"></i></button>
+        <div id="notification-bell" style="position: relative; cursor: pointer; padding: 10px; font-size: 1.2rem; color: #f8fafc; display: flex; align-items: center; justify-content: center;" title="Notifications">
+            <i class="fas fa-bell"></i>
+            <span id="notification-badge" style="display: none; position: absolute; top: 0px; right: 0; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; align-items: center; justify-content: center; font-weight: bold;">0</span>
+        </div>
+    </aside>
     <main class="container" style="flex: 1;">
 
         <!-- Notification Dropdown -->
@@ -83,7 +82,6 @@
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
             <h2 id="selected-building-name" style="margin: 0;">All Properties Dashboard</h2>
-            <button id="view-bill-history" class="btn-primary" style="display: block;">View Bill History</button>
         </div>
 
         <section class="dashboard-grid">
