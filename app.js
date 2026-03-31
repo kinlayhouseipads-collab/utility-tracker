@@ -280,7 +280,7 @@ function renderBuildings(buildings) {
                 ${formatCurrency.format(buildingTotalCost)}
             </td>
             <td style="padding: 20px 15px; text-align: center;">
-                <button onclick="openEditModal('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #cbd5e1; margin-right: 10px;" title="Edit Property">
+                <button onclick="openEditModal('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #3b82f6; margin-right: 10px;" title="Edit Property">
                     <i class="fas fa-edit"></i>
                 </button>
                 <button onclick="requestDeleteBuilding('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Property">
@@ -313,7 +313,7 @@ function renderBuildings(buildings) {
                     <td style="padding: 8px; color: #cbd5e1;" class="monospace">${acc.id_number || 'N/A'}</td>
                     <td style="padding: 8px; color: #cbd5e1;">${formatDate(acc.contractEndDate)}</td>
                     <td style="padding: 8px; text-align: center;">
-                        <button onclick="openEditAccountModal('${building.id}', '${acc.id_number}')" style="background: transparent; border: none; cursor: pointer; color: #cbd5e1; margin-right: 5px;"><i class="fas fa-edit"></i></button>
+                        <button onclick="openEditAccountModal('${building.id}', '${acc.id_number}')" style="background: transparent; border: none; cursor: pointer; color: #3b82f6; margin-right: 5px;"><i class="fas fa-edit"></i></button>
                         <button onclick="requestDeleteAccount('${building.id}', '${acc.id_number}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`;
@@ -564,6 +564,13 @@ window.requestDeleteBill = async function(billId) {
 };
 
 window.requestDeleteAccount = function(buildingId, accountId) {
+    if (!buildingId && window.cloudEnergyData) {
+        const accData = window.cloudEnergyData.find(ed => ed.mprn_number === accountId || ed.mprn === accountId);
+        if (accData) {
+            const b = energyBuildings.find(b => b.name === accData.property_name && companies.find(c => c.id === b.companyId)?.name === accData.company_name);
+            if (b) buildingId = b.id;
+        }
+    }
     const building = energyBuildings.find(b => b.id === buildingId);
     if (!building) return;
     const account = building.accounts.find(a => a.id_number === accountId);
@@ -1098,7 +1105,7 @@ function renderClientManager() {
             <td style="padding: 20px 15px;">${company.name}</td>
             <td style="padding: 20px 15px;">${company.industry}</td>
             <td style="padding: 20px 15px; text-align: center;">
-                <button onclick="openEditCompanyModal('${company.id}')" style="background: transparent; border: none; cursor: pointer; color: #cbd5e1; margin-right: 10px;" title="Edit Company">
+                <button onclick="openEditCompanyModal('${company.id}')" style="background: transparent; border: none; cursor: pointer; color: #3b82f6; margin-right: 10px;" title="Edit Company">
                     <i class="fas fa-edit"></i>
                 </button>
                 <button onclick="requestDeleteCompany('${company.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Company">
@@ -1367,8 +1374,8 @@ async function fetchDataFromSupabase() {
                             existingBuilding.accounts.push({
                                 type: ed.utility_type === 'Gas' ? 'Gas' : 'Electricity',
                                 id_number: ed.mprn_number,
-                                provider: 'Utility Co',
-                                contractEndDate: '2026-12-31'
+                                provider: '',
+                                contractEndDate: ''
                             });
                         }
                     }
@@ -1401,13 +1408,23 @@ async function fetchDataFromSupabase() {
                         card.style.cursor = 'pointer';
 
                         // Action: Open the new reading wizard when clicked
-                        card.onclick = () => {
-                            const addEntryBtn = document.getElementById('add-entry');
-                            if (addEntryBtn) addEntryBtn.click();
-                        };
+                        card.style.position = 'relative';
 
                         card.innerHTML = `
-                            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${account.property_name || 'Unknown Property'}</h3>
+                            <div style="position: absolute; top: 15px; right: 15px;">
+                                <button onclick="event.stopPropagation(); const menu = this.nextElementSibling; menu.style.display = menu.style.display === 'block' ? 'none' : 'block';" style="background: transparent; border: none; color: #cbd5e1; cursor: pointer; font-size: 1.2rem;">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; z-index: 100; min-width: 120px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                                    <button onclick="event.stopPropagation(); alert('History clicked');" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); color: #f8fafc; cursor: pointer; font-size: 0.9em;">
+                                        <i class="fas fa-history" style="margin-right: 8px;"></i> History
+                                    </button>
+                                    <button onclick="event.stopPropagation(); alert('Duplicate clicked');" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; color: #f8fafc; cursor: pointer; font-size: 0.9em;">
+                                        <i class="fas fa-copy" style="margin-right: 8px;"></i> Duplicate
+                                    </button>
+                                </div>
+                            </div>
+                            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text); padding-right: 30px;">${account.property_name || 'Unknown Property'}</h3>
                             <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">${account.mprn_number || account.mprn || 'N/A'}</div>
                             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
                                 <div>
@@ -1419,7 +1436,22 @@ async function fetchDataFromSupabase() {
                                     <div class="monospace" style="font-weight: bold; color: var(--primary);">${formatCurrency.format(Number(account.total_cost || 0))}</div>
                                 </div>
                             </div>
+                            <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+                                <button onclick="event.stopPropagation(); openEditAccountModal(null, '${account.mprn_number || account.mprn}')" style="background: transparent; border: none; cursor: pointer; color: #3b82f6;" title="Edit Account">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="event.stopPropagation(); requestDeleteAccount(null, '${account.mprn_number || account.mprn}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Account">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
                         `;
+
+                        // Action: Open the new reading wizard when clicked (except when clicking buttons)
+                        card.onclick = (e) => {
+                            if (e.target.closest('button')) return;
+                            const addEntryBtn = document.getElementById('add-entry');
+                            if (addEntryBtn) addEntryBtn.click();
+                        };
                         energyGrid.appendChild(card);
                     });
                 }
@@ -1957,7 +1989,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             document.getElementById('add-insurance-form').reset();
-            document.getElementById('ins-renewal-date').value = '2026-03-12';
+            document.getElementById('ins-renewal-date').value = '';
             addInsuranceModal.style.display = 'block';
         });
     }
@@ -2410,6 +2442,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.addEventListener('click', (event) => {
+        // Close three-dot dropdowns if clicking outside
+        if (!event.target.closest('button') || !event.target.closest('button').querySelector('.fa-ellipsis-v')) {
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                menu.style.display = 'none';
+            });
+        }
+
         if (event.target == billHistoryModal) {
             billHistoryModal.style.display = 'none';
         }
@@ -2449,6 +2488,14 @@ window.openAddAccountModal = function(buildingId) {
 };
 
 window.openEditAccountModal = function(buildingId, accountId) {
+    if (!buildingId && window.cloudEnergyData) {
+        // Find building from account if buildingId is missing
+        const accData = window.cloudEnergyData.find(ed => ed.mprn_number === accountId || ed.mprn === accountId);
+        if (accData) {
+            const b = energyBuildings.find(b => b.name === accData.property_name && companies.find(c => c.id === b.companyId)?.name === accData.company_name);
+            if (b) buildingId = b.id;
+        }
+    }
     const building = energyBuildings.find(b => b.id === buildingId);
     if (building && building.accounts) {
         const account = building.accounts.find(a => a.id_number === accountId);
@@ -2619,7 +2666,7 @@ if (addEntryBtn) {
         // 2026 Default Date Picker Check
         const readingDateInput = document.getElementById('reading-date');
         if (readingDateInput) {
-            const dateStr = '2026-03-12'; // The explicit reference today date used elsewhere in the codebase
+            const dateStr = ''; // The explicit reference today date used elsewhere in the codebase
             readingDateInput.value = dateStr;
         }
 
