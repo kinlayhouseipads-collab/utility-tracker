@@ -404,8 +404,6 @@ function renderBuildings(buildings) {
             } else {
                 accordionRow.style.display = 'none';
             }
-
-            selectBuilding(building);
         });
 
         tbody.appendChild(row);
@@ -1060,6 +1058,31 @@ function updateFilters() {
 
     if (companyFilter && companyFilter.value) {
         filteredBuildings = filteredBuildings.filter(b => b.companyId === companyFilter.value);
+    }
+
+    const propertyFilter = document.getElementById('property-filter');
+    if (propertyFilter) {
+        // Retain the current selection if possible
+        const currentPropVal = propertyFilter.value;
+        propertyFilter.innerHTML = '<option value="">All Properties</option>';
+
+        // Sort alphabetically by name
+        const sortedForDropdown = [...filteredBuildings].sort((a, b) => a.name.localeCompare(b.name));
+
+        sortedForDropdown.forEach(b => {
+            const opt = document.createElement('option');
+            opt.value = b.id;
+            opt.textContent = b.name;
+            propertyFilter.appendChild(opt);
+        });
+
+        // Restore selection if it still exists in the filtered list
+        if (filteredBuildings.find(b => b.id === currentPropVal)) {
+            propertyFilter.value = currentPropVal;
+        } else {
+            propertyFilter.value = "";
+            activeBuildingId = null;
+        }
     }
 
     renderBuildings(filteredBuildings);
@@ -2139,6 +2162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const companyFilter = document.getElementById('company-filter');
     const startDateFilter = document.getElementById('start-date-filter');
     const endDateFilter = document.getElementById('end-date-filter');
+    const propertyFilter = document.getElementById('property-filter');
     const viewBillHistoryBtn = document.getElementById('view-bill-history');
     const billHistoryModal = document.getElementById('bill-history-modal');
     const closeHistoryModal = document.getElementById('close-history-modal');
@@ -2147,6 +2171,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (companyFilter) companyFilter.addEventListener('change', updateFilters);
     if (startDateFilter) startDateFilter.addEventListener('change', updateFilters);
     if (endDateFilter) endDateFilter.addEventListener('change', updateFilters);
+    if (propertyFilter) {
+        propertyFilter.addEventListener('change', (e) => {
+            activeBuildingId = e.target.value || null;
+            if (activeBuildingId) {
+                const b = energyBuildings.find(x => x.id === activeBuildingId);
+                if (b) {
+                    document.getElementById('selected-building-name').textContent = `${b.name} Dashboard`;
+                }
+            } else {
+                document.getElementById('selected-building-name').textContent = 'All Properties Dashboard';
+            }
+            updateDashboard();
+            renderChart();
+            renderBuildings(energyBuildings); // re-render to apply active styling
+        });
+    }
 
     if (viewBillHistoryBtn) {
         viewBillHistoryBtn.addEventListener('click', async () => {
@@ -2835,7 +2875,7 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
         date: document.getElementById('reading-date').value
     };
 
-    const buildingName = building ? building.address : 'Unknown Property';
+    const buildingName = building ? building.name : 'Unknown Property';
     const buildingCompanyId = building ? building.companyId : wCompany.value;
 
     const usageVal = Number(document.getElementById('reading-value').value);
