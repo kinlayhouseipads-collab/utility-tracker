@@ -55,12 +55,12 @@ body {
     gap: 20px;
 }
 
-#insurance-vault-grid {
+#insurance-vault-grid, #energy-list-grid {
     grid-template-columns: repeat(2, 1fr) !important;
 }
 
 @media (max-width: 768px) {
-    #insurance-vault-grid {
+    #insurance-vault-grid, #energy-list-grid {
         grid-template-columns: 1fr !important;
     }
 }
