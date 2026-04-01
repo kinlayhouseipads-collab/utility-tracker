@@ -219,7 +219,7 @@ function renderBuildings(buildings) {
         });
 
         const companyObj = companies.find(c => c.id === building.companyId);
-        const companyName = companyObj ? companyObj.name : 'Unknown';
+        const companyName = companyObj ? companyObj.name : '';
 
 
         const today = new Date('2026-03-12T00:00:00');
@@ -279,13 +279,18 @@ function renderBuildings(buildings) {
             <td style="padding: 20px 15px; font-size: 0.95em; font-weight: bold; color: var(--primary);" class="monospace">
                 ${formatCurrency.format(buildingTotalCost)}
             </td>
-            <td style="padding: 20px 15px; text-align: center;">
-                <button onclick="openEditModal('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #3b82f6; margin-right: 10px;" title="Edit Property">
-                    <i class="fas fa-edit"></i>
+            <td style="padding: 20px 15px; text-align: center; position: relative;">
+                <button onclick="event.stopPropagation(); const menu = this.nextElementSibling; menu.style.display = menu.style.display === 'block' ? 'none' : 'block';" style="background: transparent; border: none; color: #cbd5e1; cursor: pointer; font-size: 1.2rem;">
+                    <i class="fas fa-ellipsis-v"></i>
                 </button>
-                <button onclick="requestDeleteBuilding('${building.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Property">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; z-index: 100; min-width: 120px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                    <button onclick="event.stopPropagation(); openEditModal('${building.id}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); color: #3b82f6; cursor: pointer; font-size: 0.9em;" title="Edit Property">
+                        <i class="fas fa-edit" style="margin-right: 8px;"></i> Edit
+                    </button>
+                    <button onclick="event.stopPropagation(); requestDeleteBuilding('${building.id}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.9em;" title="Delete Property">
+                        <i class="fas fa-trash" style="margin-right: 8px;"></i> Delete
+                    </button>
+                </div>
             </td>
         `;
 
@@ -312,9 +317,18 @@ function renderBuildings(buildings) {
                     <td style="padding: 8px; color: #cbd5e1;">${acc.account_address || 'N/A'}</td>
                     <td style="padding: 8px; color: #cbd5e1;" class="monospace">${acc.id_number || 'N/A'}</td>
                     <td style="padding: 8px; color: #cbd5e1;">${formatDate(acc.contractEndDate)}</td>
-                    <td style="padding: 8px; text-align: center;">
-                        <button onclick="openEditAccountModal('${building.id}', '${acc.id_number}')" style="background: transparent; border: none; cursor: pointer; color: #3b82f6; margin-right: 5px;"><i class="fas fa-edit"></i></button>
-                        <button onclick="requestDeleteAccount('${building.id}', '${acc.id_number}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;"><i class="fas fa-trash"></i></button>
+                    <td style="padding: 8px; text-align: center; position: relative;">
+                        <button onclick="event.stopPropagation(); const menu = this.nextElementSibling; menu.style.display = menu.style.display === 'block' ? 'none' : 'block';" style="background: transparent; border: none; color: #cbd5e1; cursor: pointer; font-size: 1.2rem;">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; z-index: 100; min-width: 120px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                            <button onclick="event.stopPropagation(); openEditAccountModal('${building.id}', '${acc.id_number}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); color: #3b82f6; cursor: pointer; font-size: 0.9em;">
+                                <i class="fas fa-edit" style="margin-right: 8px;"></i> Edit
+                            </button>
+                            <button onclick="event.stopPropagation(); requestDeleteAccount('${building.id}', '${acc.id_number}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.9em;">
+                                <i class="fas fa-trash" style="margin-right: 8px;"></i> Delete
+                            </button>
+                        </div>
                     </td>
                 </tr>`;
             });
@@ -377,10 +391,15 @@ function renderBuildings(buildings) {
                     <td style="padding: 8px; font-weight: 600; color: #f8fafc;">${bill.type}</td>
                     <td style="padding: 8px; color: #cbd5e1;">${bill.reading}</td>
                     <td style="padding: 8px; font-weight: bold; color: var(--primary);" class="monospace">${formatCurrency.format(bill.cost)}</td>
-                    <td style="padding: 8px; text-align: center;">
-                        <button onclick="requestDeleteBill('${bill.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Bill">
-                            <i class="fas fa-trash"></i>
+                    <td style="padding: 8px; text-align: center; position: relative;">
+                        <button onclick="event.stopPropagation(); const menu = this.nextElementSibling; menu.style.display = menu.style.display === 'block' ? 'none' : 'block';" style="background: transparent; border: none; color: #cbd5e1; cursor: pointer; font-size: 1.2rem;">
+                            <i class="fas fa-ellipsis-v"></i>
                         </button>
+                        <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; z-index: 100; min-width: 120px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                            <button onclick="event.stopPropagation(); requestDeleteBill('${bill.id}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.9em;">
+                                <i class="fas fa-trash" style="margin-right: 8px;"></i> Delete
+                            </button>
+                        </div>
                     </td>
                 </tr>`;
             });
@@ -1332,8 +1351,8 @@ async function fetchDataFromSupabase() {
                 // Isolate State for Insurance
                 insuranceBuildings = [];
                 energyData.forEach(ed => {
-                    const propName = ed.property_name || 'Unknown Property';
-                    const compName = ed.company_name || 'Unknown Company';
+                    const propName = ed.property_name || '';
+                    const compName = ed.company_name || '';
                     const compId = compName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
                     if (!insuranceBuildings.find(b => b.name === propName && b.companyId === compId)) {
@@ -1364,8 +1383,8 @@ async function fetchDataFromSupabase() {
                 let bCount = energyBuildings.length + 1;
 
                 energyData.forEach(ed => {
-                    const propName = ed.property_name || 'Unknown Property';
-                    const compName = ed.company_name || 'Unknown Company';
+                    const propName = ed.property_name || '';
+                    const compName = ed.company_name || '';
                     const compId = compName.toLowerCase().replace(/[^a-z0-9]/g, '');
 
                     // Add company if not present
@@ -1447,7 +1466,7 @@ async function fetchDataFromSupabase() {
                                     </button>
                                 </div>
                             </div>
-                            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text); padding-right: 30px;">${account.property_name || 'Unknown Property'}</h3>
+                            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text); padding-right: 30px;">${account.property_name || ''}</h3>
                             <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">${account.mprn_number || account.mprn || 'N/A'}</div>
                             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
                                 <div>
@@ -1520,7 +1539,7 @@ window.renderInsuranceVault = function(insuranceData) {
 
         if (premium > highestPremium) {
             highestPremium = premium;
-            highestPremiumBuilding = policy.account_address || 'Unknown Property';
+            highestPremiumBuilding = policy.account_address || '';
         }
 
         if (policy.renewal_date) {
@@ -1538,8 +1557,8 @@ window.renderInsuranceVault = function(insuranceData) {
 
     // Extract unique providers and update dropdown
     const providerSelect = document.getElementById('ins-filter-provider');
-    const currentProvider = providerSelect.value;
-    providerSelect.innerHTML = '<option value="" style="background: #0f172a;">All Providers</option>';
+    const currentProvider = providerSelect ? providerSelect.value : '';
+    if (providerSelect) providerSelect.innerHTML = '<option value="" style="background: #0f172a;">All Providers</option>';
 
     const uniqueProviders = [...new Set(insuranceData.map(p => p.provider_name).filter(Boolean))].sort();
     uniqueProviders.forEach(provider => {
@@ -1547,14 +1566,14 @@ window.renderInsuranceVault = function(insuranceData) {
         opt.value = provider;
         opt.textContent = provider;
         opt.style.background = '#0f172a';
-        providerSelect.appendChild(opt);
+        if(providerSelect) providerSelect.appendChild(opt);
     });
-    providerSelect.value = currentProvider;
+    if (providerSelect) providerSelect.value = currentProvider;
 
     // Extract unique properties and update dropdown
     const propertySelect = document.getElementById('ins-search-address');
-    const currentProperty = propertySelect.value;
-    propertySelect.innerHTML = '<option value="" style="background: #0f172a;">All Properties</option>';
+    const currentProperty = propertySelect ? propertySelect.value : '';
+    if(propertySelect) propertySelect.innerHTML = '<option value="" style="background: #0f172a;">All Properties</option>';
 
     const uniqueProperties = [...new Set(insuranceData.map(p => p.account_address).filter(Boolean))].sort();
     uniqueProperties.forEach(prop => {
@@ -1562,16 +1581,16 @@ window.renderInsuranceVault = function(insuranceData) {
         opt.value = prop;
         opt.textContent = prop;
         opt.style.background = '#0f172a';
-        propertySelect.appendChild(opt);
+        if(propertySelect) propertySelect.appendChild(opt);
     });
-    propertySelect.value = currentProperty;
+    if(propertySelect) propertySelect.value = currentProperty;
 
     // Apply Filters
-    const searchAddress = document.getElementById('ins-search-address').value;
-    const filterProvider = document.getElementById('ins-filter-provider').value;
-    const filterBroker = document.getElementById('ins-filter-broker').value.toLowerCase();
-    const filterStatus = document.getElementById('ins-filter-status').value;
-    const sortRenewal = document.getElementById('ins-sort-renewal').value;
+    const searchAddress = document.getElementById('ins-search-address') ? document.getElementById('ins-search-address').value : '';
+    const filterProvider = document.getElementById('ins-filter-provider') ? document.getElementById('ins-filter-provider').value : '';
+    const filterBroker = document.getElementById('ins-filter-broker') ? document.getElementById('ins-filter-broker').value.toLowerCase() : '';
+    const filterStatus = document.getElementById('ins-filter-status') ? document.getElementById('ins-filter-status').value : '';
+    const sortRenewal = document.getElementById('ins-sort-renewal') ? document.getElementById('ins-sort-renewal').value : 'asc';
 
     let filteredData = insuranceData.filter(policy => {
         const matchesAddress = searchAddress ? (policy.account_address === searchAddress) : true;
@@ -1680,7 +1699,7 @@ window.renderInsuranceVault = function(insuranceData) {
                                 <div style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; color: ${diffDaysColor}; border: 1px solid ${diffDaysColor};">${diffDaysText}</div>
                             </div>
                         </div>
-                        <div style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 5px;">${policy.account_address || 'Unknown Property'}</div>
+                        <div style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 5px;">${policy.account_address || ''}</div>
                         <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">
                             ${policy.insurance_type || 'N/A'} - ${policy.policy_number || 'N/A'} <span style="margin: 0 5px; color: rgba(255,255,255,0.2);">|</span> <i class="fas fa-user-tie"></i> ${brokerName}
                         </div>
@@ -1823,7 +1842,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             filteredBuildings.forEach(building => {
                 const companyObj = companies.find(c => c.id === building.companyId);
-                const companyName = companyObj ? companyObj.name : 'Unknown';
+                const companyName = companyObj ? companyObj.name : '';
 
                 let mprn = 'N/A';
                 let gprn = 'N/A';
@@ -2237,7 +2256,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <span>${formattedDate}</span>
                                     <span style="color: var(--primary);">€${cost}</span>
                                 </div>
-                                <div style="font-size: 0.85em; color: #475569; margin-top: 2px;">MPRN: ${bill.mprn_number || bill.mprn || 'N/A'} - ${bill.property_name || 'Unknown Property'}</div>
+                                <div style="font-size: 0.85em; color: #475569; margin-top: 2px;">MPRN: ${bill.mprn_number || bill.mprn || 'N/A'} - ${bill.property_name || ''}</div>
                                 <div style="font-size: 0.9em; color: #64748b; margin-top: 5px;">
                                     <span>Usage: ${kwh} kWh</span>
                                 </div>
@@ -2298,7 +2317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const companyObj = companies.find(c => c.id === newBuilding.companyId);
-        const companyName = companyObj ? companyObj.name : 'Unknown';
+        const companyName = companyObj ? companyObj.name : '';
 
         if (window.supabaseClient) {
             try {
@@ -2787,6 +2806,7 @@ if (wNext2) {
                 opt.textContent = `${a.type} - ${a.id_number}${addressText}`;
                 opt.dataset.type = a.type;
                 opt.dataset.enddate = a.contractEndDate;
+                opt.dataset.provider = a.provider || '';
                 wAccount.appendChild(opt);
             });
         }
@@ -2810,6 +2830,10 @@ if (wAccount) {
         const selected = wAccount.options[wAccount.selectedIndex];
         wEditAccNum.value = selected.value;
         wEditEndDate.value = selected.dataset.enddate || '';
+        const providerInput = document.getElementById('provider');
+        if (providerInput) {
+            providerInput.value = selected.dataset.provider || '';
+        }
     });
 }
 
@@ -2881,18 +2905,18 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     const usageVal = Number(document.getElementById('reading-value').value);
     const costVal = Number(document.getElementById('reading-cost').value);
 
-    const companyObj = companies.find(c => c.id === buildingCompanyId);
-    const companyName = companyObj ? companyObj.name : 'Unknown';
 
     const payload = {
         id: crypto.randomUUID(),
         mprn_number: newAccNum,
         usage_kwh: Number(usageVal),
         total_cost: Number(costVal),
-        company_name: companyName,
+        company_name: document.getElementById('provider').value,
         property_name: buildingName,
         bill_date: document.getElementById('reading-date').value,
-        utility_type: accType.charAt(0).toUpperCase() + accType.slice(1)
+        utility_type: accType.charAt(0).toUpperCase() + accType.slice(1),
+        contract_end_date: document.getElementById('wizard-edit-enddate').value,
+        service_address: building.address
     };
 
     if (window.cloudEnergyData) {
@@ -2963,7 +2987,7 @@ window.renderInsuranceChart = function(filteredData) {
     const typesFound = new Set();
 
     chartData.forEach(p => {
-        const address = p.account_address || 'Unknown Property';
+        const address = p.account_address || '';
         const type = p.insurance_type || 'Other';
         typesFound.add(type);
 
