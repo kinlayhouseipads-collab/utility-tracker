@@ -2727,8 +2727,12 @@ if (addEntryBtn) {
         // 2026 Default Date Picker Check
         const readingDateInput = document.getElementById('reading-date');
         if (readingDateInput) {
-            const dateStr = new Date().toISOString().split('T')[0];
-            readingDateInput.value = dateStr;
+            readingDateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        const providerInput = document.getElementById('provider');
+        if (providerInput) {
+            providerInput.value = '';
         }
 
         // Auto-select company if company admin
@@ -2911,14 +2915,19 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
     const payload = {
         id: crypto.randomUUID(),
         mprn_number: newAccNum,
-        usage_kwh: Number(usageVal),
-        total_cost: Number(costVal),
-        provider: document.getElementById('provider').value || null,
-        property_name: buildingName,
+        usage_kwh: Number(document.getElementById('reading-value').value),
+        total_cost: Number(document.getElementById('reading-cost').value),
         bill_date: document.getElementById('reading-date').value,
-        utility_type: accType.charAt(0).toUpperCase() + accType.slice(1),
+
+        // NEW COLUMN MAPPING - MUST BE LOWERCASE
+        provider: document.getElementById('provider').value || null,
         contract_end_date: document.getElementById('wizard-edit-enddate').value || null,
-        service_address: building.address
+        service_address: building.address || 'Unknown Address',
+
+        // PROPERTY METADATA
+        property_name: building ? building.name : 'Unknown Property',
+        company_name: companies.find(c => c.id === (building ? building.companyId : wCompany.value))?.name || 'Unknown Company',
+        utility_type: accType.charAt(0).toUpperCase() + accType.slice(1)
     };
 
     if (window.cloudEnergyData) {
