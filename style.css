@@ -43,14 +43,15 @@ body {
 
 /* --- JULES: MAIN LAYOUT RESET --- */
 #main-dashboard {
+    width: 100%;
     max-width: 1200px !important;
     margin: 0 auto !important;
     padding: 20px;
-    width: 100%;
     display: flex;
     flex-direction: column;
     gap: 25px;
     box-sizing: border-box; /* Ensures the right-side content stays on screen */
+    overflow-x: hidden;
 }
 
 .dashboard-grid {
