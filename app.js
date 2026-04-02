@@ -1,11 +1,9 @@
 window.supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient('https://jzzbbttgvkdqwkjynuxi.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY') : null;
 
 let utilityChartInstance = null;
-let insuranceChartInstance = null;
 let activeBuildingId = null;
 
 let energyBuildings = [];
-let insuranceBuildings = [];
 let sortEndDateAscending = true; // Track sorting state globally
 let currentUserRole = null;
 let currentUserId = null;
@@ -451,85 +449,6 @@ window.requestDeleteBuilding = function(id) {
     document.getElementById('confirm-modal').style.display = 'block';
 };
 
-window.toggleInsuranceStatus = async function(insuranceId, currentStatus) {
-    const newStatus = !currentStatus;
-
-    // Optimistically update UI
-    if (window.cloudInsuranceData) {
-        const policyIndex = window.cloudInsuranceData.findIndex(p => p.id === insuranceId);
-        if (policyIndex !== -1) {
-            window.cloudInsuranceData[policyIndex].is_paid = newStatus;
-            window.renderInsuranceVault(window.cloudInsuranceData);
-        }
-    }
-    showToast('Saving...', 'info');
-
-    if (window.supabaseClient) {
-        try {
-            const response = await window.supabaseClient
-                .from('insurance_vault')
-                .update({ is_paid: newStatus })
-                .eq('id', String(insuranceId).trim());
-
-            if (response.error) {
-                console.error('Error updating insurance status:', response.error);
-                window.alert(response.error.message);
-
-                // Revert on error
-                if (window.cloudInsuranceData) {
-                    const policyIndex = window.cloudInsuranceData.findIndex(p => p.id === insuranceId);
-                    if (policyIndex !== -1) {
-                        window.cloudInsuranceData[policyIndex].is_paid = currentStatus;
-                        window.renderInsuranceVault(window.cloudInsuranceData);
-                    }
-                }
-            } else {
-                showToast('Status Updated', 'success');
-                logAudit(`Updated payment status for insurance policy ID ${insuranceId} to ${newStatus ? 'Paid' : 'Unpaid'}`);
-            }
-        } catch (err) {
-            console.error('Exception during Supabase insurance update:', err);
-            window.alert(err.message);
-
-            // Revert on error
-            if (window.cloudInsuranceData) {
-                const policyIndex = window.cloudInsuranceData.findIndex(p => p.id === insuranceId);
-                if (policyIndex !== -1) {
-                    window.cloudInsuranceData[policyIndex].is_paid = currentStatus;
-                    window.renderInsuranceVault(window.cloudInsuranceData);
-                }
-            }
-        }
-    }
-};
-
-window.requestDeleteInsurance = async function(insuranceId) {
-    if (!confirm("Are you sure you want to delete this insurance policy?")) {
-        return;
-    }
-
-    if (window.supabaseClient) {
-        try {
-            const response = await window.supabaseClient
-                .from('insurance_vault')
-                .delete()
-                .eq('id', String(insuranceId).trim());
-
-            if (response.error) {
-                console.error('Error deleting insurance from Supabase:', response.error);
-                window.alert(response.error.message);
-            } else {
-                showToast('Insurance Deleted', 'success');
-                logAudit(`Deleted insurance policy associated with ID ${insuranceId}`);
-                fetchDataFromSupabase();
-            }
-        } catch (err) {
-            console.error('Exception during Supabase insurance delete:', err);
-            window.alert(err.message);
-        }
-    }
-};
-
 window.requestDeleteBill = async function(billId) {
     if (!confirm("Are you sure you want to delete this bill? This will remove this specific bill's data.")) {
         return;
@@ -682,16 +601,9 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             }
 
             if (!hasError) {
-                if (window.supabaseClient) {
-                    try {
-                        await window.supabaseClient.from('insurance_vault').delete().eq('account_address', building.address);
-                    } catch (e) {
-                        console.error('Error deleting related insurance', e);
-                    }
-                }
                 showToast('Property Deleted', 'success');
                 logAudit(`Deleted property: ${buildingName}`);
-                fetchDataFromSupabase(); // Relying on realtime subscription but insurance vault needs explicit fetch
+                fetchDataFromSupabase();
             }
         }
     } else if (deleteTarget.type === 'account') {
@@ -763,18 +675,6 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             }
 
             if (!hasError) {
-                // Also clean up insurance policies for buildings owned by this company
-                const companyBuildings = energyBuildings.filter(b => b.companyId === deleteTarget.companyId);
-                if (window.supabaseClient && companyBuildings.length > 0) {
-                    for (const cb of companyBuildings) {
-                        try {
-                            await window.supabaseClient.from('insurance_vault').delete().eq('account_address', cb.address);
-                        } catch (e) {
-                            console.error('Error deleting related insurance for company building', e);
-                        }
-                    }
-                }
-
                 showToast('Company Deleted', 'success');
                 logAudit(`Deleted company: ${companyName} and associated properties.`);
                 fetchDataFromSupabase();
@@ -836,7 +736,8 @@ function updateDashboard() {
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
-                const billDate = new Date(bill.date);
+                const rawDate = bill.bill_date || bill.date;
+                const billDate = new Date(rawDate);
 
                 let withinDateRange = false;
 
@@ -879,7 +780,8 @@ function updateDashboard() {
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             grandTotal += building.billHistory.reduce((s, bill) => {
-                const billDate = new Date(bill.date);
+                const rawDate = bill.bill_date || bill.date;
+                const billDate = new Date(rawDate);
 
                 let withinDateRange = false;
 
@@ -932,7 +834,7 @@ function renderChart() {
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
-                const rawDate = bill.bill_date || bill.date; // Ignore 'last_updated' for filtering
+                const rawDate = bill.bill_date || bill.date;
                 const billDateStr = rawDate;
                 const billDate = new Date(rawDate);
 
@@ -1352,23 +1254,6 @@ async function fetchDataFromSupabase() {
                 // State Management: Update the global state and call render functions
                 window.cloudEnergyData = energyData;
 
-                // Isolate State for Insurance
-                insuranceBuildings = [];
-                energyData.forEach(ed => {
-                    const propName = ed.property_name || '';
-                    const compName = ed.company_name || '';
-                    const compId = compName.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-                    if (!insuranceBuildings.find(b => b.name === propName && b.companyId === compId)) {
-                        insuranceBuildings.push({
-                            id: crypto.randomUUID(), // unique ID
-                            name: propName,
-                            address: propName + ' Address',
-                            companyId: compId
-                        });
-                    }
-                });
-
                 // Do not wipe `energyBuildings` and `companies` to prevent zero-bill properties from vanishing.
                 // Clear the `buildings-list` inner HTML as it will be re-rendered via `updateFilters`.
                 document.getElementById('buildings-list').innerHTML = '';
@@ -1503,245 +1388,11 @@ async function fetchDataFromSupabase() {
                 }
             }
 
-            // Fetch Insurance Vault
-            const { data: insuranceData, error: insuranceError } = await window.supabaseClient.from('insurance_vault').select('*');
-            if (insuranceError) {
-                console.error('Error fetching insurance_vault from Supabase', insuranceError);
-                const insuranceGrid = document.getElementById('insurance-vault-grid');
-                if (insuranceGrid) insuranceGrid.innerHTML = '';
-                window.alert(insuranceError.message);
-            } else {
-                console.log('Supabase insurance_vault fetch result:', insuranceData);
-                window.cloudInsuranceData = insuranceData;
-                if (window.renderInsuranceVault) {
-                    window.renderInsuranceVault(window.cloudInsuranceData);
-                }
-            }
-
         } catch(err) {
             console.error('Exception fetching from supabase:', err);
         }
     }
 }
-
-window.renderInsuranceVault = function(insuranceData) {
-    if (!insuranceData) return;
-
-    // Calculate Hero Metrics
-    let totalPremium = 0;
-    let upcomingRenewalsCount = 0;
-    let highestPremium = 0;
-    let highestPremiumBuilding = 'N/A';
-
-    const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(now.getDate() + 30);
-
-    insuranceData.forEach(policy => {
-        const premium = Number(policy.premium_cost || 0);
-        totalPremium += premium;
-
-        if (premium > highestPremium) {
-            highestPremium = premium;
-            highestPremiumBuilding = policy.account_address || '';
-        }
-
-        if (policy.renewal_date) {
-            const renewalDate = new Date(policy.renewal_date);
-            if (renewalDate >= now && renewalDate <= thirtyDaysFromNow) {
-                upcomingRenewalsCount++;
-            }
-        }
-    });
-
-    const fmtCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
-    document.getElementById('stat-total-premium').textContent = fmtCurrency.format(totalPremium);
-    document.getElementById('stat-upcoming-renewals').textContent = upcomingRenewalsCount;
-    document.getElementById('stat-highest-premium').innerHTML = `${fmtCurrency.format(highestPremium)}<br><span style="font-size: 0.8rem; color: #cbd5e1; font-family: 'Inter', sans-serif;">${highestPremiumBuilding}</span>`;
-
-    // Extract unique providers and update dropdown
-    const providerSelect = document.getElementById('ins-filter-provider');
-    const currentProvider = providerSelect ? providerSelect.value : '';
-    if (providerSelect) providerSelect.innerHTML = '<option value="" style="background: #0f172a;">All Providers</option>';
-
-    const uniqueProviders = [...new Set(insuranceData.map(p => p.provider_name).filter(Boolean))].sort();
-    uniqueProviders.forEach(provider => {
-        const opt = document.createElement('option');
-        opt.value = provider;
-        opt.textContent = provider;
-        opt.style.background = '#0f172a';
-        if(providerSelect) providerSelect.appendChild(opt);
-    });
-    if (providerSelect) providerSelect.value = currentProvider;
-
-    // Extract unique properties and update dropdown
-    const propertySelect = document.getElementById('ins-search-address');
-    const currentProperty = propertySelect ? propertySelect.value : '';
-    if(propertySelect) propertySelect.innerHTML = '<option value="" style="background: #0f172a;">All Properties</option>';
-
-    const uniqueProperties = [...new Set(insuranceData.map(p => p.account_address).filter(Boolean))].sort();
-    uniqueProperties.forEach(prop => {
-        const opt = document.createElement('option');
-        opt.value = prop;
-        opt.textContent = prop;
-        opt.style.background = '#0f172a';
-        if(propertySelect) propertySelect.appendChild(opt);
-    });
-    if(propertySelect) propertySelect.value = currentProperty;
-
-    // Apply Filters
-    const searchAddress = document.getElementById('ins-search-address') ? document.getElementById('ins-search-address').value : '';
-    const filterProvider = document.getElementById('ins-filter-provider') ? document.getElementById('ins-filter-provider').value : '';
-    const filterBroker = document.getElementById('ins-filter-broker') ? document.getElementById('ins-filter-broker').value.toLowerCase() : '';
-    const filterStatus = document.getElementById('ins-filter-status') ? document.getElementById('ins-filter-status').value : '';
-    const sortRenewal = document.getElementById('ins-sort-renewal') ? document.getElementById('ins-sort-renewal').value : 'asc';
-
-    let filteredData = insuranceData.filter(policy => {
-        const matchesAddress = searchAddress ? (policy.account_address === searchAddress) : true;
-        const matchesProvider = filterProvider ? (policy.provider_name === filterProvider) : true;
-        const matchesBroker = filterBroker ? (policy.broker_name || '').toLowerCase().includes(filterBroker) : true;
-        let matchesStatus = true;
-        if (filterStatus === 'paid') matchesStatus = policy.is_paid === true;
-        if (filterStatus === 'unpaid') matchesStatus = policy.is_paid === false || policy.is_paid == null;
-
-        return matchesAddress && matchesProvider && matchesBroker && matchesStatus;
-    });
-
-    // Apply Sorting
-    filteredData.sort((a, b) => {
-        const dateA = new Date(a.renewal_date || 0);
-        const dateB = new Date(b.renewal_date || 0);
-        return sortRenewal === 'asc' ? dateA - dateB : dateB - dateA;
-    });
-
-    const insuranceGrid = document.getElementById('insurance-vault-grid');
-    if (insuranceGrid) {
-        insuranceGrid.innerHTML = '';
-        filteredData.forEach(policy => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.style.textAlign = 'left';
-
-            let staleStyle = '';
-            let diffDaysText = 'N/A';
-            let diffDaysColor = '#cbd5e1';
-
-            let diffDaysCalculated = null;
-
-            if (policy.renewal_date) {
-                const rDate = new Date(policy.renewal_date);
-                const diffTime = rDate - now;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                diffDaysCalculated = diffDays;
-
-                if (diffDays < 0) {
-                    diffDaysText = `${Math.abs(diffDays)} Days Overdue`;
-                    diffDaysColor = '#ef4444';
-                    staleStyle = 'border: 2px solid #ef4444 !important;';
-                } else if (diffDays === 0) {
-                    diffDaysText = 'Due Today';
-                    diffDaysColor = '#ef4444';
-                    staleStyle = 'border: 2px solid #ef4444 !important;';
-                } else {
-                    diffDaysText = `${diffDays} Days`;
-                    if (diffDays <= 7) {
-                        diffDaysColor = '#ef4444';
-                        staleStyle = 'border: 2px solid #ef4444 !important;';
-                    } else if (diffDays <= 30) {
-                        diffDaysColor = '#eab308';
-                    } else {
-                        diffDaysColor = '#10b981';
-                    }
-                }
-            }
-
-            const isUnpaid = policy.is_paid === false || policy.is_paid == null;
-            if (isUnpaid && diffDaysCalculated !== null && diffDaysCalculated < 0) {
-                staleStyle = 'background-color: #7f1d1d !important; border: 2px solid #ef4444 !important;';
-            }
-
-            if (staleStyle) {
-                card.style.cssText += staleStyle;
-            }
-
-            const statusIcon = policy.is_paid ? '✅' : '❌';
-            const brokerName = policy.broker_name || 'No Broker';
-
-            const currentPremium = Number(policy.premium_cost || 0);
-            const lastYearPremium = Number(policy.last_year_premium || 0);
-            const premiumDiff = currentPremium - lastYearPremium;
-
-            let diffText = '';
-            let diffColor = '#cbd5e1';
-
-            let lastYearDisplay = '';
-
-            if (lastYearPremium !== 0 && !isNaN(lastYearPremium)) {
-                if (premiumDiff > 0) {
-                    diffText = `+${fmtCurrency.format(premiumDiff)}`;
-                    diffColor = '#ef4444'; // Red for increase
-                } else if (premiumDiff < 0) {
-                    diffText = `${fmtCurrency.format(premiumDiff)}`;
-                    diffColor = '#10b981'; // Green for decrease
-                } else {
-                    diffText = 'No Change';
-                    diffColor = '#94a3b8';
-                }
-                lastYearDisplay = fmtCurrency.format(lastYearPremium);
-            } else {
-                diffText = 'N/A';
-                lastYearDisplay = 'N/A';
-            }
-
-            card.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div style="display: flex; flex-direction: column; width: 100%;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${policy.provider_name || 'Unknown Provider'}</h3>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <div id="status-icon-${policy.id}" style="font-size: 1.2rem; cursor: pointer;" title="${policy.is_paid ? 'Paid' : 'Unpaid'}" onclick="toggleInsuranceStatus('${policy.id}', ${!!policy.is_paid})">${statusIcon}</div>
-                                <div style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; color: ${diffDaysColor}; border: 1px solid ${diffDaysColor};">${diffDaysText}</div>
-                            </div>
-                        </div>
-                        <div style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 5px;">${policy.account_address || ''}</div>
-                        <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">
-                            ${policy.insurance_type || 'N/A'} - ${policy.policy_number || 'N/A'} <span style="margin: 0 5px; color: rgba(255,255,255,0.2);">|</span> <i class="fas fa-user-tie"></i> ${brokerName}
-                        </div>
-                    </div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
-                    <div>
-                        <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Renewal Date</div>
-                        <div style="font-weight: 600; color: #f8fafc;">${policy.renewal_date ? formatDate(policy.renewal_date) : 'N/A'}</div>
-                    </div>
-                    <div style="display: flex; gap: 15px; text-align: right; align-items: flex-end;">
-                        <div>
-                            <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Diff</div>
-                            <div class="monospace" style="font-weight: bold; font-size: 0.9em; color: ${diffColor};">${diffText}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Last Year</div>
-                            <div class="monospace" style="color: #cbd5e1; text-decoration: line-through; font-size: 0.9em;">${lastYearDisplay}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Premium</div>
-                            <div class="monospace" style="font-weight: bold; font-size: 1.1em; color: #eab308;">${fmtCurrency.format(currentPremium)}</div>
-                        </div>
-                        <button onclick="requestDeleteInsurance('${policy.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444; margin-left: 10px; padding-bottom: 4px;" title="Delete Insurance">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            insuranceGrid.appendChild(card);
-        });
-    }
-
-    // Render the chart with the filtered data
-    if (window.renderInsuranceChart) {
-        window.renderInsuranceChart(filteredData);
-    }
-};
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -2636,6 +2287,11 @@ if (addEntryBtn) {
             readingDateInput.value = new Date().toISOString().split('T')[0];
         }
 
+        const wizardEditEnddate = document.getElementById('wizard-edit-enddate');
+        if (wizardEditEnddate) {
+            wizardEditEnddate.value = new Date().toISOString().split('T')[0];
+        }
+
         const providerInput = document.getElementById('provider');
         if (providerInput) {
             providerInput.value = '';
@@ -2741,7 +2397,7 @@ if (wAccount) {
     wAccount.addEventListener('change', () => {
         const selected = wAccount.options[wAccount.selectedIndex];
         wEditAccNum.value = selected.value;
-        wEditEndDate.value = selected.dataset.enddate || '';
+        wEditEndDate.value = selected.dataset.enddate || new Date().toISOString().split('T')[0];
         const providerInput = document.getElementById('provider');
         if (providerInput) {
             providerInput.value = selected.dataset.provider || '';
@@ -2820,20 +2476,19 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
 
     const payload = {
         id: crypto.randomUUID(),
+        property_name: building.name,
         mprn_number: newAccNum,
-        usage_kwh: Number(document.getElementById('reading-value').value),
-        total_cost: Number(document.getElementById('reading-cost').value),
-        bill_date: document.getElementById('reading-date').value, // CRITICAL FOR GRAPH
 
-        // THE 3 KEY COLUMNS (USE THESE NAMES ONLY)
+        // THE 3 PILLARS (MUST BE LOWERCASE)
         provider: document.getElementById('provider').value || null,
         contract_end_date: document.getElementById('wizard-edit-enddate').value || null,
-        service_address: building.address || 'Unknown Address',
+        service_address: building.address || '',
 
-        // METADATA
-        property_name: building.name,
-        company_name: companies.find(c => c.id === building.companyId)?.name || 'Unknown',
-        utility_type: accType.charAt(0).toUpperCase() + accType.slice(1)
+        // USAGE DATA (Ensures the stats above the graph update)
+        usage_kwh: Number(document.getElementById('reading-value').value),
+        total_cost: Number(document.getElementById('reading-cost').value),
+        bill_date: document.getElementById('reading-date').value,
+        utility_type: accType
     };
 
     if (window.cloudEnergyData) {
