@@ -24,7 +24,7 @@
     <div id="main-dashboard" class="container" style="display: none;">
     <div style="width: 100%;">
     <header class="app-header">
-        <div class="container">
+        <div>
             <div style="display: flex; align-items: center; gap: 15px;">
                 <img src="https://media.licdn.com/dms/image/v2/C4E0BAQEHyOTTvaVxXA/company-logo_200_200/company-logo_200_200/0/1630641921424/dob_developments_logo?e=2147483647&v=beta&t=3Xv0Dlrlb1COXctRBM2gOr_7yPA1wyr9C_ipTD3MKQM" alt="DOB Developments Logo" style="height: 40px; width: 40px; border-radius: 8px; object-fit: contain; background-color: #ffffff;">
                 <h1 style="margin: 0;">DOB <span>Accounts</span></h1>
@@ -66,7 +66,7 @@
             <span id="notification-badge" style="display: none; position: absolute; top: 0px; right: 0; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; align-items: center; justify-content: center; font-weight: bold;">0</span>
         </div>
     </aside>
-    <main class="container" style="flex: 1;">
+    <main  style="flex: 1;">
 
         <!-- Notification Dropdown -->
         <div id="notification-dropdown" style="display: none; position: absolute; right: 20px; top: 70px; background: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px; width: 350px; max-height: 400px; overflow-y: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 2000;">
@@ -116,7 +116,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin: 0;">Contract Expirations</h2>
             </div>
-            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 800px;">
                 <thead>
                     <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">
                         <th style="padding: 12px 15px;">Property</th>
@@ -139,7 +139,7 @@
                 <h2 style="margin: 0;">Client Manager</h2>
                 <button id="add-company-btn" class="btn-primary" style="background: #22c55e;">+ New Company</button>
             </div>
-            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 600px;">
                 <thead>
                     <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">
                         <th style="padding: 12px 15px;">ID</th>
