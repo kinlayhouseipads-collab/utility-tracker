@@ -750,19 +750,13 @@ function updateDashboard() {
                 }
 
                 if (withinDateRange) {
-                    if (bill.utility_type === 'Gas') {
-                        totalGas += parseFloat(bill.usage_kwh) || parseFloat(bill.usage_m3) || 0;
-                    } else if (bill.utility_type === 'Electricity') {
-                        totalElectricity += parseFloat(bill.usage_kwh) || 0;
-                    } else {
-                        // Fallback logic
-                        if (parseFloat(bill.usage_m3) > 0) {
-                            totalGas += parseFloat(bill.usage_m3) || 0;
-                        } else {
-                            totalElectricity += parseFloat(bill.usage_kwh) || 0;
-                        }
+                    const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
+                    if (bill.utility_type === 'Electricity') {
+                        totalElectricity += val;
+                    } else if (bill.utility_type === 'Gas') {
+                        totalGas += val;
                     }
-                    totalCost += parseFloat(bill.cost) || 0;
+                    totalCost += parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
                 }
             });
         }
@@ -835,14 +829,15 @@ function renderChart() {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
                 const rawDate = bill.bill_date || bill.date;
+                if (!rawDate) return;
+
                 const billDateStr = rawDate;
                 const billDate = new Date(rawDate);
 
                 if (startDateFilter && endDateFilter) {
                     const start = new Date(startDateFilter);
                     const end = new Date(endDateFilter);
-                    // If the bill is outside the range, skip it
-                    if (billDate < start || billDate > end) return;
+                    if (billDate < start || billDate > end) return; // Skip if out of range
                 }
 
                 const billCost = parseFloat(bill.cost) || 0;
@@ -1945,19 +1940,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const payload = {
                 id: crypto.randomUUID(),
                 mprn_number: newAcc.id_number,
-                usage_kwh: 0,
-                total_cost: 0,
-                bill_date: new Date().toISOString().split('T')[0],
-
-                // THE 3 KEY COLUMNS (USE THESE NAMES ONLY)
                 provider: newAcc.provider || null,
                 contract_end_date: newAcc.contractEndDate || null,
                 service_address: newAcc.account_address || 'Unknown Address',
-
-                // METADATA
                 property_name: building.name,
                 company_name: companies.find(c => c.id === building.companyId)?.name || 'Unknown',
-                utility_type: newAcc.type
+                utility_type: newAcc.type,
+                usage_kwh: 0,
+                total_cost: 0,
+                bill_date: new Date().toISOString().split('T')[0]
             };
 
             if (window.supabaseClient) {
