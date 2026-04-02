@@ -10,10 +10,11 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background: #020617;
+    background: #0f172a;
     background-attachment: fixed;
     color: var(--text);
     margin: 0;
+    overflow-x: hidden; /* Stops the horizontal scroll mess */
 }
 
 .container {
@@ -40,19 +41,22 @@ body {
     align-items: center;
 }
 
+/* --- JULES: MAIN LAYOUT RESET --- */
 #main-dashboard {
     max-width: 1200px !important;
     margin: 0 auto !important;
     padding: 20px;
     width: 100%;
-    overflow-x: hidden; /* Prevents the right-side cutoff */
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    box-sizing: border-box; /* Ensures the right-side content stays on screen */
 }
 
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 20px;
-    margin-top: 40px;
 }
 
 .bento-list-grid {
