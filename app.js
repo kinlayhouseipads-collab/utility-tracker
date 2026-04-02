@@ -933,8 +933,9 @@ function renderChart() {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
                 let withinDateRange = true;
+                const billDateStr = bill.bill_date || bill.date || bill.last_updated;
                 if (startDateFilter && endDateFilter) {
-                    const billDate = new Date(bill.date);
+                    const billDate = new Date(billDateStr);
                     const start = new Date(startDateFilter);
                     const end = new Date(endDateFilter);
                     if (billDate < start || billDate > end) withinDateRange = false;
@@ -943,14 +944,14 @@ function renderChart() {
                     const billCost = parseFloat(bill.cost) || 0;
 
                     if (bill.utility_type === 'Gas') {
-                        gasReadings.push({ date: bill.date, cost: billCost });
+                        gasReadings.push({ date: billDateStr, cost: billCost });
                     } else if (bill.utility_type === 'Electricity') {
-                        electricReadings.push({ date: bill.date, cost: billCost });
+                        electricReadings.push({ date: billDateStr, cost: billCost });
                     } else {
                         if (parseFloat(bill.usage_m3) > 0) {
-                            gasReadings.push({ date: bill.date, cost: billCost });
+                            gasReadings.push({ date: billDateStr, cost: billCost });
                         } else {
-                            electricReadings.push({ date: bill.date, cost: billCost });
+                            electricReadings.push({ date: billDateStr, cost: billCost });
                         }
                     }
                 }
@@ -2406,7 +2407,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addAccountModal = document.getElementById('add-account-modal');
     document.getElementById('close-add-account-modal')?.addEventListener('click', () => { addAccountModal.style.display = 'none'; });
 
-    document.getElementById('add-account-form')?.addEventListener('submit', (e) => {
+    document.getElementById('add-account-form')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const bId = document.getElementById('add-acc-building-id').value;
         const building = energyBuildings.find(b => b.id === bId);
@@ -2418,6 +2419,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 account_address: document.getElementById('add-acc-address').value,
                 contractEndDate: document.getElementById('add-acc-enddate').value
             };
+
+            const payload = {
+                id: crypto.randomUUID(),
+                mprn_number: newAcc.id_number,
+                property_name: building.name,
+                company_name: companies.find(c => c.id === building.companyId)?.name || 'Unknown',
+                provider: newAcc.provider,
+                contract_end_date: newAcc.contractEndDate,
+                service_address: newAcc.account_address,
+                utility_type: newAcc.type,
+                usage_kwh: 0, // Initializing empty account
+                total_cost: 0,
+                bill_date: new Date().toISOString().split('T')[0] // Sets a reference date
+            };
+
+            if (window.supabaseClient) {
+                try {
+                    const response = await window.supabaseClient.from('energy_accounts').insert(payload);
+                    if (response.error) {
+                        console.error('Error saving account to Supabase:', response.error);
+                        window.alert(response.error.message);
+                        return; // Prevent local save if it fails on server
+                    }
+                } catch(err) {
+                    console.error('Exception during account save:', err);
+                    window.alert(err.message);
+                    return; // Prevent local save if it fails
+                }
+            }
+
             if (!building.accounts) building.accounts = [];
             building.accounts.push(newAcc);
             logAudit(`Added ${newAcc.type} MPRN for ${newAcc.account_address} at Building ${building.name}`);
