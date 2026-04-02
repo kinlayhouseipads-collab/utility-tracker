@@ -26,7 +26,7 @@ function showToast(message, type='success') {
     if (!container) return;
 
     const toast = document.createElement('div');
-    toast.style.background = type === 'success' ? '#10b981' : '#3b82f6';
+    toast.style.background = type === 'success' ? '#22c55e' : '#3b82f6';
     toast.style.color = '#fff';
     toast.style.padding = '12px 20px';
     toast.style.borderRadius = '8px';
@@ -222,7 +222,7 @@ function renderBuildings(buildings) {
         const companyName = companyObj ? companyObj.name : '';
 
 
-        const today = new Date('2026-03-12T00:00:00');
+        const today = new Date();
 
         // Contract End Date logic
         const end = new Date(building.contractEndDate);
@@ -1179,7 +1179,7 @@ window.openEditCompanyModal = function(id) {
 
 function checkAlerts() {
     const notifications = [];
-    const today = new Date('2026-03-12T00:00:00'); // Static today per context
+    const today = new Date(); // Static today per context
 
     // Only check buildings visible to user
     let targetBuildings = energyBuildings;
@@ -1458,7 +1458,7 @@ async function fetchDataFromSupabase() {
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
                                 <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; z-index: 100; min-width: 120px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-                                    <button onclick="event.stopPropagation(); alert('History clicked');" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); color: #f8fafc; cursor: pointer; font-size: 0.9em;">
+                                    <button onclick="event.stopPropagation(); openHistoryModal('${account.mprn_number || account.mprn}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); color: #f8fafc; cursor: pointer; font-size: 0.9em;">
                                         <i class="fas fa-history" style="margin-right: 8px;"></i> History
                                     </button>
                                     <button onclick="event.stopPropagation(); alert('Duplicate clicked');" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; color: #f8fafc; cursor: pointer; font-size: 0.9em;">
@@ -1838,7 +1838,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let csvContent = "data:text/csv;charset=utf-8,";
             csvContent += "Property Name,Address,Company,MPRN,GPRN,Status\n";
 
-            const today = new Date('2026-03-12T00:00:00');
+            const today = new Date();
 
             filteredBuildings.forEach(building => {
                 const companyObj = companies.find(c => c.id === building.companyId);
@@ -2725,7 +2725,7 @@ if (addEntryBtn) {
         // 2026 Default Date Picker Check
         const readingDateInput = document.getElementById('reading-date');
         if (readingDateInput) {
-            const dateStr = ''; // The explicit reference today date used elsewhere in the codebase
+            const dateStr = new Date().toISOString().split('T')[0];
             readingDateInput.value = dateStr;
         }
 
@@ -2911,11 +2911,11 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
         mprn_number: newAccNum,
         usage_kwh: Number(usageVal),
         total_cost: Number(costVal),
-        company_name: document.getElementById('provider').value,
+        provider: document.getElementById('provider').value || null,
         property_name: buildingName,
         bill_date: document.getElementById('reading-date').value,
         utility_type: accType.charAt(0).toUpperCase() + accType.slice(1),
-        contract_end_date: document.getElementById('wizard-edit-enddate').value,
+        contract_end_date: document.getElementById('wizard-edit-enddate').value || null,
         service_address: building.address
     };
 
@@ -3073,4 +3073,60 @@ window.renderInsuranceChart = function(filteredData) {
             }
         }
     });
+};
+
+
+window.openHistoryModal = async function(accountId) {
+    const listContainer = document.getElementById('bill-history-list');
+    const billHistoryModal = document.getElementById('bill-history-modal');
+
+    if (!billHistoryModal || !listContainer) return;
+
+    listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #cbd5e1;">Loading history...</div>';
+    billHistoryModal.style.display = 'block';
+
+    if (window.supabaseClient) {
+        try {
+            let { data, error } = await window.supabaseClient.from('energy_accounts').select('*').or(`mprn_number.eq.${accountId},mprn.eq.${accountId}`);
+
+            if (error) {
+                listContainer.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error: ${error.message}</div>`;
+                return;
+            }
+
+            listContainer.innerHTML = '';
+
+            if (data && data.length > 0) {
+                data.sort((a, b) => new Date(b.bill_date || b.date || b.last_updated) - new Date(a.bill_date || a.date || a.last_updated));
+
+                data.forEach(bill => {
+                    const item = document.createElement('div');
+                    item.style.padding = '10px';
+                    item.style.borderBottom = '1px solid #e2e8f0';
+
+                    const formattedDate = formatDate(bill.bill_date || bill.last_updated || bill.date);
+                    const kwh = Number(bill.usage_kwh || bill.current_kwh || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    const cost = Number(bill.total_cost || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+                    item.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                            <span>${formattedDate}</span>
+                            <span style="color: var(--primary);">€${cost}</span>
+                        </div>
+                        <div style="font-size: 0.85em; color: #475569; margin-top: 2px;">MPRN: ${bill.mprn_number || bill.mprn || 'N/A'} - ${bill.property_name || ''}</div>
+                        <div style="font-size: 0.9em; color: #64748b; margin-top: 5px;">
+                            <span>Usage: ${kwh} kWh</span>
+                        </div>
+                    `;
+                    listContainer.appendChild(item);
+                });
+            } else {
+                listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #cbd5e1;">No billing history found for this account.</div>';
+            }
+        } catch (err) {
+            listContainer.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Exception: ${err.message}</div>`;
+        }
+    } else {
+        listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">Database client not initialized.</div>';
+    }
 };
