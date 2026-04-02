@@ -932,10 +932,12 @@ function renderChart() {
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
+                const rawDate = bill.bill_date || bill.date;
+                const billDateStr = rawDate;
+                const billDate = new Date(rawDate);
                 let withinDateRange = true;
-                const billDateStr = bill.bill_date || bill.date || bill.last_updated;
+
                 if (startDateFilter && endDateFilter) {
-                    const billDate = new Date(billDateStr);
                     const start = new Date(startDateFilter);
                     const end = new Date(endDateFilter);
                     if (billDate < start || billDate > end) withinDateRange = false;
@@ -2423,15 +2425,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const payload = {
                 id: crypto.randomUUID(),
                 mprn_number: newAcc.id_number,
+                usage_kwh: 0,
+                total_cost: 0,
+                bill_date: new Date().toISOString().split('T')[0],
+
+                // THE 3 KEY COLUMNS (USE THESE NAMES ONLY)
+                provider: newAcc.provider || null,
+                contract_end_date: newAcc.contractEndDate || null,
+                service_address: newAcc.account_address || 'Unknown Address',
+
+                // METADATA
                 property_name: building.name,
                 company_name: companies.find(c => c.id === building.companyId)?.name || 'Unknown',
-                provider: newAcc.provider,
-                contract_end_date: newAcc.contractEndDate,
-                service_address: newAcc.account_address,
-                utility_type: newAcc.type,
-                usage_kwh: 0, // Initializing empty account
-                total_cost: 0,
-                bill_date: new Date().toISOString().split('T')[0] // Sets a reference date
+                utility_type: newAcc.type
             };
 
             if (window.supabaseClient) {
@@ -2948,14 +2954,14 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
         mprn_number: newAccNum,
         usage_kwh: Number(document.getElementById('reading-value').value),
         total_cost: Number(document.getElementById('reading-cost').value),
-        bill_date: document.getElementById('reading-date').value,
+        bill_date: document.getElementById('reading-date').value, // CRITICAL FOR GRAPH
 
-        // NEW COLUMN MAPPING - MUST BE LOWERCASE
+        // THE 3 KEY COLUMNS (USE THESE NAMES ONLY)
         provider: document.getElementById('provider').value || null,
         contract_end_date: document.getElementById('wizard-edit-enddate').value || null,
-        service_address: building.address || 'Unknown Address',
+        service_address: building ? building.address : 'Unknown Address',
 
-        // PROPERTY METADATA
+        // METADATA
         property_name: building ? building.name : 'Unknown Property',
         company_name: companies.find(c => c.id === (building ? building.companyId : wCompany.value))?.name || 'Unknown Company',
         utility_type: accType.charAt(0).toUpperCase() + accType.slice(1)
