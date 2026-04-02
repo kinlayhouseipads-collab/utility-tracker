@@ -736,21 +736,27 @@ function updateDashboard() {
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
+                // FIX: Standardize on the Supabase date column
                 const rawDate = bill.bill_date || bill.date || bill.last_updated;
                 const billDate = new Date(rawDate);
+
                 let withinDateRange = true;
                 if (startDateFilter && endDateFilter) {
                     withinDateRange = billDate >= new Date(startDateFilter) && billDate <= new Date(endDateFilter);
                 }
+
                 if (withinDateRange) {
-                    // FIX: Look for both possible usage keys
-                    const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
+                    // FIX: Map the correct Supabase columns for usage and cost
+                    const usageVal = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
+                    const costVal = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
+
                     if (bill.utility_type === 'Electricity') {
-                        totalElectricity += val;
+                        totalElectricity += usageVal;
                     } else if (bill.utility_type === 'Gas') {
-                        totalGas += val;
+                        totalGas += usageVal;
                     }
-                    totalCost += parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
+                    // Update Total Portfolio Cost
+                    totalCost += costVal;
                 }
             });
         }
@@ -822,32 +828,28 @@ function renderChart() {
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
-                // FIX: Standardize on bill_date
+                // FIX: Use bill_date from Supabase
                 const rawDate = bill.bill_date || bill.date;
                 if (!rawDate) return;
-                const billDateStr = rawDate;
-                const billDate = new Date(rawDate);
 
+                const billDate = new Date(rawDate);
                 if (startDateFilter && endDateFilter) {
-                    if (billDate < new Date(startDateFilter) || billDate > new Date(endDateFilter)) return;
+                    const s = new Date(startDateFilter);
+                    const e = new Date(endDateFilter);
+                    // SKIP if outside slider range
+                    if (billDate < s || billDate > e) return;
                 }
 
-                const billCost = parseFloat(bill.cost) || 0;
+                // FIX: Use total_cost for the Y-axis
+                const billCost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
 
                 if (bill.utility_type === 'Gas') {
-                    gasReadings.push({ date: billDateStr, cost: billCost });
-                } else if (bill.utility_type === 'Electricity') {
-                    electricReadings.push({ date: billDateStr, cost: billCost });
+                    gasReadings.push({ date: rawDate, cost: billCost });
                 } else {
-                    if (parseFloat(bill.usage_m3) > 0) {
-                        gasReadings.push({ date: billDateStr, cost: billCost });
-                    } else {
-                        electricReadings.push({ date: billDateStr, cost: billCost });
-                    }
+                    electricReadings.push({ date: rawDate, cost: billCost });
                 }
             });
         }
-
     });
 
     electricReadings.sort((a, b) => new Date(a.date) - new Date(b.date));
