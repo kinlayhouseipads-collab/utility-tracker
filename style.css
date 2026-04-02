@@ -131,7 +131,7 @@ body {
 }
 
 .btn-primary {
-    background: var(--primary);
+    background: #22c55e;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -237,4 +237,24 @@ select option { background-color: #0f172a; color: #f8fafc; }
     #main-sidebar button, #main-sidebar a, #main-sidebar select, #main-sidebar input {
         flex: 0 0 auto !important; /* Don't shrink, allow scrolling */
     }
+}
+
+/* Container Constrain */
+main, .dashboard-container {
+    max-width: 1200px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 20px;
+}
+
+/* Responsive Tables */
+.table-container, #buildings-list {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Three-Dot Menu Polish */
+.dropdown-menu {
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
 }
