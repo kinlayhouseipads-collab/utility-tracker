@@ -736,20 +736,14 @@ function updateDashboard() {
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
-                const rawDate = bill.bill_date || bill.date;
+                const rawDate = bill.bill_date || bill.date || bill.last_updated;
                 const billDate = new Date(rawDate);
-
-                let withinDateRange = false;
-
+                let withinDateRange = true;
                 if (startDateFilter && endDateFilter) {
-                    const start = new Date(startDateFilter);
-                    const end = new Date(endDateFilter);
-                    withinDateRange = billDate >= start && billDate <= end;
-                } else {
-                    withinDateRange = true;
+                    withinDateRange = billDate >= new Date(startDateFilter) && billDate <= new Date(endDateFilter);
                 }
-
                 if (withinDateRange) {
+                    // FIX: Look for both possible usage keys
                     const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
                     if (bill.utility_type === 'Electricity') {
                         totalElectricity += val;
@@ -828,16 +822,14 @@ function renderChart() {
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
+                // FIX: Standardize on bill_date
                 const rawDate = bill.bill_date || bill.date;
                 if (!rawDate) return;
-
                 const billDateStr = rawDate;
                 const billDate = new Date(rawDate);
 
                 if (startDateFilter && endDateFilter) {
-                    const start = new Date(startDateFilter);
-                    const end = new Date(endDateFilter);
-                    if (billDate < start || billDate > end) return; // Skip if out of range
+                    if (billDate < new Date(startDateFilter) || billDate > new Date(endDateFilter)) return;
                 }
 
                 const billCost = parseFloat(bill.cost) || 0;
@@ -1300,8 +1292,10 @@ async function fetchDataFromSupabase() {
                             existingBuilding.accounts.push({
                                 type: ed.utility_type === 'Gas' ? 'Gas' : 'Electricity',
                                 id_number: ed.mprn_number,
-                                provider: '',
-                                contractEndDate: ''
+                                // FIX: Ensure these come FROM the database columns
+                                provider: ed.provider || 'N/A',
+                                contractEndDate: ed.contract_end_date || '',
+                                account_address: ed.service_address || existingBuilding.address
                             });
                         }
                     }

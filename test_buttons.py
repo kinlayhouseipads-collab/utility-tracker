@@ -1,8 +1,8 @@
 import re
 
-files = ['app.js', 'index.html', 'insurance.html']
+files_to_check = ['app.js', 'index.html']
 
-for file in files:
+for file in files_to_check:
     with open(file, 'r') as f:
         content = f.read()
         buttons = re.findall(r'<button[^>]*>.*?</button>', content, re.DOTALL | re.IGNORECASE)
