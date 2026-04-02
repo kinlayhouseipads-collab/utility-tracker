@@ -1,11 +1,9 @@
 window.supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient('https://jzzbbttgvkdqwkjynuxi.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY') : null;
 
 let utilityChartInstance = null;
-let insuranceChartInstance = null;
 let activeBuildingId = null;
 
 let energyBuildings = [];
-let insuranceBuildings = [];
 let sortEndDateAscending = true; // Track sorting state globally
 let currentUserRole = null;
 let currentUserId = null;
@@ -451,85 +449,6 @@ window.requestDeleteBuilding = function(id) {
     document.getElementById('confirm-modal').style.display = 'block';
 };
 
-window.toggleInsuranceStatus = async function(insuranceId, currentStatus) {
-    const newStatus = !currentStatus;
-
-    // Optimistically update UI
-    if (window.cloudInsuranceData) {
-        const policyIndex = window.cloudInsuranceData.findIndex(p => p.id === insuranceId);
-        if (policyIndex !== -1) {
-            window.cloudInsuranceData[policyIndex].is_paid = newStatus;
-            window.renderInsuranceVault(window.cloudInsuranceData);
-        }
-    }
-    showToast('Saving...', 'info');
-
-    if (window.supabaseClient) {
-        try {
-            const response = await window.supabaseClient
-                .from('insurance_vault')
-                .update({ is_paid: newStatus })
-                .eq('id', String(insuranceId).trim());
-
-            if (response.error) {
-                console.error('Error updating insurance status:', response.error);
-                window.alert(response.error.message);
-
-                // Revert on error
-                if (window.cloudInsuranceData) {
-                    const policyIndex = window.cloudInsuranceData.findIndex(p => p.id === insuranceId);
-                    if (policyIndex !== -1) {
-                        window.cloudInsuranceData[policyIndex].is_paid = currentStatus;
-                        window.renderInsuranceVault(window.cloudInsuranceData);
-                    }
-                }
-            } else {
-                showToast('Status Updated', 'success');
-                logAudit(`Updated payment status for insurance policy ID ${insuranceId} to ${newStatus ? 'Paid' : 'Unpaid'}`);
-            }
-        } catch (err) {
-            console.error('Exception during Supabase insurance update:', err);
-            window.alert(err.message);
-
-            // Revert on error
-            if (window.cloudInsuranceData) {
-                const policyIndex = window.cloudInsuranceData.findIndex(p => p.id === insuranceId);
-                if (policyIndex !== -1) {
-                    window.cloudInsuranceData[policyIndex].is_paid = currentStatus;
-                    window.renderInsuranceVault(window.cloudInsuranceData);
-                }
-            }
-        }
-    }
-};
-
-window.requestDeleteInsurance = async function(insuranceId) {
-    if (!confirm("Are you sure you want to delete this insurance policy?")) {
-        return;
-    }
-
-    if (window.supabaseClient) {
-        try {
-            const response = await window.supabaseClient
-                .from('insurance_vault')
-                .delete()
-                .eq('id', String(insuranceId).trim());
-
-            if (response.error) {
-                console.error('Error deleting insurance from Supabase:', response.error);
-                window.alert(response.error.message);
-            } else {
-                showToast('Insurance Deleted', 'success');
-                logAudit(`Deleted insurance policy associated with ID ${insuranceId}`);
-                fetchDataFromSupabase();
-            }
-        } catch (err) {
-            console.error('Exception during Supabase insurance delete:', err);
-            window.alert(err.message);
-        }
-    }
-};
-
 window.requestDeleteBill = async function(billId) {
     if (!confirm("Are you sure you want to delete this bill? This will remove this specific bill's data.")) {
         return;
@@ -682,16 +601,9 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             }
 
             if (!hasError) {
-                if (window.supabaseClient) {
-                    try {
-                        await window.supabaseClient.from('insurance_vault').delete().eq('account_address', building.address);
-                    } catch (e) {
-                        console.error('Error deleting related insurance', e);
-                    }
-                }
                 showToast('Property Deleted', 'success');
                 logAudit(`Deleted property: ${buildingName}`);
-                fetchDataFromSupabase(); // Relying on realtime subscription but insurance vault needs explicit fetch
+                fetchDataFromSupabase(); // Relying on realtime subscription
             }
         }
     } else if (deleteTarget.type === 'account') {
@@ -763,18 +675,6 @@ document.getElementById('confirm-yes')?.addEventListener('click', async () => {
             }
 
             if (!hasError) {
-                // Also clean up insurance policies for buildings owned by this company
-                const companyBuildings = energyBuildings.filter(b => b.companyId === deleteTarget.companyId);
-                if (window.supabaseClient && companyBuildings.length > 0) {
-                    for (const cb of companyBuildings) {
-                        try {
-                            await window.supabaseClient.from('insurance_vault').delete().eq('account_address', cb.address);
-                        } catch (e) {
-                            console.error('Error deleting related insurance for company building', e);
-                        }
-                    }
-                }
-
                 showToast('Company Deleted', 'success');
                 logAudit(`Deleted company: ${companyName} and associated properties.`);
                 fetchDataFromSupabase();
@@ -932,7 +832,7 @@ function renderChart() {
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
-                const rawDate = bill.bill_date || bill.date;
+                const rawDate = bill.bill_date;
                 const billDateStr = rawDate;
                 const billDate = new Date(rawDate);
                 let withinDateRange = true;
@@ -1353,23 +1253,6 @@ async function fetchDataFromSupabase() {
                 // State Management: Update the global state and call render functions
                 window.cloudEnergyData = energyData;
 
-                // Isolate State for Insurance
-                insuranceBuildings = [];
-                energyData.forEach(ed => {
-                    const propName = ed.property_name || '';
-                    const compName = ed.company_name || '';
-                    const compId = compName.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-                    if (!insuranceBuildings.find(b => b.name === propName && b.companyId === compId)) {
-                        insuranceBuildings.push({
-                            id: crypto.randomUUID(), // unique ID
-                            name: propName,
-                            address: propName + ' Address',
-                            companyId: compId
-                        });
-                    }
-                });
-
                 // Do not wipe `energyBuildings` and `companies` to prevent zero-bill properties from vanishing.
                 // Clear the `buildings-list` inner HTML as it will be re-rendered via `updateFilters`.
                 document.getElementById('buildings-list').innerHTML = '';
@@ -1504,246 +1387,11 @@ async function fetchDataFromSupabase() {
                 }
             }
 
-            // Fetch Insurance Vault
-            const { data: insuranceData, error: insuranceError } = await window.supabaseClient.from('insurance_vault').select('*');
-            if (insuranceError) {
-                console.error('Error fetching insurance_vault from Supabase', insuranceError);
-                const insuranceGrid = document.getElementById('insurance-vault-grid');
-                if (insuranceGrid) insuranceGrid.innerHTML = '';
-                window.alert(insuranceError.message);
-            } else {
-                console.log('Supabase insurance_vault fetch result:', insuranceData);
-                window.cloudInsuranceData = insuranceData;
-                if (window.renderInsuranceVault) {
-                    window.renderInsuranceVault(window.cloudInsuranceData);
-                }
-            }
-
         } catch(err) {
             console.error('Exception fetching from supabase:', err);
         }
     }
 }
-
-window.renderInsuranceVault = function(insuranceData) {
-    if (!insuranceData) return;
-
-    // Calculate Hero Metrics
-    let totalPremium = 0;
-    let upcomingRenewalsCount = 0;
-    let highestPremium = 0;
-    let highestPremiumBuilding = 'N/A';
-
-    const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(now.getDate() + 30);
-
-    insuranceData.forEach(policy => {
-        const premium = Number(policy.premium_cost || 0);
-        totalPremium += premium;
-
-        if (premium > highestPremium) {
-            highestPremium = premium;
-            highestPremiumBuilding = policy.account_address || '';
-        }
-
-        if (policy.renewal_date) {
-            const renewalDate = new Date(policy.renewal_date);
-            if (renewalDate >= now && renewalDate <= thirtyDaysFromNow) {
-                upcomingRenewalsCount++;
-            }
-        }
-    });
-
-    const fmtCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
-    document.getElementById('stat-total-premium').textContent = fmtCurrency.format(totalPremium);
-    document.getElementById('stat-upcoming-renewals').textContent = upcomingRenewalsCount;
-    document.getElementById('stat-highest-premium').innerHTML = `${fmtCurrency.format(highestPremium)}<br><span style="font-size: 0.8rem; color: #cbd5e1; font-family: 'Inter', sans-serif;">${highestPremiumBuilding}</span>`;
-
-    // Extract unique providers and update dropdown
-    const providerSelect = document.getElementById('ins-filter-provider');
-    const currentProvider = providerSelect ? providerSelect.value : '';
-    if (providerSelect) providerSelect.innerHTML = '<option value="" style="background: #0f172a;">All Providers</option>';
-
-    const uniqueProviders = [...new Set(insuranceData.map(p => p.provider_name).filter(Boolean))].sort();
-    uniqueProviders.forEach(provider => {
-        const opt = document.createElement('option');
-        opt.value = provider;
-        opt.textContent = provider;
-        opt.style.background = '#0f172a';
-        if(providerSelect) providerSelect.appendChild(opt);
-    });
-    if (providerSelect) providerSelect.value = currentProvider;
-
-    // Extract unique properties and update dropdown
-    const propertySelect = document.getElementById('ins-search-address');
-    const currentProperty = propertySelect ? propertySelect.value : '';
-    if(propertySelect) propertySelect.innerHTML = '<option value="" style="background: #0f172a;">All Properties</option>';
-
-    const uniqueProperties = [...new Set(insuranceData.map(p => p.account_address).filter(Boolean))].sort();
-    uniqueProperties.forEach(prop => {
-        const opt = document.createElement('option');
-        opt.value = prop;
-        opt.textContent = prop;
-        opt.style.background = '#0f172a';
-        if(propertySelect) propertySelect.appendChild(opt);
-    });
-    if(propertySelect) propertySelect.value = currentProperty;
-
-    // Apply Filters
-    const searchAddress = document.getElementById('ins-search-address') ? document.getElementById('ins-search-address').value : '';
-    const filterProvider = document.getElementById('ins-filter-provider') ? document.getElementById('ins-filter-provider').value : '';
-    const filterBroker = document.getElementById('ins-filter-broker') ? document.getElementById('ins-filter-broker').value.toLowerCase() : '';
-    const filterStatus = document.getElementById('ins-filter-status') ? document.getElementById('ins-filter-status').value : '';
-    const sortRenewal = document.getElementById('ins-sort-renewal') ? document.getElementById('ins-sort-renewal').value : 'asc';
-
-    let filteredData = insuranceData.filter(policy => {
-        const matchesAddress = searchAddress ? (policy.account_address === searchAddress) : true;
-        const matchesProvider = filterProvider ? (policy.provider_name === filterProvider) : true;
-        const matchesBroker = filterBroker ? (policy.broker_name || '').toLowerCase().includes(filterBroker) : true;
-        let matchesStatus = true;
-        if (filterStatus === 'paid') matchesStatus = policy.is_paid === true;
-        if (filterStatus === 'unpaid') matchesStatus = policy.is_paid === false || policy.is_paid == null;
-
-        return matchesAddress && matchesProvider && matchesBroker && matchesStatus;
-    });
-
-    // Apply Sorting
-    filteredData.sort((a, b) => {
-        const dateA = new Date(a.renewal_date || 0);
-        const dateB = new Date(b.renewal_date || 0);
-        return sortRenewal === 'asc' ? dateA - dateB : dateB - dateA;
-    });
-
-    const insuranceGrid = document.getElementById('insurance-vault-grid');
-    if (insuranceGrid) {
-        insuranceGrid.innerHTML = '';
-        filteredData.forEach(policy => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.style.textAlign = 'left';
-
-            let staleStyle = '';
-            let diffDaysText = 'N/A';
-            let diffDaysColor = '#cbd5e1';
-
-            let diffDaysCalculated = null;
-
-            if (policy.renewal_date) {
-                const rDate = new Date(policy.renewal_date);
-                const diffTime = rDate - now;
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                diffDaysCalculated = diffDays;
-
-                if (diffDays < 0) {
-                    diffDaysText = `${Math.abs(diffDays)} Days Overdue`;
-                    diffDaysColor = '#ef4444';
-                    staleStyle = 'border: 2px solid #ef4444 !important;';
-                } else if (diffDays === 0) {
-                    diffDaysText = 'Due Today';
-                    diffDaysColor = '#ef4444';
-                    staleStyle = 'border: 2px solid #ef4444 !important;';
-                } else {
-                    diffDaysText = `${diffDays} Days`;
-                    if (diffDays <= 7) {
-                        diffDaysColor = '#ef4444';
-                        staleStyle = 'border: 2px solid #ef4444 !important;';
-                    } else if (diffDays <= 30) {
-                        diffDaysColor = '#eab308';
-                    } else {
-                        diffDaysColor = '#10b981';
-                    }
-                }
-            }
-
-            const isUnpaid = policy.is_paid === false || policy.is_paid == null;
-            if (isUnpaid && diffDaysCalculated !== null && diffDaysCalculated < 0) {
-                staleStyle = 'background-color: #7f1d1d !important; border: 2px solid #ef4444 !important;';
-            }
-
-            if (staleStyle) {
-                card.style.cssText += staleStyle;
-            }
-
-            const statusIcon = policy.is_paid ? '✅' : '❌';
-            const brokerName = policy.broker_name || 'No Broker';
-
-            const currentPremium = Number(policy.premium_cost || 0);
-            const lastYearPremium = Number(policy.last_year_premium || 0);
-            const premiumDiff = currentPremium - lastYearPremium;
-
-            let diffText = '';
-            let diffColor = '#cbd5e1';
-
-            let lastYearDisplay = '';
-
-            if (lastYearPremium !== 0 && !isNaN(lastYearPremium)) {
-                if (premiumDiff > 0) {
-                    diffText = `+${fmtCurrency.format(premiumDiff)}`;
-                    diffColor = '#ef4444'; // Red for increase
-                } else if (premiumDiff < 0) {
-                    diffText = `${fmtCurrency.format(premiumDiff)}`;
-                    diffColor = '#10b981'; // Green for decrease
-                } else {
-                    diffText = 'No Change';
-                    diffColor = '#94a3b8';
-                }
-                lastYearDisplay = fmtCurrency.format(lastYearPremium);
-            } else {
-                diffText = 'N/A';
-                lastYearDisplay = 'N/A';
-            }
-
-            card.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                    <div style="display: flex; flex-direction: column; width: 100%;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h3 style="margin-top: 0; margin-bottom: 5px; color: var(--text);">${policy.provider_name || 'Unknown Provider'}</h3>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <div id="status-icon-${policy.id}" style="font-size: 1.2rem; cursor: pointer;" title="${policy.is_paid ? 'Paid' : 'Unpaid'}" onclick="toggleInsuranceStatus('${policy.id}', ${!!policy.is_paid})">${statusIcon}</div>
-                                <div style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; color: ${diffDaysColor}; border: 1px solid ${diffDaysColor};">${diffDaysText}</div>
-                            </div>
-                        </div>
-                        <div style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 5px;">${policy.account_address || ''}</div>
-                        <div class="monospace" style="color: #cbd5e1; font-size: 0.9em; margin-bottom: 15px;">
-                            ${policy.insurance_type || 'N/A'} - ${policy.policy_number || 'N/A'} <span style="margin: 0 5px; color: rgba(255,255,255,0.2);">|</span> <i class="fas fa-user-tie"></i> ${brokerName}
-                        </div>
-                    </div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
-                    <div>
-                        <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Renewal Date</div>
-                        <div style="font-weight: 600; color: #f8fafc;">${policy.renewal_date ? formatDate(policy.renewal_date) : 'N/A'}</div>
-                    </div>
-                    <div style="display: flex; gap: 15px; text-align: right; align-items: flex-end;">
-                        <div>
-                            <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Diff</div>
-                            <div class="monospace" style="font-weight: bold; font-size: 0.9em; color: ${diffColor};">${diffText}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Last Year</div>
-                            <div class="monospace" style="color: #cbd5e1; text-decoration: line-through; font-size: 0.9em;">${lastYearDisplay}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.8em; color: #94a3b8; text-transform: uppercase;">Premium</div>
-                            <div class="monospace" style="font-weight: bold; font-size: 1.1em; color: #eab308;">${fmtCurrency.format(currentPremium)}</div>
-                        </div>
-                        <button onclick="requestDeleteInsurance('${policy.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444; margin-left: 10px; padding-bottom: 4px;" title="Delete Insurance">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            insuranceGrid.appendChild(card);
-        });
-    }
-
-    // Render the chart with the filtered data
-    if (window.renderInsuranceChart) {
-        window.renderInsuranceChart(filteredData);
-    }
-};
-
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Date Filter Defaults
@@ -1767,11 +1415,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'index.html';
     });
 
-    document.getElementById('nav-insurance')?.addEventListener('click', (e) => {
-        e.preventDefault();
-
-        window.location.href = 'insurance.html';
-    });
     updateDashboard();
     renderChart();
     renderClientManager();
@@ -1925,9 +1568,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchSectionSec = document.querySelector('.search-section');
     const energyListGridSec = document.getElementById('energy-list-grid');
     const energyGridHeader = energyListGridSec ? energyListGridSec.previousElementSibling : null;
-    const insuranceVaultGridSec = document.getElementById('insurance-vault-grid');
-    const insuranceGridHeader = insuranceVaultGridSec ? insuranceVaultGridSec.previousElementSibling : null;
-    const insuranceDashboardSec = document.getElementById('insurance-dashboard');
 
     if (viewContractsBtn) {
         viewContractsBtn.addEventListener('click', () => {
@@ -1941,7 +1581,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(searchSectionSec) searchSectionSec.style.display = 'none';
                 if(clientManagerSection) clientManagerSection.style.display = 'none';
                 if(energyListGridSec) { energyListGridSec.style.display = 'none'; if (energyGridHeader) energyGridHeader.style.display = 'none'; }
-                if(insuranceDashboardSec) insuranceDashboardSec.style.display = 'none';
                 if (selectedBuildingName) selectedBuildingName.parentElement.style.display = 'none';
                 viewContractsBtn.textContent = 'Back to Dashboard';
                 renderContractDates();
@@ -1973,7 +1612,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(searchSectionSec) searchSectionSec.style.display = 'none';
                 if(contractDatesSection) contractDatesSection.style.display = 'none';
                 if(energyListGridSec) { energyListGridSec.style.display = 'none'; if (energyGridHeader) energyGridHeader.style.display = 'none'; }
-                if(insuranceDashboardSec) insuranceDashboardSec.style.display = 'none';
                 if (selectedBuildingName) selectedBuildingName.parentElement.style.display = 'none';
                 clientManagerBtn.textContent = 'Back to Dashboard';
                 if(viewContractsBtn) viewContractsBtn.textContent = 'Contract Dates';
@@ -1989,125 +1627,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // Insurance Filter Logic
-    document.getElementById('ins-search-address')?.addEventListener('change', () => {
-        if (window.cloudInsuranceData) window.renderInsuranceVault(window.cloudInsuranceData);
-    });
-    document.getElementById('ins-filter-provider')?.addEventListener('change', () => {
-        if (window.cloudInsuranceData) window.renderInsuranceVault(window.cloudInsuranceData);
-    });
-    document.getElementById('ins-sort-renewal')?.addEventListener('change', () => {
-        if (window.cloudInsuranceData) window.renderInsuranceVault(window.cloudInsuranceData);
-    });
-    document.getElementById('ins-filter-broker')?.addEventListener('input', () => {
-        if (window.cloudInsuranceData) window.renderInsuranceVault(window.cloudInsuranceData);
-    });
-    document.getElementById('ins-filter-status')?.addEventListener('change', () => {
-        if (window.cloudInsuranceData) window.renderInsuranceVault(window.cloudInsuranceData);
-    });
-
-    // Add Insurance Modal Logic
-    const addInsuranceModal = document.getElementById('add-insurance-modal');
-    const addInsuranceBtnElement = document.getElementById('add-insurance-btn');
-    if (addInsuranceBtnElement) {
-        addInsuranceBtnElement.style.display = 'block';
-    }
-    const closeAddInsuranceModal = document.getElementById('close-add-insurance-modal');
-
-    if (addInsuranceBtnElement) {
-        addInsuranceBtnElement.addEventListener('click', () => {
-            // Populate property dropdown
-            const insBuildingSelect = document.getElementById('ins-building');
-            if (insBuildingSelect) {
-                insBuildingSelect.innerHTML = '<option value="" disabled selected>Select Property</option>';
-
-                let targetBuildings = insuranceBuildings;
-                if (currentUserRole === 'Company-Admin') {
-                    const authCompany = sessionStorage.getItem('auth_company');
-                    targetBuildings = insuranceBuildings.filter(b => b.companyId === authCompany);
-                }
-
-                targetBuildings.forEach(b => {
-                    const opt = document.createElement('option');
-                    opt.value = b.address; // store address as value
-                    opt.textContent = b.name;
-                    insBuildingSelect.appendChild(opt);
-                });
-            }
-            document.getElementById('add-insurance-form').reset();
-            document.getElementById('ins-renewal-date').value = '';
-            addInsuranceModal.style.display = 'block';
-        });
-    }
-
-    if (closeAddInsuranceModal) {
-        closeAddInsuranceModal.addEventListener('click', () => {
-            addInsuranceModal.style.display = 'none';
-        });
-    }
-
-    // Close modal if clicking outside
-    window.addEventListener('click', (event) => {
-        if (event.target == addInsuranceModal) {
-            addInsuranceModal.style.display = 'none';
-        }
-    });
-
-
-    let isSavingInsurance = false;
-    document.getElementById('add-insurance-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        if (isSavingInsurance) return;
-        isSavingInsurance = true;
-
-        const submitBtn = document.getElementById('btn-save-insurance');
-        if (submitBtn) submitBtn.disabled = true;
-
-        // 3-second Hard-Lock Debounce
-        setTimeout(() => {
-            isSavingInsurance = false;
-        }, 3000);
-
-        try {
-            const payload = {
-                id: crypto.randomUUID(),
-                account_address: document.getElementById('ins-building').value,
-                policy_number: document.getElementById('ins-policy-number').value,
-                provider_name: document.getElementById('ins-provider').value,
-                insurance_type: document.getElementById('ins-type').value,
-                coverage_amount: Number(document.getElementById('ins-coverage').value),
-                premium_cost: Number(document.getElementById('ins-premium').value),
-                last_year_premium: Number(document.getElementById('ins-last-year-premium').value) || 0,
-                renewal_date: document.getElementById('ins-renewal-date').value,
-                broker_name: document.getElementById('ins-broker').value || null,
-                is_paid: document.getElementById('ins-paid').checked
-            };
-
-            if (window.supabaseClient) {
-                const response = await window.supabaseClient.from('insurance_vault').insert(payload);
-                if (response.error) {
-                    console.error('Error saving insurance to Supabase:', response.error);
-                    showToast(response.error.message, 'error');
-                    window.alert(response.error.message);
-                } else {
-                    showToast('Insurance Added', 'success');
-                    logAudit(`Added ${payload.insurance_type} insurance for ${payload.account_address}`);
-                    document.getElementById('add-insurance-modal').style.display = 'none';
-                    document.getElementById('add-insurance-form').reset();
-                    fetchDataFromSupabase();
-                }
-            } else {
-                alert('Supabase client not initialized');
-            }
-        } catch (err) {
-            console.error('Exception during insurance save:', err);
-            window.alert(err.message);
-        } finally {
-            if (submitBtn) submitBtn.disabled = false;
-        }
-    });
 
     // Company Modal logic
     const companyModal = document.getElementById('company-modal');
@@ -2350,13 +1869,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         energyBuildings.push(newBuilding);
-        // Sync to Insurance Buildings so it's available in the dropdown immediately
-        insuranceBuildings.push({
-            id: newId,
-            name: newBuilding.name,
-            address: newBuilding.address,
-            companyId: newBuilding.companyId
-        });
         logAudit(`Created property: ${newBuilding.name}`);
 
         fetchDataFromSupabase(); // refresh globally
@@ -2951,20 +2463,18 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
 
     const payload = {
         id: crypto.randomUUID(),
+        property_name: building.name,
         mprn_number: newAccNum,
-        usage_kwh: Number(document.getElementById('reading-value').value),
-        total_cost: Number(document.getElementById('reading-cost').value),
-        bill_date: document.getElementById('reading-date').value, // CRITICAL FOR GRAPH
 
-        // THE 3 KEY COLUMNS (USE THESE NAMES ONLY)
+        // THE 3 PILLARS (MUST BE LOWERCASE)
         provider: document.getElementById('provider').value || null,
         contract_end_date: document.getElementById('wizard-edit-enddate').value || null,
-        service_address: building ? building.address : 'Unknown Address',
+        service_address: building.address || '',
 
-        // METADATA
-        property_name: building ? building.name : 'Unknown Property',
-        company_name: companies.find(c => c.id === (building ? building.companyId : wCompany.value))?.name || 'Unknown Company',
-        utility_type: accType.charAt(0).toUpperCase() + accType.slice(1)
+        usage_kwh: Number(document.getElementById('reading-value').value),
+        total_cost: Number(document.getElementById('reading-cost').value),
+        bill_date: document.getElementById('reading-date').value,
+        utility_type: accType
     };
 
     if (window.cloudEnergyData) {
@@ -3015,113 +2525,6 @@ document.getElementById('tracker-form')?.addEventListener('submit', async functi
         if (submitBtn) submitBtn.disabled = false;
     }
 });
-window.renderInsuranceChart = function(filteredData) {
-    const canvas = document.getElementById('insuranceChart');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-
-    if (insuranceChartInstance) {
-        insuranceChartInstance.destroy();
-    }
-
-    // Filter out records where 'Last Year' is 0
-    const chartData = filteredData.filter(p => {
-        const lastYear = Number(p.last_year_premium || 0);
-        return lastYear > 0;
-    });
-
-    // Group by account_address, and dynamically by insurance_type
-    const propertyMap = {};
-    const typesFound = new Set();
-
-    chartData.forEach(p => {
-        const address = p.account_address || '';
-        const type = p.insurance_type || 'Other';
-        typesFound.add(type);
-
-        if (!propertyMap[address]) {
-            propertyMap[address] = {};
-        }
-
-        if (!propertyMap[address][type]) {
-            propertyMap[address][type] = {
-                current: 0,
-                lastYear: 0
-            };
-        }
-
-        propertyMap[address][type].current += Number(p.premium_cost || 0);
-        propertyMap[address][type].lastYear += Number(p.last_year_premium || 0);
-    });
-
-    const labels = Object.keys(propertyMap);
-
-    const typeColors = {
-        'Building': { current: '#1E40AF', lastYear: 'rgba(30, 64, 175, 0.4)' }, // Navy
-        'Van / Motor': { current: '#2DD4BF', lastYear: 'rgba(45, 212, 191, 0.4)' }, // Teal
-        'Liability': { current: '#F59E0B', lastYear: 'rgba(245, 158, 11, 0.4)' }, // Amber
-        'Default': { current: '#635BFF', lastYear: 'rgba(99, 91, 255, 0.4)' } // Blue
-    };
-
-    const datasets = [];
-
-    Array.from(typesFound).forEach(type => {
-        const currentData = labels.map(label => propertyMap[label][type] ? propertyMap[label][type].current : 0);
-        const lastYearData = labels.map(label => propertyMap[label][type] ? propertyMap[label][type].lastYear : 0);
-
-        const colorSet = typeColors[type] || typeColors['Default'];
-
-        datasets.push({
-            label: `${type} - Current Premium`,
-            data: currentData,
-            backgroundColor: colorSet.current,
-            borderColor: '#FFFFFF',
-            borderWidth: 1
-        });
-
-        datasets.push({
-            label: `${type} - Last Year Premium`,
-            data: lastYearData,
-            backgroundColor: colorSet.lastYear,
-            borderColor: '#FFFFFF',
-            borderWidth: 1
-        });
-    });
-
-    insuranceChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: datasets
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'YoY Premium Comparison',
-                    color: '#f8fafc',
-                    font: { family: 'Inter', size: 16 }
-                },
-                legend: {
-                    position: 'bottom',
-                    labels: { color: '#cbd5e1', font: { family: 'Inter' } }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { color: '#94a3b8', font: { family: 'Inter' } },
-                    grid: { color: 'rgba(255,255,255,0.1)' }
-                },
-                x: {
-                    ticks: { color: '#94a3b8', font: { family: 'Inter' } },
-                    grid: { display: false }
-                }
-            }
-        }
-    });
-};
 
 
 window.openHistoryModal = async function(accountId) {
