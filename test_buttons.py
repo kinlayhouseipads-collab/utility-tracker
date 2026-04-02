@@ -1,6 +1,6 @@
 import re
 
-files = ['app.js', 'index.html', 'insurance.html']
+files = ['app.js', 'index.html']
 
 for file in files:
     with open(file, 'r') as f:
