@@ -305,7 +305,8 @@ function renderBuildings(buildings) {
         accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #f8fafc;">Linked Metered Accounts</h4>';
         accountsHtml += `<button class="btn-primary" onclick="openAddAccountModal('${building.id}')" style="padding: 6px 12px; font-size: 0.85em;">+ Add Metered Account</button></div>`;
 
-        accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px;">';
+    accountsHtml += '<div style="overflow-x: auto; width: 100%;">';
+    accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; min-width: 800px;">';
         accountsHtml += '<thead><tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Provider</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Address/Location</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Account # (MPRN/GPRN)</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">End Date</th><th style="text-align: center; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Actions</th></tr></thead>';
         accountsHtml += '<tbody>';
 
@@ -335,11 +336,12 @@ function renderBuildings(buildings) {
         } else {
             accountsHtml += `<tr><td colspan="6" style="padding: 15px; text-align: center; color: #cbd5e1;">No accounts linked to this building.</td></tr>`;
         }
-        accountsHtml += '</tbody></table>';
+        accountsHtml += '</tbody></table></div>';
 
         // --- Bill History Table ---
         accountsHtml += '<div style="display: flex; justify-content: space-between; align-items: center;"><h4 style="margin:0; color: #f8fafc;">Bill History</h4></div>';
-        accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px;">';
+        accountsHtml += '<div style="overflow-x: auto; width: 100%;">';
+        accountsHtml += '<table style="width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px;">';
         accountsHtml += '<thead><tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Date</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Account Address</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Type</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Reading</th><th style="text-align: left; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Cost</th><th style="text-align: center; padding: 8px; color: #cbd5e1; font-size: 0.85em;">Actions</th></tr></thead>';
         accountsHtml += '<tbody>';
 
@@ -407,7 +409,7 @@ function renderBuildings(buildings) {
             accountsHtml += `<tr><td colspan="6" style="padding: 15px; text-align: center; color: #cbd5e1;">No bills found for this building.</td></tr>`;
         }
 
-        accountsHtml += '</tbody></table>';
+        accountsHtml += '</tbody></table></div>';
 
         accountsHtml += '</div>';
 
