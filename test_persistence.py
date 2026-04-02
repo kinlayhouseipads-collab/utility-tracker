@@ -20,17 +20,16 @@ def test():
 
         rand_usage = random.randint(100, 999)
 
-        page.select_option('#wizard-company-select', index=1)
+        page.select_option('#wizard-company', index=1)
         time.sleep(0.5)
         page.click('#wizard-next-1')
 
-        page.select_option('#wizard-property-select', index=1)
+        page.select_option('#wizard-building', index=1)
         time.sleep(0.5)
         page.click('#wizard-next-2')
 
-        page.select_option('#wizard-account-select', index=1)
+        page.select_option('#wizard-account', index=1)
         time.sleep(0.5)
-        page.click('#wizard-next-3')
 
         page.fill('#reading-value', str(rand_usage))
         page.fill('#reading-cost', '50.00')
