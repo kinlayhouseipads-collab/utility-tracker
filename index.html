@@ -23,12 +23,12 @@
 
     <div id="main-dashboard" style="display: none; width: 100%; max-width: 1300px; margin: 0 auto; padding: 0 10px; box-sizing: border-box;">
     <header class="app-header">
-        <div class="header-container">
+        <div class="container">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <img src="https://media.licdn.com/dms/image/v2/C4E0BAQEHyOTTvaVxXA/company-logo_200_200/company-logo_200_200/0/1630641921424/dob_developments_logo?e=2147483647&v=beta&t=3Xv0Dlrlb1COXctRBM2gOr_7yPA1wyr9C_ipTD3MKQM" alt="DOB Developments Logo" style="height: 40px; width: 40px; border-radius: 8px; object-fit: contain; background-color: #ffffff;">
                 <h1 style="margin: 0;">DOB <span>Accounts</span></h1>
             </div>
-            <nav style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <nav style="display: flex; gap: 10px; align-items: center;">
                 <div id="filter-controls" style="display: flex; gap: 10px; align-items: center;">
                     <select id="company-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
                         <option value="" style="background: #0f172a; color: #f8fafc;">All Companies</option>
@@ -352,8 +352,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <script>
         // We output a synchronous script tag so that DOMContentLoaded in app.js still fires properly.
         document.write('<script src="app.js?v=' + Date.now() + '"><\/script>');
