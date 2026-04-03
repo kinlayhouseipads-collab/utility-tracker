@@ -733,11 +733,11 @@ function updateDashboard() {
         }
     }
 
+    // --- JULES: USE THIS CORRECTED STATS LOGIC ---
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
-                // FIX: Standardize on the Supabase date column
-                const rawDate = bill.bill_date || bill.date || bill.last_updated;
+                const rawDate = bill.bill_date || bill.date;
                 const billDate = new Date(rawDate);
 
                 let withinDateRange = true;
@@ -746,17 +746,16 @@ function updateDashboard() {
                 }
 
                 if (withinDateRange) {
-                    // FIX: Map the correct Supabase columns for usage and cost
-                    const usageVal = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
-                    const costVal = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
+                    // Ensure we parse the numbers correctly regardless of column name
+                    const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
+                    const cost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
 
                     if (bill.utility_type === 'Electricity') {
-                        totalElectricity += usageVal;
+                        totalElectricity += val;
                     } else if (bill.utility_type === 'Gas') {
-                        totalGas += usageVal;
+                        totalGas += val;
                     }
-                    // Update Total Portfolio Cost
-                    totalCost += costVal;
+                    totalCost += cost;
                 }
             });
         }
@@ -825,10 +824,10 @@ function renderChart() {
     const startDateFilter = document.getElementById('start-date-filter')?.value;
     const endDateFilter = document.getElementById('end-date-filter')?.value;
 
+    // --- JULES: UNIFY THE GRAPH FILTERING ---
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
-                // FIX: Use bill_date from Supabase
                 const rawDate = bill.bill_date || bill.date;
                 if (!rawDate) return;
 
@@ -836,13 +835,10 @@ function renderChart() {
                 if (startDateFilter && endDateFilter) {
                     const s = new Date(startDateFilter);
                     const e = new Date(endDateFilter);
-                    // SKIP if outside slider range
-                    if (billDate < s || billDate > e) return;
+                    if (billDate < s || billDate > e) return; // This fixes the sliders
                 }
 
-                // FIX: Use total_cost for the Y-axis
                 const billCost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
-
                 if (bill.utility_type === 'Gas') {
                     gasReadings.push({ date: rawDate, cost: billCost });
                 } else {
