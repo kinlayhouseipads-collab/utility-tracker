@@ -747,16 +747,17 @@ function updateDashboard() {
 
                 if (withinDateRange) {
                     const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
-                    const cost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
+                    const costVal = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
 
-                    // FIX: Handle both 'Electricity' and 'electricity'
+                    // FIX: Make comparison case-insensitive
                     const type = (bill.utility_type || "").toLowerCase();
+
                     if (type === 'electricity') {
                         totalElectricity += val;
                     } else if (type === 'gas') {
                         totalGas += val;
                     }
-                    totalCost += cost;
+                    totalCost += costVal;
                 }
             });
         }
@@ -831,6 +832,7 @@ function renderChart() {
                 const rawDate = bill.bill_date || bill.date;
                 if (!rawDate) return;
 
+                // FIX: Compare raw strings (YYYY-MM-DD) directly for the slider
                 if (startDateFilter && endDateFilter) {
                     if (rawDate < startDateFilter || rawDate > endDateFilter) return;
                 }
