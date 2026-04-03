@@ -733,7 +733,6 @@ function updateDashboard() {
         }
     }
 
-    // --- JULES: USE THIS CORRECTED STATS LOGIC ---
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
@@ -742,17 +741,19 @@ function updateDashboard() {
 
                 let withinDateRange = true;
                 if (startDateFilter && endDateFilter) {
-                    withinDateRange = billDate >= new Date(startDateFilter) && billDate <= new Date(endDateFilter);
+                    // Normalize dates to midnight for accurate string comparison
+                    withinDateRange = rawDate >= startDateFilter && rawDate <= endDateFilter;
                 }
 
                 if (withinDateRange) {
-                    // Ensure we parse the numbers correctly regardless of column name
                     const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
                     const cost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
 
-                    if (bill.utility_type === 'Electricity') {
+                    // FIX: Handle both 'Electricity' and 'electricity'
+                    const type = (bill.utility_type || "").toLowerCase();
+                    if (type === 'electricity') {
                         totalElectricity += val;
-                    } else if (bill.utility_type === 'Gas') {
+                    } else if (type === 'gas') {
                         totalGas += val;
                     }
                     totalCost += cost;
@@ -824,22 +825,20 @@ function renderChart() {
     const startDateFilter = document.getElementById('start-date-filter')?.value;
     const endDateFilter = document.getElementById('end-date-filter')?.value;
 
-    // --- JULES: UNIFY THE GRAPH FILTERING ---
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
                 const rawDate = bill.bill_date || bill.date;
                 if (!rawDate) return;
 
-                const billDate = new Date(rawDate);
                 if (startDateFilter && endDateFilter) {
-                    const s = new Date(startDateFilter);
-                    const e = new Date(endDateFilter);
-                    if (billDate < s || billDate > e) return; // This fixes the sliders
+                    if (rawDate < startDateFilter || rawDate > endDateFilter) return;
                 }
 
                 const billCost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
-                if (bill.utility_type === 'Gas') {
+                const type = (bill.utility_type || "").toLowerCase();
+
+                if (type === 'gas') {
                     gasReadings.push({ date: rawDate, cost: billCost });
                 } else {
                     electricReadings.push({ date: rawDate, cost: billCost });
