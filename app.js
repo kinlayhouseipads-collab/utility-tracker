@@ -730,7 +730,7 @@ function updateDashboard() {
                 if (withinRange) {
                     const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
                     const cost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
-                    const type = (bill.utility_type || "").toLowerCase();
+                    const type = (bill.utility_type || "").toLowerCase().trim();
 
                     if (type === 'electricity') {
                         totalElectricity += val;
@@ -773,7 +773,7 @@ function renderChart() {
                 }
 
                 const billCost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
-                const type = (bill.utility_type || "").toLowerCase();
+                const type = (bill.utility_type || "").toLowerCase().trim();
 
                 if (type === 'gas') {
                     gasReadings.push({ x: dateStr, y: billCost });
