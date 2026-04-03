@@ -24,15 +24,20 @@ body {
 }
 
 .app-header {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(15, 23, 42, 0.9); /* Darker for readability */
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--glass-border);
     padding: 1rem 0;
-    box-shadow: var(--glass-shadow);
     position: sticky;
     top: 0;
     z-index: 1000;
+    height: auto; /* Allow it to grow with the filters */
+    min-height: 80px;
+}
+
+#filter-controls {
+    flex-wrap: wrap; /* Ensure filters stack on mobile instead of disappearing */
+    justify-content: flex-start;
 }
 
 .app-header .container {
