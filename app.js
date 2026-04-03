@@ -1,6 +1,6 @@
 window.supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient('https://jzzbbttgvkdqwkjynuxi.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY') : null;
 
-window.utilityChartInstance = null;
+let utilityChartInstance = null;
 let activeBuildingId = null;
 
 let energyBuildings = [];
@@ -789,16 +789,10 @@ function renderChart() {
     electricReadings.sort((a, b) => new Date(a.x) - new Date(b.x));
     gasReadings.sort((a, b) => new Date(a.x) - new Date(b.x));
 
-    if (window.utilityChartInstance) { window.utilityChartInstance.destroy(); window.utilityChartInstance = null; }
     const ctx = document.getElementById('utilityChart').getContext('2d');
+    if (utilityChartInstance) utilityChartInstance.destroy();
 
-    // Check if chart is already registered
-    const existingChart = Chart.getChart("utilityChart");
-    if (existingChart) {
-        existingChart.destroy();
-    }
-
-    window.utilityChartInstance = new Chart(ctx, {
+    utilityChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             datasets: [
