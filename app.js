@@ -705,48 +705,29 @@ function selectBuilding(building) {
 }
 
 function updateDashboard() {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-
-    const searchBar = document.getElementById('search-bar')?.value;
-    const companyFilter = document.getElementById('company-filter')?.value;
-    const startDateFilter = document.getElementById('start-date-filter')?.value;
-    const endDateFilter = document.getElementById('end-date-filter')?.value;
-
     let totalElectricity = 0;
     let totalGas = 0;
     let totalCost = 0;
 
-    let targetBuildings = energyBuildings;
-    if (activeBuildingId) {
-        targetBuildings = targetBuildings.filter(b => b.id === activeBuildingId);
-    } else {
-        if (companyFilter) {
-            targetBuildings = targetBuildings.filter(b => b.companyId === companyFilter);
-        }
-        if (searchBar) {
-            const searchTerm = searchBar.toLowerCase();
-            targetBuildings = targetBuildings.filter(building =>
-                building.name.toLowerCase().includes(searchTerm) ||
-                building.address.toLowerCase().includes(searchTerm)
-            );
-        }
-    }
+    const startDateFilter = document.getElementById('start-date-filter')?.value;
+    const endDateFilter = document.getElementById('end-date-filter')?.value;
+
+    let targetBuildings = activeBuildingId
+        ? energyBuildings.filter(b => b.id === activeBuildingId)
+        : energyBuildings;
 
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
-                // 1. Unified Date Picker (YYYY-MM-DD)
-                const rawDate = (bill.bill_date || bill.date || "").split('T')[0];
-                if (!rawDate) return;
+                const dateStr = (bill.bill_date || bill.date || "").split('T')[0];
+                if (!dateStr) return;
 
-                let withinDateRange = true;
+                let withinRange = true;
                 if (startDateFilter && endDateFilter) {
-                    withinDateRange = rawDate >= startDateFilter && rawDate <= endDateFilter;
+                    withinRange = dateStr >= startDateFilter && dateStr <= endDateFilter;
                 }
 
-                if (withinDateRange) {
-                    // 2. Map Usage and Cost (Checks every possible name)
+                if (withinRange) {
                     const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
                     const cost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
                     const type = (bill.utility_type || "").toLowerCase();
@@ -762,87 +743,42 @@ function updateDashboard() {
         }
     });
 
-
-    document.getElementById('stat-electricity').textContent = totalElectricity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh';
+    document.getElementById('stat-electricity').textContent = totalElectricity.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' kWh';
     if (document.getElementById('stat-gas')) {
-        document.getElementById('stat-gas').textContent = totalGas.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' kWh';
+        document.getElementById('stat-gas').textContent = totalGas.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' kWh';
     }
-
-    // Total for entire filtered view based on Date Filter
-    let grandTotal = 0;
-    let totalArea = 0;
-    targetBuildings.forEach(building => {
-        if (building.billHistory) {
-            grandTotal += building.billHistory.reduce((s, bill) => {
-                const rawDate = bill.bill_date || bill.date;
-                const billDate = new Date(rawDate);
-
-                let withinDateRange = false;
-
-                if (startDateFilter && endDateFilter) {
-                    const start = new Date(startDateFilter);
-                    const end = new Date(endDateFilter);
-                    withinDateRange = billDate >= start && billDate <= end;
-                } else {
-                    withinDateRange = true;
-                }
-                return s + (withinDateRange ? (parseFloat(bill.cost) || 0) : 0);
-            }, 0);
-        }
-        totalArea += Number(building.area) || 1000;
-    });
-
-
     const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
-    document.getElementById('stat-cost').textContent = formatCurrency.format(grandTotal);
+    document.getElementById('stat-cost').textContent = formatCurrency.format(totalCost);
 }
 
 function renderChart() {
     let electricReadings = [];
     let gasReadings = [];
 
-    // Gather all historical bills and normalize them for charting
-    let targetBuildings = energyBuildings;
-    if (activeBuildingId) {
-        targetBuildings = targetBuildings.filter(b => b.id === activeBuildingId);
-    } else {
-        const companyFilter = document.getElementById('company-filter')?.value;
-        const searchBar = document.getElementById('search-bar')?.value;
-
-        if (companyFilter) {
-            targetBuildings = targetBuildings.filter(b => b.companyId === companyFilter);
-        }
-
-        if (searchBar) {
-            const searchTerm = searchBar.toLowerCase();
-            targetBuildings = targetBuildings.filter(building =>
-                building.name.toLowerCase().includes(searchTerm) ||
-                building.address.toLowerCase().includes(searchTerm)
-            );
-        }
-    }
-
     const startDateFilter = document.getElementById('start-date-filter')?.value;
     const endDateFilter = document.getElementById('end-date-filter')?.value;
+
+    let targetBuildings = activeBuildingId
+        ? energyBuildings.filter(b => b.id === activeBuildingId)
+        : energyBuildings;
 
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
-                const rawDate = (bill.bill_date || bill.date || "").split('T')[0];
-                if (!rawDate) return;
+                const dateStr = (bill.bill_date || bill.date || "").split('T')[0];
+                if (!dateStr) return;
 
-                // FIX: Ensure sliders work by comparing YYYY-MM-DD strings
                 if (startDateFilter && endDateFilter) {
-                    if (rawDate < startDateFilter || rawDate > endDateFilter) return;
+                    if (dateStr < startDateFilter || dateStr > endDateFilter) return;
                 }
 
                 const billCost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
                 const type = (bill.utility_type || "").toLowerCase();
 
                 if (type === 'gas') {
-                    gasReadings.push({ x: rawDate, y: billCost });
+                    gasReadings.push({ x: dateStr, y: billCost });
                 } else {
-                    electricReadings.push({ x: rawDate, y: billCost });
+                    electricReadings.push({ x: dateStr, y: billCost });
                 }
             });
         }
@@ -851,99 +787,22 @@ function renderChart() {
     electricReadings.sort((a, b) => new Date(a.x) - new Date(b.x));
     gasReadings.sort((a, b) => new Date(a.x) - new Date(b.x));
 
-    // Convert to Chart.js time scale format {x: date, y: cost}
-    const electricDataPoints = electricReadings.map(r => ({ x: r.x, y: r.y }));
-    const gasDataPoints = gasReadings.map(r => ({ x: r.x, y: r.y }));
-
     const ctx = document.getElementById('utilityChart').getContext('2d');
-
-    if (utilityChartInstance) {
-        utilityChartInstance.destroy();
-    }
-
-    let chartTitle = 'Total Portfolio Cost by Utility';
-    if (activeBuildingId) {
-        const activeBuilding = energyBuildings.find(b => b.id === activeBuildingId);
-        if (activeBuilding) {
-            chartTitle = `${activeBuilding.name} Cost by Utility`;
-        }
-    } else {
-        const companyFilter = document.getElementById('company-filter')?.value;
-        if (companyFilter) {
-            const comp = companies.find(c => c.id === companyFilter);
-            if (comp) {
-                chartTitle = `${comp.name} Portfolio Cost by Utility`;
-            }
-        }
-    }
-
-    if (electricReadings.length === 0 && gasReadings.length === 0) {
-        chartTitle = 'Ready for Data';
-    }
+    if (utilityChartInstance) utilityChartInstance.destroy();
 
     utilityChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             datasets: [
-                {
-                    label: `Electric Cost (€)`,
-                    data: electricDataPoints,
-                    borderColor: '#635BFF',
-                    backgroundColor: '#635BFF',
-                    tension: 0.4,
-                    fill: false,
-                    spanGaps: true
-                },
-                {
-                    label: `Gas Cost (€)`,
-                    data: gasDataPoints,
-                    borderColor: '#f97316',
-                    backgroundColor: '#f97316',
-                    tension: 0.4,
-                    fill: false,
-                    spanGaps: true
-                }
+                { label: 'Electric Cost (€)', data: electricReadings, borderColor: '#635BFF', tension: 0.4 },
+                { label: 'Gas Cost (€)', data: gasReadings, borderColor: '#f97316', tension: 0.4 }
             ]
         },
         options: {
             responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: chartTitle,
-                    color: '#f8fafc'
-                },
-                legend: {
-                    labels: {
-                        color: '#f8fafc'
-                    }
-                }
-            },
             scales: {
-                x: {
-                    type: 'time',
-                    time: {
-                        unit: 'month'
-                    },
-                    ticks: {
-                        color: '#f8fafc'
-                    },
-                    grid: {
-                        color: 'rgba(255,255,255,0.1)'
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        color: '#f8fafc',
-                        callback: function(value) {
-                            return '€' + value;
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(255,255,255,0.1)'
-                    }
-                }
+                x: { type: 'time', time: { unit: 'month' } },
+                y: { beginAtZero: true }
             }
         }
     });
