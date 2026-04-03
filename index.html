@@ -1,29 +1,31 @@
 <header class="app-header">
-    <div class="container" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <img src="https://media.licdn.com/dms/image/v2/C4E0BAQEHyOTTvaVxXA/company-logo_200_200/company-logo_200_200/0/1630641921424/dob_developments_logo?e=2147483647&v=beta&t=3Xv0Dlrlb1COXctRBM2gOr_7yPA1wyr9C_ipTD3MKQM" alt="Logo" style="height: 40px; border-radius: 8px;">
-            <h1 style="margin: 0; font-size: 1.2rem;">DOB <span style="color: var(--primary);">Accounts</span></h1>
+    <div class="header-container">
+        <div class="brand">
+            <img src="https://media.licdn.com/dms/image/v2/C4E0BAQEHyOTTvaVxXA/company-logo_200_200/company-logo_200_200/0/1630641921424/dob_developments_logo?e=2147483647&v=beta&t=3Xv0Dlrlb1COXctRBM2gOr_7yPA1wyr9C_ipTD3MKQM" alt="Logo">
+            <h1>DOB <span>Accounts</span></h1>
         </div>
 
-        <nav id="filter-controls" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <input type="text" id="search-bar" placeholder="Search Property..." style="width: 180px; padding: 8px;">
+        <nav id="filter-controls">
+            <div class="search-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-bar" placeholder="Search Property...">
+            </div>
             
-            <select id="company-filter" style="padding: 8px;">
+            <select id="company-filter">
                 <option value="">All Companies</option>
             </select>
-            <select id="property-filter" style="padding: 8px;">
+
+            <select id="property-filter">
                 <option value="">All Properties</option>
             </select>
 
-            <div class="filter-window" style="display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.05); padding: 5px 10px; border-radius: 8px; border: 1px solid var(--glass-border);">
-                <input type="date" id="start-date-filter" style="background: transparent; border: none; font-size: 0.8rem;">
-                <span style="color: #64748b;">to</span>
-                <input type="date" id="end-date-filter" style="background: transparent; border: none; font-size: 0.8rem;">
+            <div class="date-window">
+                <input type="date" id="start-date-filter">
+                <span>to</span>
+                <input type="date" id="end-date-filter">
             </div>
 
-            <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 10px; margin-left: 5px;">
-                <button id="logout-btn" class="btn-primary" style="background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 5px 10px;">Logout</button>
-            </div>
+            <button id="logout-btn"><i class="fas fa-sign-out-alt"></i></button>
         </nav>
     </div>
 </header>
