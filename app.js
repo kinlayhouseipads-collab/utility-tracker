@@ -1,6 +1,6 @@
 window.supabaseClient = typeof window !== 'undefined' && window.supabase ? window.supabase.createClient('https://jzzbbttgvkdqwkjynuxi.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY') : null;
 
-let utilityChartInstance = null;
+window.utilityChartInstance = null;
 let activeBuildingId = null;
 
 let energyBuildings = [];
@@ -716,37 +716,30 @@ function updateDashboard() {
         ? energyBuildings.filter(b => b.id === activeBuildingId)
         : energyBuildings;
 
-    // --- JULES: FORCE DATA INGESTION ---
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
-                // FIX 1: Irish Supabase Date Format
-                const rawDate = (bill.bill_date || bill.date || "").split('T')[0];
-                const start = document.getElementById('start-date-filter')?.value;
-                const end = document.getElementById('end-date-filter')?.value;
+                const rawDate = bill.bill_date || bill.date;
+                const billDate = new Date(rawDate);
 
-                // FIX 2: Allow "Empty Filter" to show all data
-                let withinRange = true;
-                if (start && end) {
-                    if (!rawDate) {
-                        withinRange = false;
-                    } else {
-                        withinRange = (rawDate >= start && rawDate <= end);
-                    }
+                let withinDateRange = true;
+                if (startDateFilter && endDateFilter) {
+                    // Normalize dates to midnight for accurate string comparison
+                    withinDateRange = rawDate >= startDateFilter && rawDate <= endDateFilter;
                 }
 
-                if (withinRange) {
+                if (withinDateRange) {
                     const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
-                    const costVal = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
-                    const type = (bill.utility_type || "").toLowerCase().trim();
+                    const cost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
 
-                    // FIX 3: Catch every spelling of Electricity
-                    if (type.includes('elect')) {
+                    // FIX: Handle both 'Electricity' and 'electricity'
+                    const type = (bill.utility_type || "").toLowerCase();
+                    if (type === 'electricity') {
                         totalElectricity += val;
-                    } else if (type.includes('gas')) {
+                    } else if (type === 'gas') {
                         totalGas += val;
                     }
-                    totalCost += costVal;
+                    totalCost += cost;
                 }
             });
         }
@@ -774,24 +767,20 @@ function renderChart() {
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
-                const rawDate = (bill.bill_date || bill.date || "").split('T')[0];
-
+                const rawDate = bill.bill_date || bill.date;
                 if (!rawDate) return;
 
-                const sFilter = document.getElementById('start-date-filter')?.value;
-                const eFilter = document.getElementById('end-date-filter')?.value;
-
-                if (sFilter && eFilter) {
-                    if (rawDate < sFilter || rawDate > eFilter) return; // Skip it
+                if (startDateFilter && endDateFilter) {
+                    if (rawDate < startDateFilter || rawDate > endDateFilter) return;
                 }
 
                 const billCost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
-                const type = (bill.utility_type || "").toLowerCase().trim();
+                const type = (bill.utility_type || "").toLowerCase();
 
-                if (type.includes('gas')) {
-                    gasReadings.push({ x: rawDate, y: billCost });
-                } else if (type.includes('elect')) {
-                    electricReadings.push({ x: rawDate, y: billCost });
+                if (type === 'gas') {
+                    gasReadings.push({ date: rawDate, cost: billCost });
+                } else {
+                    electricReadings.push({ date: rawDate, cost: billCost });
                 }
             });
         }
@@ -800,10 +789,16 @@ function renderChart() {
     electricReadings.sort((a, b) => a.x > b.x ? 1 : -1);
     gasReadings.sort((a, b) => a.x > b.x ? 1 : -1);
 
+    if (window.utilityChartInstance) { window.utilityChartInstance.destroy(); window.utilityChartInstance = null; }
     const ctx = document.getElementById('utilityChart').getContext('2d');
-    if (utilityChartInstance) utilityChartInstance.destroy();
 
-    utilityChartInstance = new Chart(ctx, {
+    // Check if chart is already registered
+    const existingChart = Chart.getChart("utilityChart");
+    if (existingChart) {
+        existingChart.destroy();
+    }
+
+    window.utilityChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
             datasets: [

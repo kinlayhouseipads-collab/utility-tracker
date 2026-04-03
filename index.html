@@ -21,23 +21,39 @@
         </div>
     </div>
 
-    <div id="main-dashboard" style="display: none; width: 100%; max-width: 1300px; margin: 0 auto; padding: 20px; box-sizing: border-box;">
+    <div id="main-dashboard" style="display: none; width: 100%; max-width: 1300px; margin: 0 auto; padding: 0 10px; box-sizing: border-box;">
     <header class="app-header">
-        <div>
+        <div class="header-container">
             <div style="display: flex; align-items: center; gap: 15px;">
                 <img src="https://media.licdn.com/dms/image/v2/C4E0BAQEHyOTTvaVxXA/company-logo_200_200/company-logo_200_200/0/1630641921424/dob_developments_logo?e=2147483647&v=beta&t=3Xv0Dlrlb1COXctRBM2gOr_7yPA1wyr9C_ipTD3MKQM" alt="DOB Developments Logo" style="height: 40px; width: 40px; border-radius: 8px; object-fit: contain; background-color: #ffffff;">
                 <h1 style="margin: 0;">DOB <span>Accounts</span></h1>
             </div>
-            <nav style="display: flex; gap: 10px; align-items: center;">
+            <nav style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <div id="filter-controls" style="display: flex; gap: 10px; align-items: center;">
                     <input type="date" id="start-date-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
                     <input type="date" id="end-date-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
                     <select id="company-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
                         <option value="" style="background: #0f172a; color: #f8fafc;">All Companies</option>
                     </select>
-                    <select id="property-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
-                        <option value="" style="background: #0f172a; color: #f8fafc;">All Properties</option>
-                    </select>
+                    <label for="start-date-filter">Start Date</label>
+                    <input type="date" id="start-date-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc; color-scheme: dark;">
+                    <label for="end-date-filter">End Date</label>
+                    <input type="date" id="end-date-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc; color-scheme: dark;">
+                </div>
+                <button id="view-stats">Trends</button>
+                <button id="view-contracts" style="background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Contract Dates</button>
+                <button id="client-manager-btn" class="btn-primary" style="display: none; background: #6366f1;">Client Manager</button>
+                <button id="add-building" class="btn-primary"><i class="fas fa-plus"></i> New Property</button>
+                <button id="add-entry" class="btn-primary"><i class="fas fa-plus-circle"></i> New Entry</button>
+                <div class="search-section" style="display: inline-block;">
+                    <input type="text" id="search-bar" placeholder="Search properties..." style="padding: 10px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: rgba(255,255,255,0.05); color: #f8fafc; min-width: 200px;">
+                </div>
+                <button id="export-csv-btn" class="btn-primary" style="background: #10b981; padding: 10px 15px;" title="Export CSV"><i class="fas fa-file-csv"></i></button>
+                <button id="backup-data-btn" class="btn-primary" style="background: #eab308; padding: 10px 15px;" title="Backup Data"><i class="fas fa-download"></i></button>
+                <button id="sync-data-btn" class="btn-primary" style="background: #8b5cf6; padding: 10px 15px;" onclick="syncNow()" title="Push Local Data to Cloud"><i class="fas fa-cloud-upload-alt"></i></button>
+                <div id="notification-bell" style="position: relative; cursor: pointer; padding: 10px; font-size: 1.2rem; color: #f8fafc; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-bell"></i>
+                    <span id="notification-badge" style="display: none; position: absolute; top: 0px; right: 0; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; align-items: center; justify-content: center; font-weight: bold;">0</span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 10px; margin-left: 5px;">
                     <span id="logged-in-user" style="color: #cbd5e1; font-weight: 500; font-size: 0.9em;"></span>
@@ -48,25 +64,7 @@
     </header>
 
     <div style="display: flex;">
-    <aside id="main-sidebar" style="width: 60px; background: #0f172a; padding: 20px 10px; border-right: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 15px; align-items: center;">
-        <a href="index.html" id="nav-energy" style="color: #635BFF; text-decoration: none; font-size: 1.2rem;" title="Energy Vault"><i class="fas fa-bolt"></i></a>
-        <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
-        <!-- History button moved strictly to Three-Dot Menu as per requirements -->
-        <button id="view-stats" style="background: transparent; border: none; color: #cbd5e1; cursor: pointer; font-size: 1.2rem;" title="Trends"><i class="fas fa-chart-line"></i></button>
-        <button id="view-contracts" style="background: transparent; border: none; color: #0284c7; cursor: pointer; font-size: 1.2rem;" title="Contract Dates"><i class="fas fa-calendar-alt"></i></button>
-        <button id="client-manager-btn" style="display: none; background: transparent; border: none; color: #6366f1; cursor: pointer; font-size: 1.2rem;" title="Client Manager"><i class="fas fa-users"></i></button>
-        <button id="add-building" style="background: transparent; border: none; color: #22c55e; cursor: pointer; font-size: 1.2rem;" title="New Property"><i class="fas fa-building"></i></button>
-        <button id="add-entry" style="background: transparent; border: none; color: #22c55e; cursor: pointer; font-size: 1.2rem;" title="New Entry"><i class="fas fa-plus-circle"></i></button>
-        <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
-        <button id="export-csv-btn" style="background: transparent; border: none; color: #10b981; cursor: pointer; font-size: 1.2rem;" title="Export CSV"><i class="fas fa-file-csv"></i></button>
-        <button id="backup-data-btn" style="background: transparent; border: none; color: #eab308; cursor: pointer; font-size: 1.2rem;" title="Backup Data"><i class="fas fa-download"></i></button>
-        <button id="sync-data-btn" style="background: transparent; border: none; color: #8b5cf6; cursor: pointer; font-size: 1.2rem;" onclick="syncNow()" title="Push Local Data to Cloud"><i class="fas fa-cloud-upload-alt"></i></button>
-        <div id="notification-bell" style="position: relative; cursor: pointer; padding: 10px; font-size: 1.2rem; color: #f8fafc; display: flex; align-items: center; justify-content: center;" title="Notifications">
-            <i class="fas fa-bell"></i>
-            <span id="notification-badge" style="display: none; position: absolute; top: 0px; right: 0; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; align-items: center; justify-content: center; font-weight: bold;">0</span>
-        </div>
-    </aside>
-    <main style="flex: 1; padding-left: 20px;">
+    <main class="container" style="flex: 1;">
 
         <!-- Notification Dropdown -->
         <div id="notification-dropdown" style="display: none; position: absolute; right: 20px; top: 70px; background: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px; width: 350px; max-height: 400px; overflow-y: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 2000;">
@@ -76,26 +74,27 @@
             </div>
         </div>
 
-        <section id="buildings-list" style="margin-top: 20px; max-height: 400px; overflow-y: auto; overflow-x: auto; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); backdrop-filter: blur(10px);">
+        <section id="buildings-list" style="margin-top: 20px; max-height: 400px; overflow-y: auto; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); backdrop-filter: blur(10px);">
             <!-- Properties will be rendered here -->
         </section>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
             <h2 id="selected-building-name" style="margin: 0;">All Properties Dashboard</h2>
+            <button id="view-bill-history" class="btn-primary" style="display: block;">View Bill History</button>
         </div>
 
         <section class="dashboard-grid">
             <div class="card a">
                 <h3>Total Portfolio Cost</h3>
-                <p class="stat monospace" id="stat-cost">€0.00</p>
+                <p class="stat monospace" id="stat-cost">-- €</p>
             </div>
             <div class="card b">
-                <h3>Electricity Usage</h3>
-                <p class="stat" id="stat-electricity">0.00 kWh</p>
+                <h3>Total Energy</h3>
+                <p class="stat" id="stat-electricity">-- kWh</p>
             </div>
             <div class="card c">
-                <h3>Gas Usage</h3>
-                <p class="stat" id="stat-gas">0.00 kWh</p>
+                <h3>Carbon Footprint</h3>
+                <p class="stat" id="stat-co2">-- kg CO₂</p>
             </div>
         </section>
 
@@ -111,12 +110,21 @@
             <!-- Energy cards rendered here -->
         </section>
 
+        <!-- Insurance Vault Bento Grid -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px;">
+            <h2 style="margin: 0;">Insurance Vault</h2>
+            <button id="toggle-insurance-btn" class="btn-primary" style="background: #eab308; color: #0f172a; font-weight: bold;">Show Insurance</button>
+        </div>
+        <section id="insurance-vault-grid" class="bento-list-grid" style="display: none; margin-top: 20px;">
+            <!-- Insurance cards rendered here -->
+        </section>
+
         <!-- Contract Dates Section -->
-        <section id="contract-dates-section" style="display: none; margin-top: 40px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); backdrop-filter: blur(10px); overflow-x: auto;">
+        <section id="contract-dates-section" style="display: none; margin-top: 40px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); backdrop-filter: blur(10px);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin: 0;">Contract Expirations</h2>
             </div>
-            <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 800px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
                     <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">
                         <th style="padding: 12px 15px;">Property</th>
@@ -134,12 +142,12 @@
         </section>
 
         <!-- Client Manager Section -->
-        <section id="client-manager-section" style="display: none; margin-top: 40px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); backdrop-filter: blur(10px); overflow-x: auto;">
+        <section id="client-manager-section" style="display: none; margin-top: 40px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); backdrop-filter: blur(10px);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin: 0;">Client Manager</h2>
-                <button id="add-company-btn" class="btn-primary" style="background: #22c55e;">+ New Company</button>
+                <button id="add-company-btn" class="btn-primary" style="background: #10b981;">+ New Company</button>
             </div>
-            <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 600px;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
                     <tr style="border-bottom: 2px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.9em; text-transform: uppercase;">
                         <th style="padding: 12px 15px;">ID</th>
@@ -164,7 +172,7 @@
                     <input type="text" id="company-id-input" placeholder="Company ID (e.g. oracle)" required>
                     <input type="text" id="company-name-input" placeholder="Company Name" required>
                     <input type="text" id="company-industry-input" placeholder="Industry" required>
-                    <button type="submit" class="btn-primary" style="background: #22c55e;">Save Company</button>
+                    <button type="submit" class="btn-primary">Save Company</button>
                 </form>
             </div>
         </section>
@@ -180,7 +188,7 @@
                         <option value="" disabled selected>Select Company</option>
                     </select>
                     <input type="number" id="add-b-area" placeholder="Property Area (m²)" required>
-                    <button type="submit" class="btn-primary" style="background: #22c55e;">Save Property</button>
+                    <button type="submit" class="btn-primary">Save Property</button>
                 </form>
             </div>
         </section>
@@ -215,7 +223,7 @@
                         <option value="" disabled selected>Select Company</option>
                     </select>
                     <input type="number" id="edit-b-area" placeholder="Property Area (m²)" required>
-                    <button type="submit" class="btn-primary" style="background: #3b82f6;">Update Property</button>
+                    <button type="submit" class="btn-primary">Update Property</button>
                 </form>
             </div>
         </section>
@@ -234,7 +242,7 @@
                     <input type="text" id="edit-acc-address" placeholder="Service Address/Location (e.g., Rear Basement)" required>
                     <label style="font-size:0.9rem; margin-bottom:-10px;">Contract End Date</label>
                     <input type="date" id="edit-acc-enddate" required>
-                    <button type="submit" class="btn-primary" style="background: #3b82f6;">Update Metered Account</button>
+                    <button type="submit" class="btn-primary">Update Metered Account</button>
                 </form>
             </div>
         </section>
@@ -249,6 +257,7 @@
                     <select id="add-acc-type" required>
                         <option value="" disabled selected>Select Type</option>
                         <option value="Electricity">Electricity</option>
+                        <option value="Water">Water</option>
                         <option value="Gas">Gas</option>
                     </select>
                     <input type="text" id="add-acc-id" placeholder="Account Number / MPRN" class="monospace" required>
@@ -256,7 +265,7 @@
                     <input type="text" id="add-acc-address" placeholder="Service Address/Location (e.g., Rear Basement)" required>
                     <label style="font-size:0.9rem; margin-bottom:-10px;">Contract End Date</label>
                     <input type="date" id="add-acc-enddate" required>
-                    <button type="submit" class="btn-primary" style="background: #22c55e;">Add Metered Account</button>
+                    <button type="submit" class="btn-primary">Add Metered Account</button>
                 </form>
             </div>
         </section>
@@ -295,17 +304,17 @@
                         <p style="font-size: 0.85em; color: #64748b; margin-top: -5px; margin-bottom: 15px;">Can edit Account Number & Contract End Date directly below if needed.</p>
 
                         <input type="text" id="wizard-edit-acc-num" placeholder="Account Number" class="monospace" required style="margin-bottom: 15px;">
-                        <input type="text" id="provider" placeholder="Provider" required style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
                         <label style="font-size:0.9rem; margin-bottom:-10px; display: block;">Contract End Date</label>
                         <input type="date" id="wizard-edit-enddate" required style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
 
                         <input type="number" id="reading-value" placeholder="Enter Usage (kWh/m³)" required style="margin-bottom: 15px;" step="any">
-                        <input type="number" id="reading-cost" placeholder="Bill Total (€)" step="0.01" required style="margin-bottom: 15px;">
+                        <input type="number" id="reading-unit-rate" placeholder="Enter Unit Rate (€)" required style="margin-bottom: 15px;" step="any">
+                        <input type="number" id="reading-cost" placeholder="Total Cost (€) - Auto Calculated" step="0.01" required style="margin-bottom: 15px;" readonly>
                         <input type="date" id="reading-date" required style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
 
                         <div style="display: flex; gap: 10px;">
                             <button type="button" id="wizard-back-3" style="padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: transparent; color: white; cursor: pointer;">Back</button>
-                            <button type="submit" id="btn-save-energy" class="btn-primary" style="flex: 1; background: #22c55e;">Save Reading</button>
+                            <button type="submit" class="btn-primary" style="flex: 1; background: #10b981;">Save Reading</button>
                         </div>
                     </form>
                 </div>
@@ -324,6 +333,17 @@
 
     </main>
 
+    <!-- System Audit Trail Sidebar -->
+    <aside id="audit-sidebar">
+        <div class="sidebar-content">
+            <h3 style="margin-top: 0; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                <i class="fas fa-list"></i> <span class="sidebar-text">System Audit Trail</span>
+            </h3>
+            <div id="audit-log-container" class="sidebar-text" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                <!-- Audit logs injected here -->
+            </div>
+        </div>
+    </aside>
     </div>
 
     <footer class="app-footer" style="background: rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.1); padding: 15px; text-align: center; backdrop-filter: blur(10px);">
@@ -334,22 +354,11 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <script>
-        if (!window.supabase) {
-            console.error('Supabase library not loaded');
-        } else {
-            // Re-initialize globally to be absolutely sure
-            window.supabaseClient = window.supabase.createClient(
-                'https://jzzbbttgvkdqwkjynuxi.supabase.co',
-                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6emJidHRndmtkcXdranludXhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NDI3NTIsImV4cCI6MjA4OTQxODc1Mn0.00ezfkTV8zMG8_5BU-WTWzRfA6tj1JV37m2O1fbD7kY'
-            );
-        }
-    </script>
-
-    <script>
         // We output a synchronous script tag so that DOMContentLoaded in app.js still fires properly.
-        document.write('<script src="app.js?v=3000"><\/script>');
+        document.write('<script src="app.js?v=' + Date.now() + '"><\/script>');
     </script>
 
     <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;"></div>
