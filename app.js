@@ -716,33 +716,30 @@ function updateDashboard() {
         ? energyBuildings.filter(b => b.id === activeBuildingId)
         : energyBuildings;
 
-    // --- JULES: FORCE DATA INGESTION ---
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
-                // FIX 1: Irish Supabase Date Format
-                const rawDate = (bill.bill_date || bill.date || "").split('T')[0];
-                const start = document.getElementById('start-date-filter')?.value;
-                const end = document.getElementById('end-date-filter')?.value;
+                const rawDate = bill.bill_date || bill.date;
+                const billDate = new Date(rawDate);
 
-                // FIX 2: Allow "Empty Filter" to show all data
-                let withinRange = true;
-                if (start && end && rawDate) {
-                    withinRange = (rawDate >= start && rawDate <= end);
+                let withinDateRange = true;
+                if (startDateFilter && endDateFilter) {
+                    // Normalize dates to midnight for accurate string comparison
+                    withinDateRange = rawDate >= startDateFilter && rawDate <= endDateFilter;
                 }
 
-                if (withinRange) {
+                if (withinDateRange) {
                     const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
-                    const costVal = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
-                    const type = (bill.utility_type || "").toLowerCase().trim();
+                    const cost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
 
-                    // FIX 3: Catch every spelling of Electricity
-                    if (type.includes('elect')) {
+                    // FIX: Handle both 'Electricity' and 'electricity'
+                    const type = (bill.utility_type || "").toLowerCase();
+                    if (type === 'electricity') {
                         totalElectricity += val;
-                    } else if (type.includes('gas')) {
+                    } else if (type === 'gas') {
                         totalGas += val;
                     }
-                    totalCost += costVal;
+                    totalCost += cost;
                 }
             });
         }
@@ -770,21 +767,20 @@ function renderChart() {
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
-                const rawDate = (bill.bill_date || bill.date || "").split('T')[0];
-                const sFilter = document.getElementById('start-date-filter')?.value;
-                const eFilter = document.getElementById('end-date-filter')?.value;
+                const rawDate = bill.bill_date || bill.date;
+                if (!rawDate) return;
 
-                if (sFilter && eFilter && rawDate) {
-                    if (rawDate < sFilter || rawDate > eFilter) return; // Skip it
+                if (startDateFilter && endDateFilter) {
+                    if (rawDate < startDateFilter || rawDate > endDateFilter) return;
                 }
 
                 const billCost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
-                const type = (bill.utility_type || "").toLowerCase().trim();
+                const type = (bill.utility_type || "").toLowerCase();
 
                 if (type === 'gas') {
-                    gasReadings.push({ x: rawDate, y: billCost });
+                    gasReadings.push({ date: rawDate, cost: billCost });
                 } else {
-                    electricReadings.push({ x: rawDate, y: billCost });
+                    electricReadings.push({ date: rawDate, cost: billCost });
                 }
             });
         }
