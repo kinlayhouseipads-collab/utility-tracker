@@ -21,7 +21,7 @@
         </div>
     </div>
 
-    <div id="main-dashboard" style="display: none; width: 100%; max-width: 1300px; margin: 0 auto; padding: 0 20px; box-sizing: border-box;">
+    <div id="main-dashboard" style="display: none; width: 100%; max-width: 1300px; margin: 0 auto; padding: 20px; box-sizing: border-box;">
     <header class="app-header">
         <div>
             <div style="display: flex; align-items: center; gap: 15px;">
@@ -45,7 +45,7 @@
         </div>
     </header>
 
-    <div style="display: grid; grid-template-columns: 60px 1fr 300px; min-height: 100vh;">
+    <div style="display: flex;">
     <aside id="main-sidebar" style="width: 60px; background: #0f172a; padding: 20px 10px; border-right: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 15px; align-items: center;">
         <a href="index.html" id="nav-energy" style="color: #635BFF; text-decoration: none; font-size: 1.2rem;" title="Energy Vault"><i class="fas fa-bolt"></i></a>
         <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
@@ -64,7 +64,7 @@
             <span id="notification-badge" style="display: none; position: absolute; top: 0px; right: 0; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; align-items: center; justify-content: center; font-weight: bold;">0</span>
         </div>
     </aside>
-    <main  style="flex: 1;">
+    <main style="flex: 1; padding-left: 20px;">
 
         <!-- Notification Dropdown -->
         <div id="notification-dropdown" style="display: none; position: absolute; right: 20px; top: 70px; background: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px; width: 350px; max-height: 400px; overflow-y: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 2000;">
@@ -322,17 +322,6 @@
 
     </main>
 
-    <!-- System Audit Trail Sidebar -->
-    <aside id="audit-sidebar">
-        <div class="sidebar-content">
-            <h3 style="margin-top: 0; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                <i class="fas fa-list"></i> <span class="sidebar-text">System Audit Trail</span>
-            </h3>
-            <div id="audit-log-container" class="sidebar-text" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
-                <!-- Audit logs injected here -->
-            </div>
-        </div>
-    </aside>
     </div>
 
     <footer class="app-footer" style="background: rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.1); padding: 15px; text-align: center; backdrop-filter: blur(10px);">
