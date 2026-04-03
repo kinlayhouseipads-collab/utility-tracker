@@ -10,7 +10,7 @@
 }
 
 .header-container {
-    max-width: 1400px;
+    max-width: 1200px !important;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
@@ -56,6 +56,11 @@
     border-radius: 8px;
     font-size: 0.85rem;
     transition: all 0.2s;
+}
+
+#filter-controls label {
+    color: #f8fafc;
+    font-size: 0.85rem;
 }
 
 #filter-controls input:focus, 
@@ -110,3 +115,9 @@
 }
 
 #logout-btn:hover { background: #ef4444; color: white; }
+
+.btn-primary {
+    background: #22c55e;
+}
+.dropdown-menu {
+}
