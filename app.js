@@ -709,41 +709,46 @@ function updateDashboard() {
     let totalGas = 0;
     let totalCost = 0;
 
-    const startDateFilter = document.getElementById('start-date-filter')?.value;
-    const endDateFilter = document.getElementById('end-date-filter')?.value;
+    const start = document.getElementById('start-date-filter')?.value;
+    const end = document.getElementById('end-date-filter')?.value;
 
     let targetBuildings = activeBuildingId
         ? energyBuildings.filter(b => b.id === activeBuildingId)
         : energyBuildings;
 
-    // --- JULES: FORCE DATA INGESTION ---
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
-                // FIX 1: Irish Supabase Date Format
                 const rawDate = (bill.bill_date || bill.date || "").split('T')[0];
-                const start = document.getElementById('start-date-filter')?.value;
-                const end = document.getElementById('end-date-filter')?.value;
-
-                // FIX 2: Allow "Empty Filter" to show all data
+                
                 let withinRange = true;
                 if (start && end && rawDate) {
                     withinRange = (rawDate >= start && rawDate <= end);
                 }
 
                 if (withinRange) {
-                    const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
+                    // FIX: Ensure we catch Gas usage even if labeled as m3 and convert for visual consistency
+                    const usage = parseFloat(bill.usage_kwh) || (parseFloat(bill.usage_m3) * 11.1) || parseFloat(bill.current_kwh) || 0;
                     const costVal = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
                     const type = (bill.utility_type || "").toLowerCase().trim();
 
-                    // FIX 3: Catch every spelling of Electricity
                     if (type.includes('elect')) {
-                        totalElectricity += val;
+                        totalElectricity += usage;
                     } else if (type.includes('gas')) {
-                        totalGas += val;
+                        totalGas += usage;
                     }
                     totalCost += costVal;
                 }
+            });
+        }
+    });
+
+    // Update UI
+    document.getElementById('stat-electricity').textContent = totalElectricity.toLocaleString() + ' kWh';
+    document.getElementById('stat-gas').textContent = totalGas.toLocaleString() + ' kWh';
+    const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
+    document.getElementById('stat-cost').textContent = formatCurrency.format(totalCost);
+}
             });
         }
     });
