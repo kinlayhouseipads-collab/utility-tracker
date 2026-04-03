@@ -749,7 +749,7 @@ function updateDashboard() {
                     const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
                     const costVal = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
 
-                    // FIX: Make comparison case-insensitive
+                    // FIX: Force lowercase comparison to catch 'electricity' vs 'Electricity'
                     const type = (bill.utility_type || "").toLowerCase();
 
                     if (type === 'electricity') {
@@ -832,7 +832,7 @@ function renderChart() {
                 const rawDate = bill.bill_date || bill.date;
                 if (!rawDate) return;
 
-                // FIX: Compare raw strings (YYYY-MM-DD) directly for the slider
+                // FIX: Compare raw strings (YYYY-MM-DD) directly for the sliders
                 if (startDateFilter && endDateFilter) {
                     if (rawDate < startDateFilter || rawDate > endDateFilter) return;
                 }
