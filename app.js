@@ -786,8 +786,8 @@ function renderChart() {
         }
     });
 
-    electricReadings.sort((a, b) => new Date(a.x) - new Date(b.x));
-    gasReadings.sort((a, b) => new Date(a.x) - new Date(b.x));
+    electricReadings.sort((a, b) => a.x > b.x ? 1 : -1);
+    gasReadings.sort((a, b) => a.x > b.x ? 1 : -1);
 
     if (window.utilityChartInstance) { window.utilityChartInstance.destroy(); window.utilityChartInstance = null; }
     const ctx = document.getElementById('utilityChart').getContext('2d');
@@ -802,12 +802,13 @@ function renderChart() {
         type: 'line',
         data: {
             datasets: [
-                { label: 'Electric Cost (€)', data: electricReadings, borderColor: '#635BFF', tension: 0.4 },
-                { label: 'Gas Cost (€)', data: gasReadings, borderColor: '#f97316', tension: 0.4 }
+                { label: 'Electric Cost (€)', data: electricReadings, borderColor: '#635BFF', tension: 0.4, spanGaps: true },
+                { label: 'Gas Cost (€)', data: gasReadings, borderColor: '#f97316', tension: 0.4, spanGaps: true }
             ]
         },
         options: {
             responsive: true,
+            spanGaps: true,
             scales: {
                 x: { type: 'time', time: { unit: 'month' } },
                 y: { beginAtZero: true }
