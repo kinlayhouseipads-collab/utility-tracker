@@ -727,8 +727,12 @@ function updateDashboard() {
 
                 // FIX 2: Allow "Empty Filter" to show all data
                 let withinRange = true;
-                if (start && end && rawDate) {
-                    withinRange = (rawDate >= start && rawDate <= end);
+                if (start && end) {
+                    if (!rawDate) {
+                        withinRange = false;
+                    } else {
+                        withinRange = (rawDate >= start && rawDate <= end);
+                    }
                 }
 
                 if (withinRange) {
@@ -771,27 +775,30 @@ function renderChart() {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
                 const rawDate = (bill.bill_date || bill.date || "").split('T')[0];
+
+                if (!rawDate) return;
+
                 const sFilter = document.getElementById('start-date-filter')?.value;
                 const eFilter = document.getElementById('end-date-filter')?.value;
 
-                if (sFilter && eFilter && rawDate) {
+                if (sFilter && eFilter) {
                     if (rawDate < sFilter || rawDate > eFilter) return; // Skip it
                 }
 
                 const billCost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
                 const type = (bill.utility_type || "").toLowerCase().trim();
 
-                if (type === 'gas') {
+                if (type.includes('gas')) {
                     gasReadings.push({ x: rawDate, y: billCost });
-                } else {
+                } else if (type.includes('elect')) {
                     electricReadings.push({ x: rawDate, y: billCost });
                 }
             });
         }
     });
 
-    electricReadings.sort((a, b) => new Date(a.x) - new Date(b.x));
-    gasReadings.sort((a, b) => new Date(a.x) - new Date(b.x));
+    electricReadings.sort((a, b) => a.x > b.x ? 1 : -1);
+    gasReadings.sort((a, b) => a.x > b.x ? 1 : -1);
 
     const ctx = document.getElementById('utilityChart').getContext('2d');
     if (utilityChartInstance) utilityChartInstance.destroy();
@@ -800,12 +807,13 @@ function renderChart() {
         type: 'line',
         data: {
             datasets: [
-                { label: 'Electric Cost (€)', data: electricReadings, borderColor: '#635BFF', tension: 0.4 },
-                { label: 'Gas Cost (€)', data: gasReadings, borderColor: '#f97316', tension: 0.4 }
+                { label: 'Electric Cost (€)', data: electricReadings, borderColor: '#635BFF', tension: 0.4, spanGaps: true },
+                { label: 'Gas Cost (€)', data: gasReadings, borderColor: '#f97316', tension: 0.4, spanGaps: true }
             ]
         },
         options: {
             responsive: true,
+            spanGaps: true,
             scales: {
                 x: { type: 'time', time: { unit: 'month' } },
                 y: { beginAtZero: true }

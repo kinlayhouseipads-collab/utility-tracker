@@ -57,6 +57,7 @@ body {
 .dashboard-grid {
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important; /* Force 3 columns */
+    grid-template-areas: "a b c" !important;
     gap: 20px;
     margin-bottom: 30px;
     width: 100%;
