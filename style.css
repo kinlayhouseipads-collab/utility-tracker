@@ -1,56 +1,47 @@
-function updateDashboard() {
-    let totalElectricity = 0;
-    let totalGas = 0;
-    let totalCost = 0;
+:root {
+    --primary: #635BFF;
+    --accent: #00E5E5;
+    --bg: #020617;
+    --card-bg: rgba(255, 255, 255, 0.04);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
 
-    // Use optional chaining to prevent crashes if elements aren't found
-    const start = document.getElementById('start-date-filter')?.value;
-    const end = document.getElementById('end-date-filter')?.value;
+.app-header {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    padding: 10px 0;
+}
 
-    let targetBuildings = activeBuildingId
-        ? energyBuildings.filter(b => b.id === activeBuildingId)
-        : energyBuildings;
+#filter-controls input, #filter-controls select {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--glass-border);
+    color: white;
+    border-radius: 6px;
+    outline: none;
+}
 
-    targetBuildings.forEach(building => {
-        if (building.billHistory) {
-            building.billHistory.forEach(bill => {
-                const rawDate = (bill.bill_date || bill.date || "").split('T')[0];
-                
-                let withinRange = true;
-                if (start && end && rawDate) {
-                    withinRange = (rawDate >= start && rawDate <= end);
-                }
+#filter-controls input:focus {
+    border-color: var(--primary);
+}
 
-                if (withinRange) {
-                    // CATCH ALL GAS VALUES: usage_kwh, usage_m3, or current_kwh
-                    const kwh = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
-                    const m3 = parseFloat(bill.usage_m3) || 0;
-                    
-                    // Logic: If kWh is 0 but m3 exists, convert m3 to kWh (~11.1) so the graph stays scaled
-                    const normalizedUsage = kwh > 0 ? kwh : (m3 * 11.1);
-                    
-                    const costVal = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
-                    const type = (bill.utility_type || "").toLowerCase().trim();
+/* Fix for the Dashboard Stat Cards */
+.stat {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -1px;
+}
 
-                    if (type.includes('elect')) {
-                        totalElectricity += normalizedUsage;
-                    } else if (type.includes('gas')) {
-                        totalGas += normalizedUsage;
-                    }
-                    totalCost += costVal;
-                }
-            });
-        }
-    });
+#stat-gas { color: #f97316; } /* Orange for Gas */
+#stat-electricity { color: #635BFF; } /* Blue for Elec */
 
-    // Safe UI Updates
-    const formatCurrency = new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' });
-    
-    const elElec = document.getElementById('stat-electricity');
-    const elGas = document.getElementById('stat-gas');
-    const elCost = document.getElementById('stat-cost');
-
-    if (elElec) elElec.textContent = totalElectricity.toLocaleString(undefined, {maximumFractionDigits: 1}) + ' kWh';
-    if (elGas) elGas.textContent = totalGas.toLocaleString(undefined, {maximumFractionDigits: 1}) + ' kWh';
-    if (elCost) elCost.textContent = formatCurrency.format(totalCost);
+/* Prevent table blowout */
+#buildings-list {
+    overflow-x: auto;
+    background: var(--card-bg);
+    border-radius: 12px;
 }
