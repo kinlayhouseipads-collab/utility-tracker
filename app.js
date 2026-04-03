@@ -736,20 +736,19 @@ function updateDashboard() {
     targetBuildings.forEach(building => {
         if (building.billHistory) {
             building.billHistory.forEach(bill => {
-                const rawDate = bill.bill_date || bill.date;
-                const billDate = new Date(rawDate);
+                // 1. Unified Date Picker (YYYY-MM-DD)
+                const rawDate = (bill.bill_date || bill.date || "").split('T')[0];
+                if (!rawDate) return;
 
                 let withinDateRange = true;
                 if (startDateFilter && endDateFilter) {
-                    // Normalize dates to midnight for accurate string comparison
                     withinDateRange = rawDate >= startDateFilter && rawDate <= endDateFilter;
                 }
 
                 if (withinDateRange) {
+                    // 2. Map Usage and Cost (Checks every possible name)
                     const val = parseFloat(bill.usage_kwh) || parseFloat(bill.current_kwh) || 0;
-                    const costVal = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
-
-                    // FIX: Force lowercase comparison to catch 'electricity' vs 'Electricity'
+                    const cost = parseFloat(bill.total_cost) || parseFloat(bill.cost) || 0;
                     const type = (bill.utility_type || "").toLowerCase();
 
                     if (type === 'electricity') {
@@ -757,7 +756,7 @@ function updateDashboard() {
                     } else if (type === 'gas') {
                         totalGas += val;
                     }
-                    totalCost += costVal;
+                    totalCost += cost;
                 }
             });
         }
@@ -829,10 +828,10 @@ function renderChart() {
     targetBuildings.forEach(b => {
         if (b.billHistory) {
             b.billHistory.forEach(bill => {
-                const rawDate = bill.bill_date || bill.date;
+                const rawDate = (bill.bill_date || bill.date || "").split('T')[0];
                 if (!rawDate) return;
 
-                // FIX: Compare raw strings (YYYY-MM-DD) directly for the sliders
+                // FIX: Ensure sliders work by comparing YYYY-MM-DD strings
                 if (startDateFilter && endDateFilter) {
                     if (rawDate < startDateFilter || rawDate > endDateFilter) return;
                 }
@@ -841,20 +840,20 @@ function renderChart() {
                 const type = (bill.utility_type || "").toLowerCase();
 
                 if (type === 'gas') {
-                    gasReadings.push({ date: rawDate, cost: billCost });
+                    gasReadings.push({ x: rawDate, y: billCost });
                 } else {
-                    electricReadings.push({ date: rawDate, cost: billCost });
+                    electricReadings.push({ x: rawDate, y: billCost });
                 }
             });
         }
     });
 
-    electricReadings.sort((a, b) => new Date(a.date) - new Date(b.date));
-    gasReadings.sort((a, b) => new Date(a.date) - new Date(b.date));
+    electricReadings.sort((a, b) => new Date(a.x) - new Date(b.x));
+    gasReadings.sort((a, b) => new Date(a.x) - new Date(b.x));
 
     // Convert to Chart.js time scale format {x: date, y: cost}
-    const electricDataPoints = electricReadings.map(r => ({ x: r.date, y: r.cost }));
-    const gasDataPoints = gasReadings.map(r => ({ x: r.date, y: r.cost }));
+    const electricDataPoints = electricReadings.map(r => ({ x: r.x, y: r.y }));
+    const gasDataPoints = gasReadings.map(r => ({ x: r.x, y: r.y }));
 
     const ctx = document.getElementById('utilityChart').getContext('2d');
 
