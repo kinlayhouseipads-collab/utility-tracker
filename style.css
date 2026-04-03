@@ -1,47 +1,112 @@
-:root {
-    --primary: #635BFF;
-    --accent: #00E5E5;
-    --bg: #020617;
-    --card-bg: rgba(255, 255, 255, 0.04);
-    --glass-border: rgba(255, 255, 255, 0.1);
-}
-
 .app-header {
-    background: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--glass-border);
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 20px;
     position: sticky;
     top: 0;
     z-index: 1000;
-    padding: 10px 0;
 }
 
-#filter-controls input, #filter-controls select {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--glass-border);
-    color: white;
+.header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 200px;
+}
+
+.brand img {
+    height: 35px;
     border-radius: 6px;
+}
+
+.brand h1 {
+    font-size: 1.1rem;
+    margin: 0;
+    color: #fff;
+}
+
+.brand h1 span { color: var(--primary); }
+
+#filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Input & Select Styling */
+#filter-controls input, 
+#filter-controls select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+#filter-controls input:focus, 
+#filter-controls select:focus {
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.1);
     outline: none;
 }
 
-#filter-controls input:focus {
-    border-color: var(--primary);
+.search-group {
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
-/* Fix for the Dashboard Stat Cards */
-.stat {
-    font-size: 1.8rem;
-    font-weight: 700;
-    letter-spacing: -1px;
+.search-group i {
+    position: absolute;
+    left: 10px;
+    color: #64748b;
+    font-size: 0.8rem;
 }
 
-#stat-gas { color: #f97316; } /* Orange for Gas */
-#stat-electricity { color: #635BFF; } /* Blue for Elec */
+.search-group input { padding-left: 30px !important; width: 180px; }
 
-/* Prevent table blowout */
-#buildings-list {
-    overflow-x: auto;
-    background: var(--card-bg);
-    border-radius: 12px;
+.date-window {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+.date-window input {
+    border: none !important;
+    background: transparent !important;
+    width: 120px;
+}
+
+#logout-btn {
+    background: transparent;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#logout-btn:hover { background: #ef4444; color: white; }
