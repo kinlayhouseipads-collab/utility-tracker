@@ -55,9 +55,11 @@ body {
 }
 
 .dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important; /* Force 3 columns */
     gap: 20px;
+    margin-bottom: 30px;
+    width: 100%;
 }
 
 .bento-list-grid {
@@ -102,6 +104,11 @@ body {
 .card {
     padding: 24px !important;
     margin-bottom: 16px !important;
+    min-width: 0; /* Prevents blowout */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .search-section input {
