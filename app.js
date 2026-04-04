@@ -778,9 +778,9 @@ function renderChart() {
                 const type = (bill.utility_type || "").toLowerCase();
 
                 if (type === 'gas') {
-                    gasReadings.push({ date: rawDate, cost: billCost });
+                    gasReadings.push({ x: rawDate, y: billCost });
                 } else {
-                    electricReadings.push({ date: rawDate, cost: billCost });
+                    electricReadings.push({ x: rawDate, y: billCost });
                 }
             });
         }
@@ -809,6 +809,11 @@ function renderChart() {
         options: {
             responsive: true,
             spanGaps: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
             scales: {
                 x: { type: 'time', time: { unit: 'month' } },
                 y: { beginAtZero: true }
