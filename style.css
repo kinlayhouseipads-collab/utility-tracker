@@ -1,3 +1,14 @@
+:root {
+    --bg-color: #020617;
+    --card-bg: #0f172a;
+    --primary: #6366f1;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: #f8fafc;
+}
+
 .app-header {
     background: rgba(15, 23, 42, 0.9);
     backdrop-filter: blur(15px);
@@ -105,19 +116,119 @@
     background: transparent;
     border: 1px solid #ef4444;
     color: #ef4444;
-    width: 35px;
-    height: 35px;
-    border-radius: 8px;
+    padding: 8px 15px;
+    border-radius: 6px;
     cursor: pointer;
+    font-size: 0.9em;
+    font-weight: bold;
     display: flex;
     align-items: center;
+    gap: 8px;
     justify-content: center;
 }
 
 #logout-btn:hover { background: #ef4444; color: white; }
 
+#main-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+    width: 60px;
+    background: var(--card-bg);
+    border-right: 1px solid rgba(255,255,255,0.1);
+}
+
+#main-sidebar button {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: filter 0.2s, transform 0.1s;
+}
+
+#main-sidebar button:hover {
+    filter: brightness(1.2);
+    transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+    #main-sidebar {
+        flex-direction: row;
+        width: 100%;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        height: 60px;
+        border-top: 1px solid rgba(255,255,255,0.1);
+        border-right: none;
+        z-index: 1000;
+        padding: 10px;
+        justify-content: space-around;
+    }
+}
+
 .btn-primary {
     background: #22c55e;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
 }
+
+.btn-edit {
+    background: transparent;
+    color: #3B82F6;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-delete {
+    background: transparent;
+    color: #EF4444;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.login-input { padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 16px; background: rgba(255,255,255,0.05); color: #f8fafc; }
+.login-btn { background: #635BFF; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
+.search-input { padding: 10px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: rgba(255,255,255,0.05); color: #f8fafc; min-width: 200px; }
+.user-controls { display: flex; align-items: center; gap: 10px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 10px; margin-left: 5px; }
+
+.dashboard-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-areas: "a b c" !important;
+    gap: 20px;
+}
+
+.card {
+    min-width: 0;
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.bento-list-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .bento-list-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .dropdown-menu {
 }

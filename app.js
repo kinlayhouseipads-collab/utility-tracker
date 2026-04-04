@@ -282,10 +282,10 @@ function renderBuildings(buildings) {
                     <i class="fas fa-ellipsis-v"></i>
                 </button>
                 <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; z-index: 100; min-width: 120px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-                    <button onclick="event.stopPropagation(); openEditModal('${building.id}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); color: #3b82f6; cursor: pointer; font-size: 0.9em;" title="Edit Property">
+                    <button onclick="event.stopPropagation(); openEditModal('${building.id}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; font-size: 0.9em;" title="Edit Property" class="btn-edit">
                         <i class="fas fa-edit" style="margin-right: 8px;"></i> Edit
                     </button>
-                    <button onclick="event.stopPropagation(); requestDeleteBuilding('${building.id}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.9em;" title="Delete Property">
+                    <button onclick="event.stopPropagation(); requestDeleteBuilding('${building.id}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; border: none; cursor: pointer; font-size: 0.9em;" title="Delete Property" class="btn-delete">
                         <i class="fas fa-trash" style="margin-right: 8px;"></i> Delete
                     </button>
                 </div>
@@ -321,10 +321,10 @@ function renderBuildings(buildings) {
                             <i class="fas fa-ellipsis-v"></i>
                         </button>
                         <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; z-index: 100; min-width: 120px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-                            <button onclick="event.stopPropagation(); openEditAccountModal('${building.id}', '${acc.id_number}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); color: #3b82f6; cursor: pointer; font-size: 0.9em;">
+                            <button onclick="event.stopPropagation(); openEditAccountModal('${building.id}', '${acc.id_number}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; font-size: 0.9em;" class="btn-edit">
                                 <i class="fas fa-edit" style="margin-right: 8px;"></i> Edit
                             </button>
-                            <button onclick="event.stopPropagation(); requestDeleteAccount('${building.id}', '${acc.id_number}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.9em;">
+                            <button onclick="event.stopPropagation(); requestDeleteAccount('${building.id}', '${acc.id_number}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; border: none; cursor: pointer; font-size: 0.9em;" class="btn-delete">
                                 <i class="fas fa-trash" style="margin-right: 8px;"></i> Delete
                             </button>
                         </div>
@@ -396,7 +396,7 @@ function renderBuildings(buildings) {
                             <i class="fas fa-ellipsis-v"></i>
                         </button>
                         <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; z-index: 100; min-width: 120px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-                            <button onclick="event.stopPropagation(); requestDeleteBill('${bill.id}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; color: #ef4444; cursor: pointer; font-size: 0.9em;">
+                            <button onclick="event.stopPropagation(); requestDeleteBill('${bill.id}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; border: none; cursor: pointer; font-size: 0.9em;" class="btn-delete">
                                 <i class="fas fa-trash" style="margin-right: 8px;"></i> Delete
                             </button>
                         </div>
@@ -906,10 +906,10 @@ function renderClientManager() {
             <td style="padding: 20px 15px;">${company.name}</td>
             <td style="padding: 20px 15px;">${company.industry}</td>
             <td style="padding: 20px 15px; text-align: center;">
-                <button onclick="openEditCompanyModal('${company.id}')" style="background: transparent; border: none; cursor: pointer; color: #3b82f6; margin-right: 10px;" title="Edit Company">
+                <button onclick="openEditCompanyModal('${company.id}')" style="border: none; cursor: pointer; margin-right: 10px;" title="Edit Company" class="btn-edit">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button onclick="requestDeleteCompany('${company.id}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Company">
+                <button onclick="requestDeleteCompany('${company.id}')" style="border: none; cursor: pointer;" title="Delete Company" class="btn-delete">
                     <i class="fas fa-trash"></i>
                 </button>
             </td>
@@ -1202,10 +1202,10 @@ async function fetchDataFromSupabase() {
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
                                 <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; z-index: 100; min-width: 120px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-                                    <button onclick="event.stopPropagation(); openHistoryModal('${account.mprn_number || account.mprn}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); color: #f8fafc; cursor: pointer; font-size: 0.9em;">
+                                    <button onclick="event.stopPropagation(); openHistoryModal('${account.mprn_number || account.mprn}')" style="display: block; width: 100%; padding: 10px 15px; text-align: left; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; font-size: 0.9em; background: transparent; color: #f8fafc;">
                                         <i class="fas fa-history" style="margin-right: 8px;"></i> History
                                     </button>
-                                    <button onclick="event.stopPropagation(); alert('Duplicate clicked');" style="display: block; width: 100%; padding: 10px 15px; text-align: left; background: transparent; border: none; color: #f8fafc; cursor: pointer; font-size: 0.9em;">
+                                    <button onclick="event.stopPropagation(); alert('Duplicate clicked');" style="display: block; width: 100%; padding: 10px 15px; text-align: left; border: none; cursor: pointer; font-size: 0.9em; background: transparent; color: #f8fafc;">
                                         <i class="fas fa-copy" style="margin-right: 8px;"></i> Duplicate
                                     </button>
                                 </div>
@@ -1223,10 +1223,10 @@ async function fetchDataFromSupabase() {
                                 </div>
                             </div>
                             <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
-                                <button onclick="event.stopPropagation(); openEditAccountModal(null, '${account.mprn_number || account.mprn}')" style="background: transparent; border: none; cursor: pointer; color: #3b82f6;" title="Edit Account">
+                                <button onclick="event.stopPropagation(); openEditAccountModal(null, '${account.mprn_number || account.mprn}')" style="border: none; cursor: pointer;" title="Edit Account" class="btn-edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="event.stopPropagation(); requestDeleteAccount(null, '${account.mprn_number || account.mprn}')" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete Account">
+                                <button onclick="event.stopPropagation(); requestDeleteAccount(null, '${account.mprn_number || account.mprn}')" style="border: none; cursor: pointer;" title="Delete Account" class="btn-delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -1444,7 +1444,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(energyListGridSec) { energyListGridSec.style.display = 'none'; if (energyGridHeader) energyGridHeader.style.display = 'none'; }
 
                 if (selectedBuildingName) selectedBuildingName.parentElement.style.display = 'none';
-                viewContractsBtn.textContent = 'Back to Dashboard';
+                viewContractsBtn.innerHTML = '<i class="fas fa-arrow-left"></i>';
+                viewContractsBtn.title = 'Back to Dashboard';
                 renderContractDates();
             } else {
                 // Hide contract dates
@@ -1455,7 +1456,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(searchSectionSec) searchSectionSec.style.display = 'block';
                 if(energyListGridSec) { energyListGridSec.style.display = 'grid'; if (energyGridHeader) energyGridHeader.style.display = 'flex'; }
                 if (selectedBuildingName) selectedBuildingName.parentElement.style.display = 'flex';
-                viewContractsBtn.textContent = 'Contract Dates';
+                viewContractsBtn.innerHTML = '<i class="fas fa-file-signature"></i>';
+                viewContractsBtn.title = 'Contract Dates';
+            }
+        });
+    }
+
+    // Audit Sidebar toggle
+    const toggleAuditBtn = document.getElementById('toggle-audit-btn');
+    const auditSidebar = document.getElementById('audit-sidebar');
+    if (toggleAuditBtn && auditSidebar) {
+        toggleAuditBtn.addEventListener('click', () => {
+            if (auditSidebar.style.display === 'none') {
+                auditSidebar.style.display = 'block';
+                toggleAuditBtn.style.background = '#cbd5e1';
+                toggleAuditBtn.style.color = '#1e293b';
+                renderAuditLogs();
+            } else {
+                auditSidebar.style.display = 'none';
+                toggleAuditBtn.style.background = '#334155';
+                toggleAuditBtn.style.color = 'white';
             }
         });
     }
@@ -1476,8 +1496,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(energyListGridSec) { energyListGridSec.style.display = 'none'; if (energyGridHeader) energyGridHeader.style.display = 'none'; }
 
                 if (selectedBuildingName) selectedBuildingName.parentElement.style.display = 'none';
-                clientManagerBtn.textContent = 'Back to Dashboard';
-                if(viewContractsBtn) viewContractsBtn.textContent = 'Contract Dates';
+                clientManagerBtn.innerHTML = '<i class="fas fa-arrow-left"></i>';
+                clientManagerBtn.title = 'Back to Dashboard';
+                if(viewContractsBtn) {
+                    viewContractsBtn.innerHTML = '<i class="fas fa-file-signature"></i>';
+                    viewContractsBtn.title = 'Contract Dates';
+                }
             } else {
                 clientManagerSection.style.display = 'none';
                 buildingsListSec.style.display = 'block';
@@ -1486,7 +1510,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(searchSectionSec) searchSectionSec.style.display = 'block';
                 if(energyListGridSec) { energyListGridSec.style.display = 'grid'; if (energyGridHeader) energyGridHeader.style.display = 'flex'; }
                 if (selectedBuildingName) selectedBuildingName.parentElement.style.display = 'flex';
-                clientManagerBtn.textContent = 'Client Manager';
+                clientManagerBtn.innerHTML = '<i class="fas fa-users"></i>';
+                clientManagerBtn.title = 'Client Manager';
             }
         });
     }

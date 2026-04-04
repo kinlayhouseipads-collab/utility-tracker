@@ -15,8 +15,8 @@
         <div style="background: rgba(255,255,255,0.05); padding: 40px; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); text-align: center; backdrop-filter: blur(10px);">
             <h2 style="color: #f8fafc; margin-top: 0;">DOB Accounts Login</h2>
             <form id="login-form" style="display: flex; flex-direction: column; gap: 15px; margin-top: 20px;">
-                <input type="text" id="login-username" placeholder="Username (e.g. Oracle_Admin)" required style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 16px; background: rgba(255,255,255,0.05); color: #f8fafc;">
-                <button type="submit" style="background: #635BFF; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold;">Login</button>
+                <input type="text" id="login-username" placeholder="Username (e.g. Oracle_Admin)" required class="login-input">
+                <button type="submit" class="login-btn">Login</button>
             </form>
         </div>
     </div>
@@ -28,7 +28,7 @@
                 <img src="https://media.licdn.com/dms/image/v2/C4E0BAQEHyOTTvaVxXA/company-logo_200_200/company-logo_200_200/0/1630641921424/dob_developments_logo?e=2147483647&v=beta&t=3Xv0Dlrlb1COXctRBM2gOr_7yPA1wyr9C_ipTD3MKQM" alt="DOB Developments Logo" style="height: 40px; width: 40px; border-radius: 8px; object-fit: contain; background-color: #ffffff;">
                 <h1 style="margin: 0;">DOB <span>Accounts</span></h1>
             </div>
-            <nav style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <nav style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap; justify-content: flex-end; flex: 1;">
                 <div id="filter-controls" style="display: flex; gap: 10px; align-items: center;">
                     <input type="date" id="start-date-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
                     <input type="date" id="end-date-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc;">
@@ -40,31 +40,34 @@
                     <label for="end-date-filter">End Date</label>
                     <input type="date" id="end-date-filter" style="padding: 12px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: #0f172a; color: #f8fafc; color-scheme: dark;">
                 </div>
-                <button id="view-stats">Trends</button>
-                <button id="view-contracts" style="background: #0284c7; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Contract Dates</button>
-                <button id="client-manager-btn" class="btn-primary" style="display: none; background: #6366f1;">Client Manager</button>
-                <button id="add-building" class="btn-primary"><i class="fas fa-plus"></i> New Property</button>
-                <button id="add-entry" class="btn-primary"><i class="fas fa-plus-circle"></i> New Entry</button>
                 <div class="search-section" style="display: inline-block;">
-                    <input type="text" id="search-bar" placeholder="Search properties..." style="padding: 10px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: rgba(255,255,255,0.05); color: #f8fafc; min-width: 200px;">
+                    <input type="text" id="search-bar" placeholder="Search properties..." class="search-input">
                 </div>
-                <button id="export-csv-btn" class="btn-primary" style="background: #10b981; padding: 10px 15px;" title="Export CSV"><i class="fas fa-file-csv"></i></button>
-                <button id="backup-data-btn" class="btn-primary" style="background: #eab308; padding: 10px 15px;" title="Backup Data"><i class="fas fa-download"></i></button>
-                <button id="sync-data-btn" class="btn-primary" style="background: #8b5cf6; padding: 10px 15px;" onclick="syncNow()" title="Push Local Data to Cloud"><i class="fas fa-cloud-upload-alt"></i></button>
                 <div id="notification-bell" style="position: relative; cursor: pointer; padding: 10px; font-size: 1.2rem; color: #f8fafc; display: flex; align-items: center; justify-content: center;">
                     <i class="fas fa-bell"></i>
                     <span id="notification-badge" style="display: none; position: absolute; top: 0px; right: 0; background: #ef4444; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; align-items: center; justify-content: center; font-weight: bold;">0</span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 10px; margin-left: 5px;">
+                <div class="user-controls">
                     <span id="logged-in-user" style="color: #cbd5e1; font-weight: 500; font-size: 0.9em;"></span>
-                    <button id="logout-btn" style="background: transparent; color: #ef4444; border: 1px solid #ef4444; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: bold;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    <button id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</button>
                 </div>
             </nav>
         </div>
     </header>
 
     <div style="display: flex;">
-    <main class="container" style="flex: 1;">
+    <aside id="main-sidebar">
+        <button id="view-stats" class="btn-sidebar" style="background: #475569;" title="Trends"><i class="fas fa-chart-line"></i></button>
+        <button id="view-contracts" class="btn-sidebar" style="background: #0284c7;" title="Contract Dates"><i class="fas fa-file-signature"></i></button>
+        <button id="client-manager-btn" class="btn-sidebar" style="display: none; background: #6366f1;" title="Client Manager"><i class="fas fa-users"></i></button>
+        <button id="add-building" class="btn-sidebar" style="background: #22c55e;" title="New Property"><i class="fas fa-plus"></i></button>
+        <button id="add-entry" class="btn-sidebar" style="background: #22c55e;" title="New Entry"><i class="fas fa-plus-circle"></i></button>
+        <button id="export-csv-btn" class="btn-sidebar" style="background: #10b981;" title="Export CSV"><i class="fas fa-file-csv"></i></button>
+        <button id="backup-data-btn" class="btn-sidebar" style="background: #eab308;" title="Backup Data"><i class="fas fa-download"></i></button>
+        <button id="sync-data-btn" class="btn-sidebar" style="background: #8b5cf6;" onclick="syncNow()" title="Push Local Data to Cloud"><i class="fas fa-cloud-upload-alt"></i></button>
+        <button id="toggle-audit-btn" class="btn-sidebar" style="background: #334155; margin-top: auto;" title="System Audit Trail"><i class="fas fa-list"></i></button>
+    </aside>
+    <main  style="flex: 1; padding-left: 20px;">
 
         <!-- Notification Dropdown -->
         <div id="notification-dropdown" style="display: none; position: absolute; right: 20px; top: 70px; background: #0f172a; border: 1px solid #e2e8f0; border-radius: 12px; width: 350px; max-height: 400px; overflow-y: auto; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); z-index: 2000;">
@@ -85,16 +88,16 @@
 
         <section class="dashboard-grid">
             <div class="card a">
-                <h3>Total Portfolio Cost</h3>
-                <p class="stat monospace" id="stat-cost">-- €</p>
+                <h3 style="margin-top: 0;">Total Portfolio Cost</h3>
+                <p class="stat monospace" id="stat-cost" style="font-size: 2rem; font-weight: bold; margin: 10px 0; color: #22c55e;">-- €</p>
             </div>
             <div class="card b">
-                <h3>Total Energy</h3>
-                <p class="stat" id="stat-electricity">-- kWh</p>
+                <h3 style="margin-top: 0;">Total Energy</h3>
+                <p class="stat" id="stat-electricity" style="font-size: 2rem; font-weight: bold; margin: 10px 0; color: #3b82f6;">-- kWh</p>
             </div>
             <div class="card c">
-                <h3>Carbon Footprint</h3>
-                <p class="stat" id="stat-co2">-- kg CO₂</p>
+                <h3 style="margin-top: 0;">Carbon Footprint</h3>
+                <p class="stat" id="stat-co2" style="font-size: 2rem; font-weight: bold; margin: 10px 0; color: #10b981;">-- kg CO₂</p>
             </div>
         </section>
 
@@ -145,7 +148,7 @@
         <section id="client-manager-section" style="display: none; margin-top: 40px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); backdrop-filter: blur(10px);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 style="margin: 0;">Client Manager</h2>
-                <button id="add-company-btn" class="btn-primary" style="background: #10b981;">+ New Company</button>
+                <button id="add-company-btn" class="btn-primary">+ New Company</button>
             </div>
             <table style="width: 100%; border-collapse: collapse; text-align: left;">
                 <thead>
@@ -314,7 +317,7 @@
 
                         <div style="display: flex; gap: 10px;">
                             <button type="button" id="wizard-back-3" style="padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; background: transparent; color: white; cursor: pointer;">Back</button>
-                            <button type="submit" class="btn-primary" style="flex: 1; background: #10b981;">Save Reading</button>
+                            <button type="submit" class="btn-primary" style="flex: 1;">Save Reading</button>
                         </div>
                     </form>
                 </div>
@@ -334,7 +337,7 @@
     </main>
 
     <!-- System Audit Trail Sidebar -->
-    <aside id="audit-sidebar">
+    <aside id="audit-sidebar" style="display: none; width: 250px; background: rgba(255,255,255,0.05); border-left: 1px solid rgba(255,255,255,0.1); padding: 20px; overflow-y: auto;">
         <div class="sidebar-content">
             <h3 style="margin-top: 0; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
                 <i class="fas fa-list"></i> <span class="sidebar-text">System Audit Trail</span>
