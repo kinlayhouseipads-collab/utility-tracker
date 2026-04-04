@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DOB Accounts</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -21,7 +21,7 @@
         </div>
     </div>
 
-    <div id="main-dashboard" style="display: none; width: 100%; max-width: 1300px; margin: 0 auto; padding: 0 10px; box-sizing: border-box;">
+    <div id="main-dashboard" style="display: none; width: 100%; max-width: 1300px; margin: 0 auto; padding: 20px; box-sizing: border-box;">
     <header class="app-header">
         <div class="header-container">
             <div style="display: flex; align-items: center; gap: 15px;">
@@ -57,15 +57,15 @@
 
     <div style="display: flex;">
     <aside id="main-sidebar">
-        <button id="view-stats" class="btn-sidebar" style="background: #475569;" title="Trends"><i class="fas fa-chart-line"></i></button>
-        <button id="view-contracts" class="btn-sidebar" style="background: #0284c7;" title="Contract Dates"><i class="fas fa-file-signature"></i></button>
-        <button id="client-manager-btn" class="btn-sidebar" style="display: none; background: #6366f1;" title="Client Manager"><i class="fas fa-users"></i></button>
-        <button id="add-building" class="btn-sidebar" style="background: #22c55e;" title="New Property"><i class="fas fa-plus"></i></button>
-        <button id="add-entry" class="btn-sidebar" style="background: #22c55e;" title="New Entry"><i class="fas fa-plus-circle"></i></button>
-        <button id="export-csv-btn" class="btn-sidebar" style="background: #10b981;" title="Export CSV"><i class="fas fa-file-csv"></i></button>
-        <button id="backup-data-btn" class="btn-sidebar" style="background: #eab308;" title="Backup Data"><i class="fas fa-download"></i></button>
-        <button id="sync-data-btn" class="btn-sidebar" style="background: #8b5cf6;" onclick="syncNow()" title="Push Local Data to Cloud"><i class="fas fa-cloud-upload-alt"></i></button>
-        <button id="toggle-audit-btn" class="btn-sidebar" style="background: #334155; margin-top: auto;" title="System Audit Trail"><i class="fas fa-list"></i></button>
+        <button id="view-stats" class="btn-sidebar" style="background: #475569;" title="Trends"><i class="fas fa-chart-line"></i><span class="sidebar-text" style="margin-left: 10px;">Trends</span></button>
+        <button id="view-contracts" class="btn-sidebar" style="background: #0284c7;" title="Contract Dates"><i class="fas fa-file-signature"></i><span class="sidebar-text" style="margin-left: 10px;">Contract Dates</span></button>
+        <button id="client-manager-btn" class="btn-sidebar" style="display: none; background: #6366f1;" title="Client Manager"><i class="fas fa-users"></i><span class="sidebar-text" style="margin-left: 10px;">Client Manager</span></button>
+        <button id="add-building" class="btn-sidebar" style="background: #22c55e;" title="New Property"><i class="fas fa-plus"></i><span class="sidebar-text" style="margin-left: 10px;">New Property</span></button>
+        <button id="add-entry" class="btn-sidebar" style="background: #22c55e;" title="New Entry"><i class="fas fa-plus-circle"></i><span class="sidebar-text" style="margin-left: 10px;">New Entry</span></button>
+        <button id="export-csv-btn" class="btn-sidebar" style="background: #10b981;" title="Export CSV"><i class="fas fa-file-csv"></i><span class="sidebar-text" style="margin-left: 10px;">Export CSV</span></button>
+        <button id="backup-data-btn" class="btn-sidebar" style="background: #eab308;" title="Backup Data"><i class="fas fa-download"></i><span class="sidebar-text" style="margin-left: 10px;">Backup Data</span></button>
+        <button id="sync-data-btn" class="btn-sidebar" style="background: #8b5cf6;" onclick="syncNow()" title="Push Local Data to Cloud"><i class="fas fa-cloud-upload-alt"></i><span class="sidebar-text" style="margin-left: 10px;">Sync Data</span></button>
+        <button id="toggle-audit-btn" class="btn-sidebar" style="background: #334155; margin-top: auto;" title="System Audit Trail"><i class="fas fa-list"></i><span class="sidebar-text" style="margin-left: 10px;">Audit Trail</span></button>
     </aside>
     <main  style="flex: 1; padding-left: 20px;">
 
