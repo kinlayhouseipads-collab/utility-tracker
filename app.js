@@ -1165,7 +1165,7 @@ async function fetchDataFromSupabase() {
                         }
 
                         // Add account if not present in this building
-                        if (ed.mprn_number) {
+                        if (ed.mprn_number && ed.mprn_number !== 'Pending') {
                             if (!existingBuilding.accounts) existingBuilding.accounts = [];
                             if (!existingBuilding.accounts.find(a => a.id_number === ed.mprn_number)) {
                                 existingBuilding.accounts.push({
