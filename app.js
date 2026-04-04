@@ -812,6 +812,13 @@ function renderChart() {
             plugins: {
                 legend: {
                     position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': €' + Number(context.parsed.y).toFixed(2);
+                        }
+                    }
                 }
             },
             scales: {
@@ -1139,46 +1146,48 @@ async function fetchDataFromSupabase() {
                         companies.push({ id: compId, name: compName, industry: 'Unknown' });
                     }
 
-                    // Find existing building or create new
-                    let existingBuilding = energyBuildings.find(b => b.name === propName && b.companyId === compId);
+                    if (propName && propName !== 'Pending') {
+                        // Find existing building or create new
+                        let existingBuilding = energyBuildings.find(b => b.name === propName && b.companyId === compId);
 
-                    if (!existingBuilding) {
-                        const newId = 'B' + String(bCount++).padStart(3, '0');
-                        existingBuilding = {
-                            id: newId,
-                            name: propName,
-                            address: propName + ' Address',
-                            companyId: compId,
-                            area: 1000,
-                            accounts: [],
-                            billHistory: []
-                        };
-                        energyBuildings.push(existingBuilding);
-                    }
-
-                    // Add account if not present in this building
-                    if (ed.mprn_number) {
-                        if (!existingBuilding.accounts) existingBuilding.accounts = [];
-                        if (!existingBuilding.accounts.find(a => a.id_number === ed.mprn_number)) {
-                            existingBuilding.accounts.push({
-                                type: ed.utility_type === 'Gas' ? 'Gas' : 'Electricity',
-                                id_number: ed.mprn_number,
-                                // FIX: Ensure these come FROM the database columns
-                                provider: ed.provider || 'N/A',
-                                contractEndDate: ed.contract_end_date || '',
-                                account_address: ed.service_address || existingBuilding.address
-                            });
+                        if (!existingBuilding) {
+                            const newId = 'B' + String(bCount++).padStart(3, '0');
+                            existingBuilding = {
+                                id: newId,
+                                name: propName,
+                                address: propName + ' Address',
+                                companyId: compId,
+                                area: 1000,
+                                accounts: [],
+                                billHistory: []
+                            };
+                            energyBuildings.push(existingBuilding);
                         }
-                    }
 
-                    // Always add the bill
-                    existingBuilding.billHistory.push({
-                        id: ed.id,
-                        date: ed.bill_date || ed.last_updated || new Date().toISOString(),
-                        usage_kwh: ed.usage_kwh || ed.current_kwh || 0,
-                        cost: ed.total_cost || 0,
-                        utility_type: ed.utility_type || (ed.usage_m3 > 0 ? 'Gas' : 'Electricity')
-                    });
+                        // Add account if not present in this building
+                        if (ed.mprn_number) {
+                            if (!existingBuilding.accounts) existingBuilding.accounts = [];
+                            if (!existingBuilding.accounts.find(a => a.id_number === ed.mprn_number)) {
+                                existingBuilding.accounts.push({
+                                    type: ed.utility_type === 'Gas' ? 'Gas' : 'Electricity',
+                                    id_number: ed.mprn_number,
+                                    // FIX: Ensure these come FROM the database columns
+                                    provider: ed.provider || 'N/A',
+                                    contractEndDate: ed.contract_end_date || '',
+                                    account_address: ed.service_address || existingBuilding.address
+                                });
+                            }
+                        }
+
+                        // Always add the bill
+                        existingBuilding.billHistory.push({
+                            id: ed.id,
+                            date: ed.bill_date || ed.last_updated || new Date().toISOString(),
+                            usage_kwh: ed.usage_kwh || ed.current_kwh || 0,
+                            cost: ed.total_cost || 0,
+                            utility_type: ed.utility_type || (ed.usage_m3 > 0 ? 'Gas' : 'Electricity')
+                        });
+                    }
                 });
 
                 populateCompanyDropdowns();
