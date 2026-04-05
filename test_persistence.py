@@ -32,7 +32,7 @@ def test():
         time.sleep(0.5)
 
         page.fill('#reading-value', str(rand_usage))
-        page.fill('#reading-unit-rate', '0.50')
+        page.fill('#reading-cost', '150.00')
 
         page.click('button:has-text("Save Reading")')
         print(f"Submitted reading: usage {rand_usage}")
