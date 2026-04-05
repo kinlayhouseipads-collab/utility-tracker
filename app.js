@@ -2296,22 +2296,7 @@ if (wAccount) {
 }
 
 const rValueInput = document.getElementById('reading-value');
-const rUnitRateInput = document.getElementById('reading-unit-rate');
 const rCostInput = document.getElementById('reading-cost');
-
-function calculateCost() {
-    if (!rValueInput || !rUnitRateInput || !rCostInput) return;
-    const value = parseFloat(rValueInput.value) || 0;
-    const rate = parseFloat(rUnitRateInput.value) || 0;
-    rCostInput.value = (value * rate).toFixed(2);
-}
-
-if (rValueInput) {
-    rValueInput.addEventListener('input', calculateCost);
-}
-if (rUnitRateInput) {
-    rUnitRateInput.addEventListener('input', calculateCost);
-}
 
 let isSavingEnergy = false;
 document.getElementById('tracker-form')?.addEventListener('submit', async function(e) {
