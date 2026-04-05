@@ -1202,6 +1202,9 @@ async function fetchDataFromSupabase() {
                 }
                 if (energyGrid && energyData && energyData.length > 0) {
                     energyData.forEach(account => {
+                        if (account.property_name === 'Pending' || account.mprn_number === 'Pending' || account.mprn === 'Pending') {
+                            return; // Skip pending records
+                        }
                         const card = document.createElement('div');
                         card.className = 'card';
                         card.style.textAlign = 'left';
